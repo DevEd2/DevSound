@@ -1,0 +1,9 @@
+@echo off
+
+echo Assembling...
+rgbasm -o DevSound.obj -p 255 Main.asm
+echo Linking...
+rgblink -p 255 -o DevSound.gb -n DevSound.sym DevSound.obj
+echo Fixing...
+rgbfix -v -p 255 DevSound.gb
+echo Build complete.
