@@ -88,12 +88,13 @@ fix		equ	C_2
 SetInstrument	equ	$80
 SetLoopPoint	equ	$81
 GotoLoopPoint	equ	$82
-SetChannelPtr	equ	$83
-PitchBendUp		equ	$84
-PitchBendDown	equ	$85
-SetSweep		equ	$86
-SetPan			equ	$87
-SetSpeed		equ	$88
+CallSection		equ	$83
+SetChannelPtr	equ	$84
+PitchBendUp		equ	$85
+PitchBendDown	equ	$86
+SetSweep		equ	$87
+SetPan			equ	$88
+SetSpeed		equ	$89
 EndChannel		equ	$FF
 
 endc

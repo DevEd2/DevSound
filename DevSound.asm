@@ -120,13 +120,13 @@ DevSound_Init:
 DefaultRegTable:
 	db	0,0,0,0,0,1,1,1,1,1
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0	; the $FF is so that the wave is updated properly on the first frame
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0	; the $FF is so that the wave is updated properly on the first frame
 	dw	DummyChannel,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
@@ -217,6 +217,8 @@ CH1_CheckByte:
 	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
+	cp	$c9
+	jr	z,.retSection
 	bit	7,a			; check for command
 	jr	nz,.getCommand
 	; if we have a note...
@@ -253,6 +255,15 @@ CH1_CheckByte:
 	xor	a
 	ld	[CH1Enabled],a
 	jp	UpdateCH2
+
+.retSection
+	ld	a,[CH1RetPtr]
+	ld	[CH1Ptr],a
+	ld	a,[CH1RetPtr+1]
+	ld	[CH1Ptr+1],a
+	ld	a,[CH1RetPos]
+	ld	[CH1Pos],a
+	jp	UpdateCH1
 	
 CH1_DoneUpdating:
 	ld	a,c
@@ -263,6 +274,7 @@ CH1_CommandTable
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
+	dw	.callSection
 	dw	.setChannelPtr
 	dw	.pitchBendUp
 	dw	.pitchBendDown
@@ -325,6 +337,25 @@ CH1_CommandTable
 	ld	a,[CH1LoopPos]
 	ld	[CH1Pos],a
 	jp	UpdateCH1		; too far for jr
+
+.callSection
+	pop	hl
+	ld	a,[CH1Ptr]
+	ld	[CH1RetPtr],a
+	ld	a,[CH1Ptr+1]
+	ld	[CH1RetPtr+1],a
+	ld	a,[hl+]
+	ld	[CH1Ptr],a
+	ld	a,[hl]
+	ld	[CH1Ptr+1],a
+	inc	c
+	inc c
+	ld	a,c
+	ld	[CH1RetPos],a
+	xor	a
+	ld	[CH1Pos],a
+	ld	c,a
+	jp	UpdateCH1	; too far for jr
 	
 .setChannelPtr
 	pop	hl
@@ -401,6 +432,8 @@ CH2_CheckByte:
 	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
+	cp	$c9
+	jr	z,.retSection
 	bit	7,a			; check for command
 	jr	nz,.getCommand	
 	; if we have a note...
@@ -438,6 +471,16 @@ CH2_CheckByte:
 	ld	[CH2Enabled],a
 	jp	UpdateCH3
 	
+.retSection
+	ld	hl,CH2RetPtr
+	ld	a,[hl+]
+	ld	[CH2Ptr],a
+	ld	a,[hl]
+	ld	[CH2Ptr+1],a
+	ld	a,[CH2RetPos]
+	ld	[CH2Pos],a
+	jp	UpdateCH2
+	
 CH2_DoneUpdating:
 	ld	a,c
 	ld	[CH2Pos],a
@@ -447,6 +490,7 @@ CH2_CommandTable
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
+	dw	.callSection
 	dw	.setChannelPtr
 	dw	.pitchBendUp
 	dw	.pitchBendDown
@@ -509,6 +553,25 @@ CH2_CommandTable
 	ld	a,[CH2LoopPos]
 	ld	[CH2Pos],a
 	jp	UpdateCH2		; too far for jr
+	
+.callSection
+	pop	hl
+	ld	a,[CH2Ptr]
+	ld	[CH2RetPtr],a
+	ld	a,[CH2Ptr+1]
+	ld	[CH2RetPtr+1],a
+	ld	a,[hl+]
+	ld	[CH2Ptr],a
+	ld	a,[hl]
+	ld	[CH2Ptr+1],a
+	inc	c
+	inc c
+	ld	a,c
+	ld	[CH2RetPos],a
+	xor	a
+	ld	[CH2Pos],a
+	ld	c,a
+	jp	UpdateCH2	; too far for jr
 	
 .setChannelPtr
 	pop	hl
@@ -585,6 +648,8 @@ CH3_CheckByte:
 	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
+	cp	$c9
+	jr	z,.retSection
 	bit	7,a			; check for command
 	jr	nz,.getCommand
 	; if we have a note...
@@ -594,13 +659,16 @@ CH3_CheckByte:
 	inc	c
 	dec	a
 	ld	[CH3Tick],a
+	xor	a
+	ld	[CH3VolPos],a
+	ld	[CH3ArpPos],a
+	ld	[CH3VibPos],a
+	xor	$ff
+	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG
 	ld	a,[CH3Reset]
 	jp	z,CH3_DoneUpdating
 	xor	a
-	ld	[CH3VolPos],a
 	ld	[CH3WavePos],a
-	ld	[CH3ArpPos],a
-	ld	[CH3VibPos],a
 	jp	CH3_DoneUpdating
 .getCommand
 	push	hl
@@ -621,6 +689,16 @@ CH3_CheckByte:
 	ld	[CH3Enabled],a
 	jp	UpdateCH4
 	
+.retSection
+	ld	hl,CH3RetPtr
+	ld	a,[hl+]
+	ld	[CH3Ptr],a
+	ld	a,[hl]
+	ld	[CH3Ptr+1],a
+	ld	a,[CH3RetPos]
+	ld	[CH3Pos],a
+	jp	UpdateCH3
+	
 CH3_DoneUpdating:
 	ld	a,c
 	ld	[CH3Pos],a
@@ -630,6 +708,7 @@ CH3_CommandTable
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
+	dw	.callSection
 	dw	.setChannelPtr
 	dw	.pitchBendUp
 	dw	.pitchBendDown
@@ -693,6 +772,25 @@ CH3_CommandTable
 	ld	a,[CH3LoopPos]
 	ld	[CH3Pos],a
 	jp	UpdateCH3		; too far for jr
+	
+.callSection
+	pop	hl
+	ld	a,[CH3Ptr]
+	ld	[CH3RetPtr],a
+	ld	a,[CH3Ptr+1]
+	ld	[CH3RetPtr+1],a
+	ld	a,[hl+]
+	ld	[CH3Ptr],a
+	ld	a,[hl]
+	ld	[CH3Ptr+1],a
+	inc	c
+	inc c
+	ld	a,c
+	ld	[CH3RetPos],a
+	xor	a
+	ld	[CH3Pos],a
+	ld	c,a
+	jp	UpdateCH3	; too far for jr
 	
 .setChannelPtr
 	pop	hl
@@ -769,6 +867,8 @@ CH4_CheckByte:
 	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
+	cp	$c9
+	jr	z,.retSection
 	bit	7,a			; check for command
 	jr	nz,.getCommand	
 	; if we have a note...
@@ -804,6 +904,16 @@ CH4_CheckByte:
 	ld	[CH4Enabled],a
 	jp	DoneUpdating
 	
+.retSection
+	ld	hl,CH4RetPtr
+	ld	a,[hl+]
+	ld	[CH4Ptr],a
+	ld	a,[hl]
+	ld	[CH4Ptr+1],a
+	ld	a,[CH4RetPos]
+	ld	[CH4Pos],a
+	jp	UpdateCH4
+	
 CH4_DoneUpdating:
 	ld	a,c
 	ld	[CH4Pos],a
@@ -814,6 +924,7 @@ CH4_CommandTable
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
 	dw	.setChannelPtr
+	dw	.callSection
 	dw	.pitchBendUp
 	dw	.pitchBendDown
 	dw	.setSweep
@@ -865,6 +976,25 @@ CH4_CommandTable
 	ld	a,[CH4LoopPos]
 	ld	[CH4Pos],a
 	jp	UpdateCH4		; too far for jr
+	
+.callSection
+	pop	hl
+	ld	a,[CH4Ptr]
+	ld	[CH4RetPtr],a
+	ld	a,[CH4Ptr+1]
+	ld	[CH4RetPtr+1],a
+	ld	a,[hl+]
+	ld	[CH4Ptr],a
+	ld	a,[hl]
+	ld	[CH4Ptr+1],a
+	inc	c
+	inc c
+	ld	a,c
+	ld	[CH4RetPos],a
+	xor	a
+	ld	[CH4Pos],a
+	ld	c,a
+	jp	UpdateCH4	; too far for jr
 	
 .setChannelPtr
 	pop	hl
@@ -1436,7 +1566,6 @@ CH4_UpdateRegisters:
 	
 DoneUpdatingRegisters:
 	ret
-	
 
 ; ================================================================
 ; Subroutines
@@ -1478,6 +1607,15 @@ NoiseTable:	; taken from deflemask
 	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$64
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$24
 	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$03,$02,$01,$00
+
+; ================================================================
+; Dummy data
+; ================================================================
+	
+DummyTable:	db	$ff
+
+DummyChannel:
+	db	EndChannel
 	
 ; ================================================================
 ; Song data

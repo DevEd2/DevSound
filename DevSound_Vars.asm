@@ -31,6 +31,8 @@ CH1PulsePos		ds	1
 CH1ArpPos		ds	1
 CH1VibPos		ds	1
 CH1LoopPos		ds	1
+CH1RetPtr		ds	2
+CH1RetPos		ds	1
 CH1Tick			ds	1
 CH1Reset		ds	1
 CH1Note			ds	1
@@ -51,6 +53,8 @@ CH2PulsePos		ds	1
 CH2ArpPos		ds	1
 CH2VibPos		ds	1
 CH2LoopPos		ds	1
+CH2RetPtr		ds	2
+CH2RetPos		ds	1
 CH2Tick			ds	1
 CH2Reset		ds	1
 CH2Note			ds	1
@@ -70,6 +74,8 @@ CH3WavePos		ds	1
 CH3ArpPos		ds	1
 CH3VibPos		ds	1
 CH3LoopPos		ds	1
+CH3RetPtr		ds	2
+CH3RetPos		ds	1
 CH3Tick			ds	1
 CH3Reset		ds	1
 CH3Note			ds	1
@@ -86,6 +92,8 @@ CH4Pos			ds	1
 CH4VolPos		ds	1
 CH4NoisePos		ds	1
 CH4LoopPos		ds	1
+CH4RetPtr		ds	2
+CH4RetPos		ds	1
 CH4Mode			ds	1
 CH4Tick			ds	1
 CH4Reset		ds	1
