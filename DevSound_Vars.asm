@@ -26,7 +26,7 @@ CH1PulsePtr		ds	2
 CH1ArpPtr		ds	2
 CH1VibPtr		ds	2
 CH1Pos			ds	1
-CH1VolPos		ds	2
+CH1VolPos		ds	1
 CH1PulsePos		ds	1
 CH1ArpPos		ds	1
 CH1VibPos		ds	1
@@ -37,9 +37,6 @@ CH1Tick			ds	1
 CH1Reset		ds	1
 CH1Note			ds	1
 CH1Transpose	ds	1
-CH1Vol			ds	1
-CH1Pulse		ds	1
-CH1Pan			ds	1
 CH1Sweep		ds	1
 
 CH2Ptr			ds	2
@@ -58,10 +55,7 @@ CH2RetPos		ds	1
 CH2Tick			ds	1
 CH2Reset		ds	1
 CH2Note			ds	1
-CH2Vol			ds	1
-CH2Pulse		ds	1
 CH2Transpose	ds	1
-CH2Pan			ds	1
 
 CH3Ptr			ds	2
 CH3VolPtr		ds	2

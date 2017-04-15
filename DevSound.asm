@@ -120,9 +120,9 @@ DevSound_Init:
 DefaultRegTable:
 	db	0,0,0,0,0,1,1,1,1,1
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0	; the $FF is so that the wave is updated properly on the first frame
 	dw	DummyChannel,DummyTable,DummyTable
@@ -200,35 +200,35 @@ UpdateCH1:
 	jr	z,.continue
 	dec	a
 	ld	[CH1Tick],a
-	jp	UpdateCH2	; too far for jr
+	jp	UpdateCH2		; too far for jr
 .continue
-	ld	hl,CH1Ptr	; get pointer
+	ld	hl,CH1Ptr		; get pointer
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH1Pos]	; get current offset
-	ld	c,a			; store offset for later use
-	add	l			; hl = hl + a (four lines)
+	ld	a,[CH1Pos]		; get current offset
+	ld	c,a				; store offset for later use
+	add	l
 	ld	l,a
 	jr	nc,CH1_CheckByte
 	inc	h
 CH1_CheckByte:
-	ld	a,[hl+]		; get byte
-	inc	c			; add 1 to offset
-	cp	$ff
+	ld	a,[hl+]			; get byte
+	inc	c				; add 1 to offset
+	cp	$ff				; if $ff...
 	jr	z,.endChannel
-	cp	$c9
+	cp	$c9				; if $c9...
 	jr	z,.retSection
-	bit	7,a			; check for command
+	bit	7,a				; if command...
 	jr	nz,.getCommand
 	; if we have a note...
 .getNote
-	ld	[CH1Note],a
+	ld	[CH1Note],a		; set note
 	ld	a,[hl+]
 	inc	c
 	dec	a
-	ld	[CH1Tick],a
-	ld	a,[CH1Reset]
+	ld	[CH1Tick],a		; set tick
+	ld	a,[CH1Reset]	; check for reset flag
 	jp	z,CH1_DoneUpdating
 	xor	a
 	ld	[CH1VolPos],a
@@ -239,8 +239,8 @@ CH1_CheckByte:
 	jp	CH1_DoneUpdating
 .getCommand
 	push	hl
-	sub	$80
-	add	a
+	sub	$80				; subtract 128 from command value
+	add	a				; multiply by 2
 	add	a,CH1_CommandTable%256
 	ld	l,a
 	adc	a,CH1_CommandTable/256
@@ -664,9 +664,10 @@ CH3_CheckByte:
 	ld	[CH3ArpPos],a
 	ld	[CH3VibPos],a
 	xor	$ff
-	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG
+	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,[CH3Reset]
-	jp	z,CH3_DoneUpdating
+	and	a
+	jp	nz,CH3_DoneUpdating
 	xor	a
 	ld	[CH3WavePos],a
 	jp	CH3_DoneUpdating
@@ -1146,10 +1147,31 @@ CH1_UpdateRegisters:
 	add	hl,bc
 	add	hl,bc
 	
+; get vibrato (TODO: Finish this!)
+;	push	hl
+;	dec	hl
+;	ld	a,[hl+]
+;	ld	h,[hl]
+;	ld	l,a
+;	ld	d,h
+;	ld	e,l
+;	ld	hl,CH1VibPtr
+;	ld	a,[CH1VibPos]
+;	add	l
+;	ld	l,a
+;	jr	nc,.nocarry3
+;	inc	h
+;.nocarry3
+;	ld	a,[hl+]
+;	bit	7,a
+;	jr	z,.subtract
+;	add	
+	
 	ld	a,[hl+]
 	ldh	[rNR13],a
 	ld	a,[hl]
 	ldh	[rNR14],a
+	
 	ld	e,a
 
 	; update volume
