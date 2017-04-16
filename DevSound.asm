@@ -1075,6 +1075,7 @@ CH1_UpdateRegisters:
 .norest
 
 	; update arps
+.updatearp
 	ld	hl,CH1ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -1090,7 +1091,7 @@ CH1_UpdateRegisters:
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH1ArpPos],a
-	jr	.continue
+	jr	.updatearp
 .noloop
 	cp	$ff
 	jr	z,.continue
@@ -1229,6 +1230,7 @@ CH2_UpdateRegisters:
 .norest
 
 	; update arps
+.updatearp
 	ld	hl,CH2ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -1244,7 +1246,7 @@ CH2_UpdateRegisters:
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH2ArpPos],a
-	jr	.continue
+	jr	.updatearp
 .noloop
 	cp	$ff
 	jr	z,.continue
@@ -1359,6 +1361,7 @@ CH3_UpdateRegisters:
 .norest
 
 	; update arps
+.updatearp
 	ld	hl,CH3ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -1374,7 +1377,7 @@ CH3_UpdateRegisters:
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH3ArpPos],a
-	jr	.continue
+	jr	.updatearp
 .noloop
 	cp	$ff
 	jr	z,.continue
@@ -1508,6 +1511,7 @@ CH4_UpdateRegisters:
 .norest
 
 	; update arps
+.updatearp
 	ld	hl,CH4NoisePtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -1523,7 +1527,7 @@ CH4_UpdateRegisters:
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH4NoisePos],a
-	jr	.continue
+	jr	.updatearp
 .noloop
 	cp	$ff
 	jr	z,.continue
