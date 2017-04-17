@@ -194,7 +194,7 @@ DevSound_Play:
 UpdateCH1:
 	ld	a,[CH1Enabled]
 	and	a
-	jr	z,CH1_DoneUpdating
+	jp	z,UpdateCH2
 	ld	a,[CH1Tick]
 	and	a
 	jr	z,.continue
@@ -409,7 +409,7 @@ CH1_CommandTable
 UpdateCH2:
 	ld	a,[CH2Enabled]
 	and	a
-	jr	z,CH2_DoneUpdating
+	jp	z,UpdateCH3
 	ld	a,[CH2Tick]
 	and	a
 	jr	z,.continue
@@ -625,7 +625,7 @@ CH2_CommandTable
 UpdateCH3:
 	ld	a,[CH3Enabled]
 	and	a
-	jr	z,CH3_DoneUpdating
+	jp	z,UpdateCH4
 	ld	a,[CH3Tick]
 	and	a
 	jr	z,.continue
@@ -845,7 +845,7 @@ CH3_CommandTable
 UpdateCH4:
 	ld	a,[CH4Enabled]
 	and	a
-	jr	z,CH4_DoneUpdating
+	jp	z,DoneUpdating
 	ld	a,[CH4Tick]
 	and	a
 	jr	z,.continue
