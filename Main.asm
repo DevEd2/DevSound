@@ -42,7 +42,7 @@ SECTION	"Reset $30",HOME[$30]
 Reset30:	ret
 
 SECTION	"Reset $38",HOME[$38]
-Reset38:	jp	$100
+Reset38:	jp	ErrorHandler
 
 ; ================================================================
 ; Interrupt vectors
@@ -117,7 +117,6 @@ ProgramStart:
 ._loop
 	ld	[c],a
 	inc	c
-	
 	dec	b
 	jr	nz,._loop
 
@@ -131,15 +130,57 @@ ProgramStart:
 	call	ClearVRAM
 	
 	CopyTileset1BPP	Font,0,(Font_End-Font)/8
-	ld	hl,MainText
+	
+	
+	; VBA check
+	ld	a,$5f				; this value isn't important
+	ld	[VBACheck],a		; copy value to WRAM
+	ld	b,a
+	ld	a,[VBACheck+$2000]	; read value back from echo RAM
+	cp	b					; (fails in VBA because echo RAM isn't emulated)
+	jp	z,.notvba			; if check passes, jump ahead
+	ld	hl,.novbatext
+	call	LoadMapText		; assumes font is already loaded into VRAM
+	ld	a,%11100100			; 3 2 1 0
+	ldh	[rBGP],a			; set background palette
+	ld	a,%10010001			; LCD on + BG on + BG $8000
+	ldh	[rLCDC],a			; enable LCD
+.vbawait
+	call	CheckInput
+	ld	a,[sys_btnPress]
+	bit	btnA,a				; check if A is pressed
+	jp	nz,.notvba			; if a is pressed, break from loop
+	jr	.vbawait
+.novbatext					; 20x18 char tilemap
+	db	"Nice emulator you   "
+	db	"got there :^)       "
+	db	"                    "
+	db	"For best results,   "
+	db	"please use a better "
+	db	"emulator (such as   "
+	db	"bgb or gambatte) or "
+	db	"run this ROM on real"
+	db	"hardware.           "
+	db	"                    "
+	db	"Press A to continue "
+	db	"anyway, but don't   "
+	db	"blame me if any part"
+	db	"of this ROM doesn't "
+	db	"work correctly due  "
+	db	"to your terrible    "
+	db	"choice of emulator! "
+	db	"                    "
+	
+.notvba	
+	ld	hl,MainText			; load main text
 	call	LoadMapText
 	ld	a,%11100100			; 3 2 1 0
 	ldh	[rBGP],a			; set background palette
 
 	ld	a,IEF_VBLANK
 	ldh	[rIE],a				; set VBlank interrupt flag
-	
-	ld	a,%10010001
+		
+	ld	a,%10010001			; LCD on + BG on + BG $8000
 	ldh	[rLCDC],a			; enable LCD
 	
 	; Sample implementation for loading a song.
@@ -201,27 +242,28 @@ MainLoop:
 	call	DS_Stop
 	
 .continue
-	ld	a,[rLY]
+	ld	a,[rLY]			; wait for scanline 0
 	and	a
-	jr	nz,.continue  
-	ldh	a,[rBGP]
-	ld	b,a
-	xor	$ff
-	ldh	[rBGP],a
-	call	DS_Play
+	jr	nz,.continue
+	ldh	a,[rBGP]		; get current palette
+	ld	b,a				; copy to B for later use
+	xor	$ff				; invert palette
+	ldh	[rBGP],a		; (draw CPU meter from top of screen)
+	call	DS_Play		; update sound
 	
-	ldh	a,[rLY]
-	ld	hl,$9a11
-	call	DrawHex	; draw raster time
+	ldh	a,[rLY]			; get current scanline
+	ld	hl,$9a11		; raster time display address in VRAM
+	call	DrawHex		; draw raster time
 	
-;	call	WaitStat
-	ld	a,b
-	ldh	[rBGP],a
+	ld	a,b				; restore palette
+	ldh	[rBGP],a		; (stop drawing CPU meter)
 	
-	
-	
-	halt
+	halt				; wait for VBlank
 	jp	MainLoop
+	
+; ================================================================
+; Graphics data
+; ================================================================
 	
 MainText:
 ;		 ####################
@@ -245,7 +287,17 @@ MainText:
 	db	"                    "
 ;		 ####################
 
-Font:	incbin	"Font.bin"
+Font:	incbin	"Font.bin"	; 1bpp font data
 Font_End:
+
+; ================================================================
+; Error handler
+; ================================================================
+
+	include	"ErrorHandler.asm"
+	
+; ================================================================
+; DevSound sound driver
+; ================================================================
 
 	include	"DevSound.asm"

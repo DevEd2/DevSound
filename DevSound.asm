@@ -95,6 +95,20 @@ DevSound_Init:
 	ld	[CH4Ptr],a
 	ld	a,[hl+]
 	ld	[CH4Ptr+1],a
+	ld	hl,DummyChannel
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl+]
+	ld	[CH1RetPtr],a
+	ld	[CH2RetPtr],a
+	ld	[CH3RetPtr],a
+	ld	[CH4RetPtr],a
+	ld	a,[hl]
+	ld	[CH1RetPtr+1],a
+	ld	[CH2RetPtr+1],a
+	ld	[CH3RetPtr+1],a
+	ld	[CH4RetPtr+1],a
 	; get tempo
 	ld	hl,SongSpeedTable
 	pop	af		; see? I TOLD you there was a method to my madness!

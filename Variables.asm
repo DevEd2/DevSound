@@ -11,11 +11,9 @@ SECTION	"Variables",BSS
 ; Global variables
 ; ================================================================
 
-GBType				ds	1	; current Game Boy model
-GBTestRun			ds	1	; flag set when GB type test is run
+VBACheck			ds	1	; variable used to determine if we're running in VBA
 sys_btnHold			ds	1	; held buttons
 sys_btnPress		ds	1	; pressed buttons
-CurrentFrame		ds	1	; current frame
 
 ; ================================================================
 ; Project-specific variables
