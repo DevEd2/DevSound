@@ -89,9 +89,10 @@ NintendoLogo:	; DO NOT MODIFY OR ROM WILL NOT BOOT!!!
 	db	$00,$08,$11,$1f,$88,$89,$00,$0e,$dc,$cc,$6e,$e6,$dd,$dd,$d9,$99
 	db	$bb,$bb,$67,$63,$6e,$0e,$ec,$cc,$dd,$dc,$99,$9f,$bb,$b9,$33,$3e
 
-ROMTitle:		db	"DEVSOUND       "	; ROM title
+ROMTitle:		db	"DEVSOUND",0,0,0	; ROM title (11 bytes)
+ProductCode		db	"ADSE"				; product code (4 bytes)
 GBCSupport:		db	0					; GBC support (0 = DMG only, $80 = DMG/GBC, $C0 = GBC only)
-NewLicenseCode:	dw	0					; new license code (2 bytes)
+NewLicenseCode:	db	"DS"				; new license code (2 bytes)
 SGBSupport:		db	0					; SGB support
 CartType:		db	$19					; Cart type, see hardware.inc for a list of values
 ROMSize:		ds	1					; ROM size (handled by post-linking tool)
@@ -109,49 +110,53 @@ ROMChecksum:	ds	2					; ROM checksum (2 bytes) (handled by post-linking tool)
 ProgramStart:
 	di						; disable interrupts
 	
-	call	ClearWRAM
-
-	; clear HRAM
-	ld	a,0
-	ld	bc,$6060
-._loop
-	ld	[c],a
-	inc	c
-	dec	b
-	jr	nz,._loop
-
 .wait						; wait for VBlank before disabling the LCD
 	ldh	a,[rLY]
 	cp	$90
 	jr	nz,.wait
 	xor	a
 	ld	[rLCDC],a			; disable LCD
+	
+	call	ClearWRAM
+
+	; clear HRAM
+	xor	a
+	ld	bc,$8080
+._loop
+	ld	[c],a
+	inc	c
+	dec	b
+	jr	nz,._loop
 
 	call	ClearVRAM
 	
 	CopyTileset1BPP	Font,0,(Font_End-Font)/8
 	
-	
-	; VBA check
-	ld	a,$5f				; this value isn't important
+	; Emulator check!
+	; This routine uses echo RAM access to detect lesser
+	; emulators (such as VBA) which are more likely to
+	; break when given situations that real hardware
+	; handles just fine.
+	ld	a,"e"				; this value isn't important
 	ld	[VBACheck],a		; copy value to WRAM
 	ld	b,a
 	ld	a,[VBACheck+$2000]	; read value back from echo RAM
-	cp	b					; (fails in VBA because echo RAM isn't emulated)
-	jp	z,.notvba			; if check passes, jump ahead
-	ld	hl,.novbatext
+	cp	b					; (fails in emulators which don't emulate echo RAM)
+	jp	z,.noemu			; if check passes, don't display warning
+.emuscreen	
+	ld	hl,.emutext
 	call	LoadMapText		; assumes font is already loaded into VRAM
 	ld	a,%11100100			; 3 2 1 0
 	ldh	[rBGP],a			; set background palette
 	ld	a,%10010001			; LCD on + BG on + BG $8000
 	ldh	[rLCDC],a			; enable LCD
-.vbawait
+.emuwait
 	call	CheckInput
 	ld	a,[sys_btnPress]
 	bit	btnA,a				; check if A is pressed
-	jp	nz,.notvba			; if a is pressed, break from loop
-	jr	.vbawait
-.novbatext					; 20x18 char tilemap
+	jp	nz,.emubreak		; if a is pressed, break from loop
+	jr	.emuwait
+.emutext					; 20x18 char tilemap
 	db	"Nice emulator you   "
 	db	"got there :^)       "
 	db	"                    "
@@ -171,7 +176,11 @@ ProgramStart:
 	db	"choice of emulator! "
 	db	"                    "
 	
-.notvba	
+.emubreak
+	; no need to wait for vblank first because this code only runs in emulators
+	xor	a
+	ldh	[rLCDC],a			; disable lcd
+.noemu
 	ld	hl,MainText			; load main text
 	call	LoadMapText
 	ld	a,%11100100			; 3 2 1 0
@@ -212,6 +221,10 @@ MainLoop:
 	jr	nz,.loadSong
 	bit	btnB,b
 	jr	nz,.stopSong
+	bit	btnStart,a
+	jr	nz,.fadeout
+	bit	btnSelect,a
+	jr	nz,.fadein
 	jr	.continue
 
 .add1
@@ -240,6 +253,14 @@ MainLoop:
 	jr	.continue
 .stopSong
 	call	DS_Stop
+	jr	.continue
+.fadeout
+	ld	a,0
+	call	DS_Fade
+	jr	.continue
+.fadein
+	ld	a,1
+	call	DS_Fade
 	
 .continue
 	ld	a,[rLY]			; wait for scanline 0
@@ -278,8 +299,8 @@ MainText:
 	db	" A        Load song "
 	db	" B        Stop song "
 	db	" D-pad  Select song "
-	db	"                    "
-	db	"                    "
+	db	" Start     Fade out "
+	db	" Select     Fade in "
 	db	"                    "
 	db	"                    "
 	db	"                    "

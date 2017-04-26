@@ -12,6 +12,8 @@ SongSpeedTable:
 	db	4,3			; triumph
 	db	4,3			; insert title here (NOTE: Actual song name.)
 	db	6,6			; gadunk
+	db	3,3			; vibrato test
+	db	3,3
 	
 
 	
@@ -19,6 +21,8 @@ SongPointerTable:
 	dw	PT_Triumph
 	dw	PT_InsertTitleHere
 	dw	PT_Gadunk
+	dw	PT_VibTest
+	dw	SongSpeedTable
 	
 ; =================================================================
 ; Volume sequences
@@ -92,7 +96,7 @@ s7	equ	$2d
 
 noiseseq_Kick:	db	32,26,37,$80,2
 noiseseq_Snare:	db	s7+29,s7+23,s7+20,35,$80,3
-noiseseq_Hat:	db	39,43,$80,1
+noiseseq_Hat:	db	41,43,$80,1
 
 ; =================================================================
 ; Pulse sequences
@@ -111,8 +115,8 @@ pulse_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$80,00
 ; Must be terminated with a loop command!
 ; =================================================================
 
-vib_Dummy:	db	0,$80,$00
-vib_Test:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,1,1,1,1,$80,16
+vib_Dummy:	db	0,0,$80,1
+vib_Test:	db	16,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1,1,$80,17
 
 ; =================================================================
 ; Wave sequences
@@ -186,6 +190,8 @@ InstrumentTable:
 	dw	ins_WaveLeadMed
 	dw	ins_WaveLeadLong
 	dw	ins_WaveLeadLong2
+	
+	dw	ins_VibTest
 
 ; Instrument format: [no reset flag],[wave mode (ch3 only)],[voltable id],[arptable id],[pulsetable/wavetable id],[vibtable id]
 ; note that wave mode must be 0 for non-wave instruments
@@ -215,6 +221,8 @@ ins_WaveLeadMed:	Instrument	0,0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_
 ins_WaveLeadLong:	Instrument	0,0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
 ins_WaveLeadLong2:	Instrument	0,0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
 
+ins_VibTest:		Instrument	0,0,vol_PulseBass,arp_Pluck,pulse_Bass,vib_Test
+
 _ins_Gadunk			equ	0
 _ins_Arp1			equ	1
 _ins_Arp2			equ	2
@@ -237,6 +245,7 @@ _ins_WaveLeadShort	equ	18
 _ins_WaveLeadMed	equ	19
 _ins_WaveLeadLong	equ	20
 _ins_WaveLeadLong2	equ	21
+_ins_VibTest		equ	22
 
 Kick				equ	_ins_Kick
 Snare				equ	_ins_Snare
@@ -508,15 +517,6 @@ InsertTitleHere_CH2:
 	db	C#4,10,C#4,8,C#4,6,F_4,10,F_4,8,F_4,6
 	ret
 
-; _ins_PulseBass		equ	14
-; _ins_Tom				equ	15
-; _ins_Arp037			equ	16
-; _ins_Arp038			equ	17
-; _ins_WaveLeadShort	equ	18
-; _ins_WaveLeadMed		equ	19
-; _ins_WaveLeadLong		equ	20
-; _ins_WaveLeadLong2	equ	21
-
 InsertTitleHere_CH3:
 	db	rest,192
 	db	SetLoopPoint
@@ -561,4 +561,14 @@ InsertTitleHere_CH4:
 	Drum	Snare,4
 	Drum	CHH,2
 	db	GotoLoopPoint
+	db	EndChannel
+	
+; =================================================================
+
+PT_VibTest:
+	dw	VibTest_CH1,DummyChannel,DummyChannel,DummyChannel
+	
+VibTest_CH1:
+	db	$80,_ins_VibTest
+	db	C_3,16
 	db	EndChannel

@@ -34,6 +34,7 @@ DevSound_JumpTable:
 DS_Init:	jp	DevSound_Init
 DS_Play:	jp	DevSound_Play
 DS_Stop:	jp	DevSound_Stop
+DS_Fade:	jp	DevSound_Fade
 
 ; Driver thumbprint
 db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
@@ -132,7 +133,7 @@ DevSound_Init:
 	ret
 
 DefaultRegTable:
-	db	0,0,0,0,0,1,1,1,1,1
+	db	7,0,0,0,0,0,0,1,1,1,1,1
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
@@ -158,6 +159,41 @@ DevSound_Stop:
 	ld	[SoundEnabled],a
 	ret
 
+; ================================================================
+; Fade routine
+; ================================================================
+
+DevSound_Fade:
+	and	3
+	or	a
+	jr	z,.fadeOut
+	dec	a
+	jr	z,.fadeIn
+	dec	a
+	jr	z,.fadeOutStop
+	ret	; default case
+.fadeOut
+	ld	a,1
+	ld	[FadeType],a
+	add	6
+	ld	[GlobalVolume],a
+	jr	.done
+.fadeIn
+	ld	a,2
+	ld	[FadeType],a
+	xor	a
+	ld	[GlobalVolume],a
+	jr	.done
+.fadeOutStop
+	ld	a,3
+	ld	[FadeType],a
+	add	4
+	ld	[GlobalVolume],a
+.done
+	ld	a,7
+	ld	[FadeTimer],a
+	ret
+	
 ; ================================================================
 ; Play routine
 ; ================================================================
@@ -242,18 +278,31 @@ CH1_CheckByte:
 	inc	c
 	dec	a
 	ld	[CH1Tick],a		; set tick
+	xor	a
+	ld	[CH1VolPos],a
+	ld	[CH1ArpPos],a
+	inc	a
+	ld	[CH1VibPos],a
 	ld	a,[CH1Reset]	; check for reset flag
 	jp	z,CH1_DoneUpdating
 	xor	a
-	ld	[CH1VolPos],a
 	ld	[CH1PulsePos],a
-	ld	[CH1ArpPos],a
-	ld	[CH1VibPos],a
 	ldh	[rNR12],a
+	ld	hl,CH1VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH1VibDelay],a
 	jp	CH1_DoneUpdating
 .getCommand
 	push	hl
 	sub	$80				; subtract 128 from command value
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	pop	hl
+	jp	CH1_CheckByte
+.nodummy
 	add	a				; multiply by 2
 	add	a,CH1_CommandTable%256
 	ld	l,a
@@ -469,6 +518,11 @@ CH2_CheckByte:
 .getCommand
 	push	hl
 	sub	$80
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	pop	hl
+	jp	CH2_CheckByte
+.nodummy
 	add	a
 	add	a,CH2_CommandTable%256
 	ld	l,a
@@ -632,7 +686,7 @@ CH2_CommandTable
 	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte	; too far for jr	
 	
 ; ================================================================
 	
@@ -688,6 +742,11 @@ CH3_CheckByte:
 .getCommand
 	push	hl
 	sub	$80
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	pop	hl
+	jp	CH3_CheckByte
+.nodummy
 	add	a
 	add	a,CH3_CommandTable%256
 	ld	l,a
@@ -903,6 +962,11 @@ CH4_CheckByte:
 .getCommand
 	push	hl
 	sub	$80
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	pop	hl
+	jp	CH4_CheckByte
+.nodummy
 	add	a
 	add	a,CH4_CommandTable%256
 	ld	l,a
@@ -1071,6 +1135,63 @@ DoneUpdating:
 ; ================================================================	
 
 UpdateRegisters:
+	ld	a,[FadeType]
+	and	3
+	or	a
+	jr	z,CH1_UpdateRegisters
+	ld	a,[FadeTimer]
+	and	a
+	jr	z,.doupdate
+	dec	a
+	ld	[FadeTimer],a
+	jr	.continue
+.doupdate
+	ld	a,7
+	ld	[FadeTimer],a
+	ld	a,[FadeType]
+	dec	a
+	jr	z,.fadeout
+	dec	a
+	jr	z,.fadein
+	dec	a
+	jr	z,.fadeoutstop
+	jr	.continue
+.fadeout
+	ld	a,[GlobalVolume]
+	and	a
+	jr	z,.continue
+	dec	a
+	ld	[GlobalVolume],a
+	jr	.continue
+.fadein
+	ld	a,[GlobalVolume]
+	cp	7
+	jr	z,.done
+	inc	a
+	ld	[GlobalVolume],a
+	jr	.continue
+.done
+	xor	a
+	ld	[FadeType],a
+	jr	.continue
+.fadeoutstop	; TODO:	This causes lag, figure out why.
+	ld	a,[GlobalVolume]
+	and	a
+	jr	z,.dostop
+	dec	a
+	ld	[GlobalVolume],a
+	ld	a,3
+	ld	[GlobalTimer],a
+	jr	.continue
+.dostop
+	call	DS_Stop
+.continue
+	ld	a,[GlobalVolume]
+	and	7
+	ld	b,a
+	swap	a
+	add	b
+	ldh	[rNR50],a
 	
 CH1_UpdateRegisters:
 	ld	a,[CH1Enabled]
@@ -1134,10 +1255,12 @@ CH1_UpdateRegisters:
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.updateNote
-	swap	a
-	rl	a
-	rl	a
-	ldh	[rNR11],a
+	; convert pulse value
+	and	3			; make sure value does not exceed 3
+	swap	a		; swap lower and upper nybbles
+	rl	a			; rotate left
+	rl	a			;   ""    ""
+	ldh	[rNR11],a	; transfer to register
 .noreset2
 	ld	a,[CH1PulsePos]
 	inc	a
@@ -1160,35 +1283,71 @@ CH1_UpdateRegisters:
 	
 	ld	hl,FreqTable
 	add	hl,bc
-	add	hl,bc
-	
-; get vibrato (TODO: Finish this!)
-;	push	hl
-;	dec	hl
-;	ld	a,[hl+]
-;	ld	h,[hl]
-;	ld	l,a
-;	ld	d,h
-;	ld	e,l
-;	ld	hl,CH1VibPtr
-;	ld	a,[CH1VibPos]
-;	add	l
-;	ld	l,a
-;	jr	nc,.nocarry3
-;	inc	h
-;.nocarry3
-;	ld	a,[hl+]
-;	bit	7,a
-;	jr	z,.subtract
-;	add	
+	add	hl,bc	
 	
 	ld	a,[hl+]
 	ldh	[rNR13],a
 	ld	a,[hl]
 	ldh	[rNR14],a
+	ld	e,a	
 	
-	ld	e,a
-
+; get note frequency
+;	ld	a,[hl+]
+;	ld	d,a
+;	ld	a,[hl]
+;	ld	e,a
+	
+; get vibrato
+;	ld	b,b
+;	ld	hl,CH1VibPtr
+;	ld	a,[CH1VibPos]
+;	ld	b,a
+;	and	a
+;	jr	z,.doupdatevib
+;	dec	a
+;	ld	[CH1VibPos],a
+;	jr	.setNoteFreq
+;.doupdatevib
+;	ld	a,[hl+]
+;	ld	h,[hl]
+;	ld	l,a
+;	ld	a,b
+;	add	l
+;	ld	l,a
+;	jr	nc,.nocarry4
+;	inc	h
+;.nocarry4
+;	ld	a,[hl+]
+;	cp	$80
+;	jr	nz,.noloopvib
+;	ld	a,[hl+]
+;	ld	[CH1VibPos],a
+;	jr	.doupdatevib
+;.noloopvib
+;	bit	7,a
+;	jr	z,.subtract
+;	add	d
+;	ld	d,a
+;	jr	nc,.contvib
+;	inc	e
+;	jr	.contvib
+;.subtract
+;	sub	d
+;	ld	d,a
+;	jr	nc,.contvib
+;	inc	e
+;.contvib
+;	ld	a,[CH1VibPos]
+;	inc	a
+;	ld	[CH1VibPos],a
+	
+; set note frequency
+;.setNoteFreq
+;	ld	a,d
+;	ldh	[rNR13],a
+;	ld	a,e
+;	ldh	[rNR14],a
+	
 	; update volume
 .updateVolume
 	ld	hl,CH1VolPtr
@@ -1198,9 +1357,9 @@ CH1_UpdateRegisters:
 	ld	a,[CH1VolPos]
 	add	l
 	ld	l,a
-	jr	nc,.nocarry4
+	jr	nc,.nocarry5
 	inc	h
-.nocarry4
+.nocarry5
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.done
@@ -1285,10 +1444,12 @@ CH2_UpdateRegisters:
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.updateNote
-	swap	a
-	rl	a
-	rl	a
-	ldh	[rNR21],a
+	; convert pulse value
+	and	3			; make sure value does not exceed 3
+	swap	a		; swap lower and upper nybbles
+	rl	a			; rotate left
+	rl	a			;   ""    ""
+	ldh	[rNR21],a	; transfer to register
 .noreset2
 	ld	a,[CH2PulsePos]
 	inc	a
@@ -1646,7 +1807,7 @@ NoiseTable:	; taken from deflemask
 	db	$ac	; 7 steps
 	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$64
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$24
-	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$03,$02,$01,$00
+	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$07,$06,$05,$04
 
 ; ================================================================
 ; Dummy data

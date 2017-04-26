@@ -14,7 +14,10 @@ GlobalSpeed1	ds	1
 GlobalSpeed2	ds	1
 GlobalTimer		ds	1
 TickCount		ds	1
+FadeTimer		ds	1
+FadeType		ds	1
 SoundEnabled	ds	1
+
 CH1Enabled		ds	1
 CH2Enabled		ds	1
 CH3Enabled		ds	1
@@ -30,6 +33,7 @@ CH1VolPos		ds	1
 CH1PulsePos		ds	1
 CH1ArpPos		ds	1
 CH1VibPos		ds	1
+CH1VibDelay		ds	1
 CH1LoopPos		ds	1
 CH1RetPtr		ds	2
 CH1RetPos		ds	1
@@ -49,6 +53,7 @@ CH2VolPos		ds	1
 CH2PulsePos		ds	1
 CH2ArpPos		ds	1
 CH2VibPos		ds	1
+CH2VibDelay		ds	1
 CH2LoopPos		ds	1
 CH2RetPtr		ds	2
 CH2RetPos		ds	1
@@ -67,6 +72,7 @@ CH3VolPos		ds	1
 CH3WavePos		ds	1
 CH3ArpPos		ds	1
 CH3VibPos		ds	1
+CH3VibDelay		ds	1
 CH3LoopPos		ds	1
 CH3RetPtr		ds	2
 CH3RetPos		ds	1
