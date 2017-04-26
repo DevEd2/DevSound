@@ -173,7 +173,7 @@ DevSound_Fade:
 	jr	z,.fadeOutStop
 	ret	; default case
 .fadeOut
-	ld	a,1
+	inc	a
 	ld	[FadeType],a
 	add	6
 	ld	[GlobalVolume],a
