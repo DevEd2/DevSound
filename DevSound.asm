@@ -173,7 +173,7 @@ DevSound_Fade:
 	jr	z,.fadeOutStop
 	ret	; default case
 .fadeOut
-	inc	a
+	ld	a,1
 	ld	[FadeType],a
 	add	6
 	ld	[GlobalVolume],a
@@ -210,7 +210,7 @@ DevSound_Play:
 	pop	af
 	ret
 	
-.doUpdate	
+.doUpdate
 	push	bc
 	push	de
 	push	hl
@@ -410,7 +410,7 @@ CH1_CommandTable
 	ld	a,[hl]
 	ld	[CH1Ptr+1],a
 	inc	c
-	inc c
+	inc	c
 	ld	a,c
 	ld	[CH1RetPos],a
 	xor	a

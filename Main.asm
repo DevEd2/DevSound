@@ -108,6 +108,7 @@ ROMChecksum:	ds	2					; ROM checksum (2 bytes) (handled by post-linking tool)
 ; ================================================================
 
 ProgramStart:
+	ld	sp,$dffe
 	di						; disable interrupts
 	
 .wait						; wait for VBlank before disabling the LCD
@@ -259,6 +260,7 @@ MainLoop:
 	call	DS_Fade
 	jr	.continue
 .fadein
+	rst	$38				; crash
 	ld	a,1
 	call	DS_Fade
 	
