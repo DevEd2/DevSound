@@ -7,6 +7,8 @@
 ErrorHandler:
 
 	; store stack pointer
+	inc	sp
+	inc	sp
 	ld	[tempSP],sp
 	
 	push	hl
@@ -141,6 +143,7 @@ ErrorHandler_loop:
 	ld	a,[sys_btnPress]
 	bit	btnStart,a
 	jr	z,.continue
+	ld	sp,$fffe
 	jp	ProgramStart
 .continue
 	halt
