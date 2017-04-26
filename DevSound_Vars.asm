@@ -1,5 +1,5 @@
 ; ================================================================
-; SimpleSound variable definitions
+; DevSound variable definitions
 ; ================================================================
 
 if !def(incDSVars)
