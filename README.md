@@ -20,7 +20,7 @@ call  DS_Init
 ld  a,X ; replace X with 0 to fade out, replace X with 1 to fade in
 call DS_Fade
 ```
-7. If you need help, let me know. I can usually be reached on IRC at irc.efnet.org #gbdev, with the nick DevEd.
+7. If you need help, let me know. I can usually be reached on IRC at irc.efnet.org #gbdev, with the nick DevEd. I may also be reached on Discord in this server: https://discord.gg/gpBxq85. Just ping me (I go by the name DevEd on that server) if you need anything.
 
 # Frequently Asked Questions
 *TODO*
