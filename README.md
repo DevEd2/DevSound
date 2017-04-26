@@ -15,7 +15,12 @@ ld a,SongID  ; replace SongID with the ID of the song you want to load
 call  DS_Init
 ```
 5. In order to stop playback, use the following line of code: `call DS_Stop`
-6. If you need help, let me know. I can usually be reached on IRC at irc.efnet.org #gbdev, with the nick DevEd.
+6. In order to fade sound in/out, use the following code:
+```
+ld  a,X ; replace X with 0 to fade out, replace X with 1 to fade in
+call DS_Fade
+```
+7. If you need help, let me know. I can usually be reached on IRC at irc.efnet.org #gbdev, with the nick DevEd.
 
 # Frequently Asked Questions
 *TODO*
