@@ -108,7 +108,7 @@ ROMChecksum:	ds	2					; ROM checksum (2 bytes) (handled by post-linking tool)
 ; ================================================================
 
 ProgramStart:
-	ld	sp,$dffe
+	ld	sp,$fffe
 	di						; disable interrupts
 	
 .wait						; wait for VBlank before disabling the LCD
