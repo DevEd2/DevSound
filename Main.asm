@@ -260,7 +260,6 @@ MainLoop:
 	call	DS_Fade
 	jr	.continue
 .fadein
-	rst	$38				; crash
 	ld	a,1
 	call	DS_Fade
 	
