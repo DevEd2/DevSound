@@ -271,12 +271,13 @@ MainLoop:
 	xor	$ff				; invert palette
 	ldh	[rBGP],a		; (draw CPU meter from top of screen)
 	call	DS_Play		; update sound
+	ldh	a,[rLY]			; get current scanline
 	ld c,a
 	ld	a,b				; restore palette
 	ldh	[rBGP],a		; (stop drawing CPU meter)
 	
 	halt				; wait for VBlank
-	ldh	a,[rLY]			; get current scanline
+	ld	a,c
 	ld	hl,$9a11		; raster time display address in VRAM
 	call	DrawHex		; draw raster time
 	jp	MainLoop
