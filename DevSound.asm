@@ -1172,14 +1172,12 @@ UpdateRegisters:
 	xor	a
 	ld	[FadeType],a
 	jr	.continue
-.fadeoutstop	; TODO:	This causes lag, figure out why.
+.fadeoutstop
 	ld	a,[GlobalVolume]
 	and	a
 	jr	z,.dostop
 	dec	a
 	ld	[GlobalVolume],a
-	ld	a,3
-	ld	[GlobalTimer],a
 	jr	.continue
 .dostop
 	call	DS_Stop
