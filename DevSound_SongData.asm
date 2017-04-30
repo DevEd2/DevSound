@@ -1,7 +1,5 @@
 ; ================================================================
-; Song data
-; TODO: Separate this data to its own file so users don't have to
-; scroll through this entire file
+; DevSound song data
 ; ================================================================
 	
 ; =================================================================

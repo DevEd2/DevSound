@@ -200,6 +200,7 @@ ProgramStart:
 	; Sample implementation for loading a song.
 	; Replace the 0 in ld a,0 with the ID of the song you want to load.
 	; Note that invalid values will most likely result in a crash!
+	
 	ld	a,0
 	call	DS_Init
 	
@@ -371,8 +372,6 @@ DrawDec:
 	ld	a,b
 	add	$10			; add offset to tile #
 	ret
-
-
 
 ; ================================================================
 ; Error handler

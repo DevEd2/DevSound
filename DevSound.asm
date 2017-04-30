@@ -807,7 +807,7 @@ CH3_CommandTable
 	ld	a,[hl+]
 	ld	[CH3Reset],a
 	ld	b,a
-	; wave mode flag (unused for CH3)
+	; wave mode flag
 	ld	a,[hl+]
 	ld	[CH3Mode],a
 	; vol table
@@ -820,7 +820,7 @@ CH3_CommandTable
 	ld	[CH3ArpPtr],a
 	ld	a,[hl+]
 	ld	[CH3ArpPtr+1],a
-	; pulse table
+	; wave table
 	ld	a,[hl+]
 	ld	[CH3WavePtr],a
 	ld	a,[hl+]
@@ -1123,14 +1123,6 @@ CH4_CommandTable
 ; ================================================================
 
 DoneUpdating:
-	call	UpdateRegisters
-	pop	hl
-	pop	de
-	pop	bc
-	pop	af
-	ret
-	
-; ================================================================	
 
 UpdateRegisters:
 	ld	a,[FadeType]
@@ -1762,6 +1754,10 @@ CH4_UpdateRegisters:
 .done
 	
 DoneUpdatingRegisters:
+	pop	hl
+	pop	de
+	pop	bc
+	pop	af
 	ret
 
 ; ================================================================
