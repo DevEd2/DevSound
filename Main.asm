@@ -7,6 +7,10 @@
 
 DebugFlag	set	1
 
+; If set to 1, display numbers in decimal instead of hexadecimal.
+
+UseDecimal	set	1
+
 ; ================================================================
 ; Project includes
 ; ================================================================
@@ -195,6 +199,7 @@ ProgramStart:
 	
 	; Sample implementation for loading a song.
 	; Replace the 0 in ld a,0 with the ID of the song you want to load.
+	; Note that invalid values will most likely result in a crash!
 	ld	a,0
 	call	DS_Init
 	
@@ -203,8 +208,13 @@ ProgramStart:
 MainLoop:
 	; draw song id
 	ld	a,[CurrentSong]
-	ld	hl,$98b1
-	call	DrawHex
+	if	UseDecimal
+		ld	hl,$98b2
+		call	DrawDec
+	else
+		ld	hl,$98b1
+		call	DrawHex
+	endc
 	
 	; playback controls
 	call	CheckInput
@@ -255,10 +265,12 @@ MainLoop:
 	call	DS_Stop
 	jr	.continue
 .fadeout
-	ld	a,0
+	ld	a,2
 	call	DS_Fade
 	jr	.continue
 .fadein
+	ld	a,[CurrentSong]
+	call	DS_Init
 	ld	a,1
 	call	DS_Fade
 	
@@ -271,12 +283,13 @@ MainLoop:
 	xor	$ff				; invert palette
 	ldh	[rBGP],a		; (draw CPU meter from top of screen)
 	call	DS_Play		; update sound
+	
 	ldh	a,[rLY]			; get current scanline
-	ld c,a
+	ld	c,a
 	ld	a,b				; restore palette
 	ldh	[rBGP],a		; (stop drawing CPU meter)
-	
 	halt				; wait for VBlank
+	
 	ld	a,c
 	ld	hl,$9a11		; raster time display address in VRAM
 	call	DrawHex		; draw raster time
@@ -310,6 +323,56 @@ MainText:
 
 Font:	incbin	"Font.bin"	; 1bpp font data
 Font_End:
+
+; ================================================================
+; Draw decimal number A at HL
+; ================================================================
+
+; Routine copied from GBS2GB with some modifications to not display
+; leading zeroes. Could use a bit of optimization...
+
+DrawDec:
+	and	a
+	jr	nz,.notzero
+	ld	a,"0"-32
+	ld	[hl-],a
+	ld	a," "-32
+	ld	[hl-],a
+	ld	[hl],a
+	ret
+.notzero
+	call	.div10	; get 1's digit
+	ld	[hl-],a		; write char
+	ld	a,c
+	call	.div10	; get 10's digit
+	cp	$10
+	jr	nz,.notzero2
+	ld	a," "-32
+.notzero2
+	ld	[hl-],a		; write char
+	ld	a,c
+	add	$10			; add offset to tile #
+	cp	$10
+	jr	nz,.notzero3
+	ld	a," "-32
+.notzero3
+	ld	[hl],a		; write 100's digit
+	ret
+	
+.div10
+	ld	c,0			; divide by 10
+.d1 
+	ld	b,a
+	sub	10
+	jr	c,.d2
+	inc	c
+	jr	.d1
+.d2
+	ld	a,b
+	add	$10			; add offset to tile #
+	ret
+
+
 
 ; ================================================================
 ; Error handler
