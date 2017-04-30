@@ -2,8 +2,8 @@
 ; DevSound constants
 ; ================================================================
 
-if !def(incSSConsts)
-incSSConsts	set	1
+if !def(incDSConsts)
+incDSConsts	set	1
 
 ; Note values
 
