@@ -29,4 +29,3 @@ goto:eof
 
 :GBSMakeError
 echo GBS build failed, aborting...
-goto:eof
