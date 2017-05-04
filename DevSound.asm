@@ -301,7 +301,7 @@ CH1_CheckByte:
 	and	a
 	jr	z,.noInstrumentChange
 	ld	a,b
-	rr	a
+	rra
 	jr	nc,.notodd
 	ld	a,[CH1Ins1]
 	jr	.odd
@@ -558,7 +558,7 @@ CH2_CheckByte:
 	and	a
 	jr	z,.noInstrumentChange
 	ld	a,b
-	rr	a
+	rra
 	jr	nc,.notodd
 	ld	a,[CH2Ins1]
 	jr	.odd
@@ -819,7 +819,7 @@ CH3_CheckByte:
 	and	a
 	jr	z,.noInstrumentChange
 	ld	a,b
-	rr	a
+	rra
 	jr	nc,.notodd
 	ld	a,[CH3Ins1]
 	jr	.odd
@@ -1076,7 +1076,7 @@ CH4_CheckByte:
 	and	a
 	jr	z,.noInstrumentChange
 	ld	a,b
-	rr	a
+	rra
 	jr	nc,.notodd
 	ld	a,[CH4Ins1]
 	jr	.odd
@@ -1392,10 +1392,10 @@ CH1_UpdateRegisters:
 	cp	$ff
 	jr	z,.updateNote
 	; convert pulse value
-	and	3			; make sure value does not exceed 3
+	and	3		; make sure value does not exceed 3
 	swap	a		; swap lower and upper nybbles
-	rl	a			; rotate left
-	rl	a			;   ""    ""
+	rla			; rotate left
+	rla			;   ""    ""
 	ldh	[rNR11],a	; transfer to register
 .noreset2
 	ld	a,[CH1PulsePos]
@@ -1581,10 +1581,10 @@ CH2_UpdateRegisters:
 	cp	$ff
 	jr	z,.updateNote
 	; convert pulse value
-	and	3			; make sure value does not exceed 3
+	and	3		; make sure value does not exceed 3
 	swap	a		; swap lower and upper nybbles
-	rl	a			; rotate left
-	rl	a			;   ""    ""
+	rla			; rotate left
+	rla			;   ""    ""
 	ldh	[rNR21],a	; transfer to register
 .noreset2
 	ld	a,[CH2PulsePos]
