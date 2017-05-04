@@ -1,9 +1,9 @@
 ; ================================================================
-; SimpleSound constants
+; DevSound macros
 ; ================================================================
 
-if !def(incSSMacros)
-incSSMacros	set	1
+if !def(incDSMacros)
+incDSMacros	set	1
 
 Instrument:		macro
 	db	\1,\2

@@ -1,7 +1,5 @@
 ; ================================================================
-; Song data
-; TODO: Separate this data to its own file so users don't have to
-; scroll through this entire file
+; DevSound song data
 ; ================================================================
 	
 ; =================================================================
@@ -11,18 +9,16 @@
 SongSpeedTable:
 	db	4,3			; triumph
 	db	4,3			; insert title here (NOTE: Actual song name.)
+	db	4,4			; vibrato test
 	db	6,6			; gadunk
-	db	3,3			; vibrato test
-	db	3,3
 	
-
 	
 SongPointerTable:
 	dw	PT_Triumph
 	dw	PT_InsertTitleHere
+	dw	PT_EchoTest
 	dw	PT_Gadunk
-	dw	PT_VibTest
-	dw	SongSpeedTable
+
 	
 ; =================================================================
 ; Volume sequences
@@ -54,6 +50,7 @@ vol_Bass1:			db	w3,$ff
 vol_Bass2:			db	w3,w3,w3,w3,w1,$ff
 vol_Bass3:			db	w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w1,$ff
 vol_PulseBass:		db	15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,$ff
+
 vol_Tom:			db	$1f,$ff
 vol_WaveLeadShort:	db	w3,w3,w3,w3,w2,$ff
 vol_WaveLeadMed:	db	w3,w3,w3,w3,w3,w3,w3,w2,$ff
@@ -66,6 +63,9 @@ vol_Snare:		db	$1d,$ff
 vol_OHH:		db	$48,$ff
 vol_CymbQ:		db	$6a,$ff
 vol_CymbL:		db	$3f,$ff
+
+vol_Echo1:			db	12,$ff	
+vol_Echo2:			db	4,$ff
 
 ; =================================================================
 ; Arpeggio sequences
@@ -109,6 +109,8 @@ pulse_OctArp:	db	2,2,2,1,1,2,$ff
 pulse_Bass:		db	1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,0,0,0,0,0,0,$80,0
 pulse_Square:	db	2,$ff
 pulse_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$80,00
+
+pulse_EchoTest:	db	1,$ff
 
 ; =================================================================
 ; Vibrato sequences
@@ -191,7 +193,8 @@ InstrumentTable:
 	dw	ins_WaveLeadLong
 	dw	ins_WaveLeadLong2
 	
-	dw	ins_VibTest
+	dw	ins_Echo1
+	dw	ins_Echo2
 
 ; Instrument format: [no reset flag],[wave mode (ch3 only)],[voltable id],[arptable id],[pulsetable/wavetable id],[vibtable id]
 ; note that wave mode must be 0 for non-wave instruments
@@ -221,7 +224,8 @@ ins_WaveLeadMed:	Instrument	0,0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_
 ins_WaveLeadLong:	Instrument	0,0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
 ins_WaveLeadLong2:	Instrument	0,0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
 
-ins_VibTest:		Instrument	0,0,vol_PulseBass,arp_Pluck,pulse_Bass,vib_Test
+ins_Echo1:		Instrument	0,0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Dummy
+ins_Echo2:		Instrument	0,0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Dummy
 
 _ins_Gadunk			equ	0
 _ins_Arp1			equ	1
@@ -245,7 +249,8 @@ _ins_WaveLeadShort	equ	18
 _ins_WaveLeadMed	equ	19
 _ins_WaveLeadLong	equ	20
 _ins_WaveLeadLong2	equ	21
-_ins_VibTest		equ	22
+_ins_Echo1			equ	22
+_ins_Echo2			equ	23
 
 Kick				equ	_ins_Kick
 Snare				equ	_ins_Snare
@@ -565,10 +570,18 @@ InsertTitleHere_CH4:
 	
 ; =================================================================
 
-PT_VibTest:
-	dw	VibTest_CH1,DummyChannel,DummyChannel,DummyChannel
+PT_EchoTest:
+	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
 	
-VibTest_CH1:
-	db	$80,_ins_VibTest
-	db	C_3,16
-	db	EndChannel
+EchoTest_CH1:
+	db	SetInsAlternate,_ins_Echo1,_ins_Echo2
+	db	SetLoopPoint
+	db	C_3,2,C_4,2
+	db	D_3,2,C_3,2
+	db	E_3,2,D_3,2
+	db	F_3,2,E_3,2
+	db	G_3,2,F_3,2
+	db	A_3,2,G_3,2
+	db	B_3,2,A_3,2
+	db	C_4,2,B_3,2
+	db	GotoLoopPoint

@@ -1,9 +1,9 @@
 ; ================================================================
-; SimpleSound constants
+; DevSound constants
 ; ================================================================
 
-if !def(incSSConsts)
-incSSConsts	set	1
+if !def(incDSConsts)
+incDSConsts	set	1
 
 ; Note values
 
@@ -95,7 +95,8 @@ PitchBendDown	equ	$86
 SetSweep		equ	$87
 SetPan			equ	$88
 SetSpeed		equ	$89
-DummyCommand	equ	$8a
+SetInsAlternate	equ	$8a
+DummyCommand	equ	$8b
 EndChannel		equ	$FF
 
 endc

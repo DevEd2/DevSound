@@ -140,4 +140,3 @@ LoadMapText:
 	dec	b
 	jr	nz,.loop
 	ret
-

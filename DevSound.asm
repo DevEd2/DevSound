@@ -135,13 +135,13 @@ DevSound_Init:
 DefaultRegTable:
 	db	7,0,0,0,0,0,0,1,1,1,1,1
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0	; the $FF is so that the wave is updated properly on the first frame
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0	; the $FF is so that the wave is updated properly on the first frame
 	dw	DummyChannel,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
@@ -173,7 +173,7 @@ DevSound_Fade:
 	jr	z,.fadeOutStop
 	ret	; default case
 .fadeOut
-	ld	a,1
+	inc	a
 	ld	[FadeType],a
 	add	6
 	ld	[GlobalVolume],a
@@ -210,7 +210,7 @@ DevSound_Play:
 	pop	af
 	ret
 	
-.doUpdate	
+.doUpdate
 	push	bc
 	push	de
 	push	hl
@@ -292,6 +292,24 @@ CH1_CheckByte:
 	ld	l,a
 	ld	a,[hl]
 	ld	[CH1VibDelay],a
+	ld	a,[CH1NoteCount]
+	inc	a
+	ld	[CH1NoteCount],a
+	ld	b,a
+	; check if instrument mode is 1 (alternating)
+	ld	a,[CH1InsMode]
+	and	a
+	jr	z,.noInstrumentChange
+	ld	a,b
+	rr	a
+	jr	nc,.notodd
+	ld	a,[CH1Ins1]
+	jr	.odd
+.notodd
+	ld	a,[CH1Ins2]
+.odd
+	call	CH1_SetInstrument
+.noInstrumentChange	
 	jp	CH1_DoneUpdating
 .getCommand
 	push	hl
@@ -331,7 +349,7 @@ CH1_DoneUpdating:
 	ld	[CH1Pos],a
 	jp	UpdateCH2	; too far for jr
 		
-CH1_CommandTable
+CH1_CommandTable:
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -342,48 +360,16 @@ CH1_CommandTable
 	dw	.setSweep
 	dw	.setPan
 	dw	.setSpeed
+	dw	.setInsAlternate
 
 .setInstrument
 	pop	hl
 	ld	a,[hl+]
 	inc	c
 	push	hl
-	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	ld	[CH1Reset],a
-	ld	b,a
-	; wave mode flag (unused for ch1)
-	inc	hl
-	; vol table
-	ld	a,[hl+]
-	ld	[CH1VolPtr],a
-	ld	a,[hl+]
-	ld	[CH1VolPtr+1],a
-	; arp table
-	ld	a,[hl+]
-	ld	[CH1ArpPtr],a
-	ld	a,[hl+]
-	ld	[CH1ArpPtr+1],a
-	; pulse table
-	ld	a,[hl+]
-	ld	[CH1PulsePtr],a
-	ld	a,[hl+]
-	ld	[CH1PulsePtr+1],a
-	; vib table
-	ld	a,[hl+]
-	ld	[CH1VibPtr],a
-	ld	a,[hl+]
-	ld	[CH1VibPtr+1],a
+	call	CH1_SetInstrument
+	xor	a
+	ld	[CH1InsMode],a
 	pop	hl
 	jp	CH1_CheckByte	; too far for jr
 	
@@ -410,7 +396,7 @@ CH1_CommandTable
 	ld	a,[hl]
 	ld	[CH1Ptr+1],a
 	inc	c
-	inc c
+	inc	c
 	ld	a,c
 	ld	[CH1RetPos],a
 	xor	a
@@ -465,6 +451,57 @@ CH1_CommandTable
 	ld	[GlobalSpeed2],a
 	jp	CH1_CheckByte	; too far for jr
 	
+.setInsAlternate
+	pop	hl
+	ld	a,[hl+]
+	inc	c
+	ld	[CH1Ins1],a
+	ld	a,[hl+]
+	inc	c
+	ld	[CH1Ins2],a
+	ld	a,1
+	ld	[CH1InsMode],a
+	jp	CH1_CheckByte
+	
+CH1_SetInstrument:
+	ld	hl,InstrumentTable
+	add	a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	; no reset flag
+	ld	a,[hl+]
+	ld	[CH1Reset],a
+	ld	b,a
+	; wave mode flag (unused for ch1)
+	inc	hl
+	; vol table
+	ld	a,[hl+]
+	ld	[CH1VolPtr],a
+	ld	a,[hl+]
+	ld	[CH1VolPtr+1],a
+	; arp table
+	ld	a,[hl+]
+	ld	[CH1ArpPtr],a
+	ld	a,[hl+]
+	ld	[CH1ArpPtr+1],a
+	; pulse table
+	ld	a,[hl+]
+	ld	[CH1PulsePtr],a
+	ld	a,[hl+]
+	ld	[CH1PulsePtr+1],a
+	; vib table
+	ld	a,[hl+]
+	ld	[CH1VibPtr],a
+	ld	a,[hl+]
+	ld	[CH1VibPtr+1],a
+	ret
+	
 ; ================================================================
 	
 UpdateCH2:
@@ -512,6 +549,24 @@ CH2_CheckByte:
 	ld	[CH2ArpPos],a
 	ld	[CH2VibPos],a
 	ldh	[rNR22],a
+	ld	a,[CH2NoteCount]
+	inc	a
+	ld	[CH2NoteCount],a
+	ld	b,a
+	; check if instrument mode is 1 (alternating)
+	ld	a,[CH2InsMode]
+	and	a
+	jr	z,.noInstrumentChange
+	ld	a,b
+	rr	a
+	jr	nc,.notodd
+	ld	a,[CH2Ins1]
+	jr	.odd
+.notodd
+	ld	a,[CH2Ins2]
+.odd
+	call	CH2_SetInstrument
+.noInstrumentChange
 	jp	CH2_DoneUpdating
 .getCommand
 	push	hl
@@ -552,7 +607,7 @@ CH2_DoneUpdating:
 	ld	[CH2Pos],a
 	jp	UpdateCH3
 		
-CH2_CommandTable
+CH2_CommandTable:
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -563,49 +618,17 @@ CH2_CommandTable
 	dw	.setSweep
 	dw	.setPan
 	dw	.setSpeed
+	dw	.setInsAlternate
 
 .setInstrument
 	pop	hl
 	ld	a,[hl+]
 	inc	c
 	push	hl
-	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	ld	[CH2Reset],a
-	ld	b,a
-	; wave mode flag (unused for CH2)
-	inc	hl
-	; vol table
-	ld	a,[hl+]
-	ld	[CH2VolPtr],a
-	ld	a,[hl+]
-	ld	[CH2VolPtr+1],a
-	; arp table
-	ld	a,[hl+]
-	ld	[CH2ArpPtr],a
-	ld	a,[hl+]
-	ld	[CH2ArpPtr+1],a
-	; pulse table
-	ld	a,[hl+]
-	ld	[CH2PulsePtr],a
-	ld	a,[hl+]
-	ld	[CH2PulsePtr+1],a
-	; vib table
-	ld	a,[hl+]
-	ld	[CH2VibPtr],a
-	ld	a,[hl+]
-	ld	[CH2VibPtr+1],a
+	call	CH2_SetInstrument
 	pop	hl
+	xor	a
+	ld	[CH2InsMode],a
 	jp	CH2_CheckByte	; too far for jr
 	
 .setLoopPoint
@@ -684,7 +707,58 @@ CH2_CommandTable
 	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH2_CheckByte	; too far for jr	
+	jp	CH2_CheckByte	; too far for jr
+
+.setInsAlternate
+	pop	hl
+	ld	a,[hl+]
+	inc	c
+	ld	[CH1Ins2],a
+	ld	a,[hl+]
+	inc	c
+	ld	[CH1Ins2],a
+	ld	a,1
+	ld	[CH2InsMode],a
+	jp	CH1_CheckByte	
+	
+CH2_SetInstrument:
+	ld	hl,InstrumentTable
+	add	a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	; no reset flag
+	ld	a,[hl+]
+	ld	[CH2Reset],a
+	ld	b,a
+	; wave mode flag (unused for CH2)
+	inc	hl
+	; vol table
+	ld	a,[hl+]
+	ld	[CH2VolPtr],a
+	ld	a,[hl+]
+	ld	[CH2VolPtr+1],a
+	; arp table
+	ld	a,[hl+]
+	ld	[CH2ArpPtr],a
+	ld	a,[hl+]
+	ld	[CH2ArpPtr+1],a
+	; pulse table
+	ld	a,[hl+]
+	ld	[CH2PulsePtr],a
+	ld	a,[hl+]
+	ld	[CH2PulsePtr+1],a
+	; vib table
+	ld	a,[hl+]
+	ld	[CH2VibPtr],a
+	ld	a,[hl+]
+	ld	[CH2VibPtr+1],a
+	ret
 	
 ; ================================================================
 	
@@ -736,6 +810,24 @@ CH3_CheckByte:
 	jp	nz,CH3_DoneUpdating
 	xor	a
 	ld	[CH3WavePos],a
+	ld	a,[CH3NoteCount]
+	inc	a
+	ld	[CH3NoteCount],a
+	ld	b,a
+	; check if instrument mode is 1 (alternating)
+	ld	a,[CH3InsMode]
+	and	a
+	jr	z,.noInstrumentChange
+	ld	a,b
+	rr	a
+	jr	nc,.notodd
+	ld	a,[CH3Ins1]
+	jr	.odd
+.notodd
+	ld	a,[CH3Ins2]
+.odd
+	call	CH3_SetInstrument
+.noInstrumentChange
 	jp	CH3_DoneUpdating
 .getCommand
 	push	hl
@@ -776,7 +868,7 @@ CH3_DoneUpdating:
 	ld	[CH3Pos],a
 	jp	UpdateCH4	; too far for jr
 		
-CH3_CommandTable
+CH3_CommandTable:
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -787,50 +879,17 @@ CH3_CommandTable
 	dw	.setSweep
 	dw	.setPan
 	dw	.setSpeed
+	dw	.setInsAlternate
 
 .setInstrument
 	pop	hl
 	ld	a,[hl+]
 	inc	c
 	push	hl
-	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	ld	[CH3Reset],a
-	ld	b,a
-	; wave mode flag (unused for CH3)
-	ld	a,[hl+]
-	ld	[CH3Mode],a
-	; vol table
-	ld	a,[hl+]
-	ld	[CH3VolPtr],a
-	ld	a,[hl+]
-	ld	[CH3VolPtr+1],a
-	; arp table
-	ld	a,[hl+]
-	ld	[CH3ArpPtr],a
-	ld	a,[hl+]
-	ld	[CH3ArpPtr+1],a
-	; pulse table
-	ld	a,[hl+]
-	ld	[CH3WavePtr],a
-	ld	a,[hl+]
-	ld	[CH3WavePtr+1],a
-	; vib table
-	ld	a,[hl+]
-	ld	[CH3VibPtr],a
-	ld	a,[hl+]
-	ld	[CH3VibPtr+1],a
+	call	CH3_SetInstrument
 	pop	hl
+	xor	a
+	ld	[CH3InsMode],a
 	jp	CH3_CheckByte	; too far for jr
 	
 .setLoopPoint
@@ -911,6 +970,58 @@ CH3_CommandTable
 	ld	[GlobalSpeed2],a
 	jp	CH3_CheckByte	; too far for jr
 	
+.setInsAlternate
+	pop	hl
+	ld	a,[hl+]
+	inc	c
+	ld	[CH3Ins1],a
+	ld	a,[hl+]
+	inc	c
+	ld	[CH3Ins2],a
+	ld	a,1
+	ld	[CH3InsMode],a
+	jp	CH3_CheckByte
+	
+CH3_SetInstrument:
+	ld	hl,InstrumentTable
+	add	a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	; no reset flag
+	ld	a,[hl+]
+	ld	[CH3Reset],a
+	ld	b,a
+	; wave mode flag
+	ld	a,[hl+]
+	ld	[CH3Mode],a
+	; vol table
+	ld	a,[hl+]
+	ld	[CH3VolPtr],a
+	ld	a,[hl+]
+	ld	[CH3VolPtr+1],a
+	; arp table
+	ld	a,[hl+]
+	ld	[CH3ArpPtr],a
+	ld	a,[hl+]
+	ld	[CH3ArpPtr+1],a
+	; wave table
+	ld	a,[hl+]
+	ld	[CH3WavePtr],a
+	ld	a,[hl+]
+	ld	[CH3WavePtr+1],a
+	; vib table
+	ld	a,[hl+]
+	ld	[CH3VibPtr],a
+	ld	a,[hl+]
+	ld	[CH3VibPtr+1],a
+	ret
+
 ; ================================================================
 
 UpdateCH4:
@@ -956,6 +1067,24 @@ CH4_CheckByte:
 	ld	[CH4VolPos],a
 	ld	[CH4NoisePos],a
 	ldh	[rNR42],a
+	ld	a,[CH4NoteCount]
+	inc	a
+	ld	[CH4NoteCount],a
+	ld	b,a
+	; check if instrument mode is 1 (alternating)
+	ld	a,[CH4InsMode]
+	and	a
+	jr	z,.noInstrumentChange
+	ld	a,b
+	rr	a
+	jr	nc,.notodd
+	ld	a,[CH4Ins1]
+	jr	.odd
+.notodd
+	ld	a,[CH4Ins2]
+.odd
+	call	CH4_SetInstrument
+.noInstrumentChange
 	jp	CH4_DoneUpdating
 .getCommand
 	push	hl
@@ -996,7 +1125,7 @@ CH4_DoneUpdating:
 	ld	[CH4Pos],a
 	jp	DoneUpdating
 		
-CH4_CommandTable
+CH4_CommandTable:
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -1007,39 +1136,17 @@ CH4_CommandTable
 	dw	.setSweep
 	dw	.setPan
 	dw	.setSpeed
+	dw	.setInsAlternate
 
 .setInstrument
 	pop	hl
 	ld	a,[hl+]
 	inc	c
 	push	hl
-	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	ld	[CH4Reset],a
-	ld	b,a
-	; wave mode flag (unused for CH4)
-	inc	hl
-	; vol table
-	ld	a,[hl+]
-	ld	[CH4VolPtr],a
-	ld	a,[hl+]
-	ld	[CH4VolPtr+1],a
-	; noise mode pointer
-	ld	a,[hl+]
-	ld	[CH4NoisePtr],a
-	ld	a,[hl+]
-	ld	[CH4NoisePtr+1],a
+	call	CH4_SetInstrument
 	pop	hl
+	xor	a
+	ld	[CH4InsMode],a
 	jp	CH4_CheckByte	; too far for jr
 	
 .setLoopPoint
@@ -1119,18 +1226,51 @@ CH4_CommandTable
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH4_CheckByte	; too far for jr
+	
+.setInsAlternate
+	pop	hl
+	ld	a,[hl+]
+	inc	c
+	ld	[CH4Ins1],a
+	ld	a,[hl+]
+	inc	c
+	ld	[CH4Ins2],a
+	ld	a,1
+	ld	[CH4InsMode],a
+	jp	CH4_CheckByte
 
+CH4_SetInstrument:
+	ld	hl,InstrumentTable
+	add	a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	; no reset flag
+	ld	a,[hl+]
+	ld	[CH4Reset],a
+	ld	b,a
+	; wave mode flag (unused for CH4)
+	inc	hl
+	; vol table
+	ld	a,[hl+]
+	ld	[CH4VolPtr],a
+	ld	a,[hl+]
+	ld	[CH4VolPtr+1],a
+	; noise mode pointer
+	ld	a,[hl+]
+	ld	[CH4NoisePtr],a
+	ld	a,[hl+]
+	ld	[CH4NoisePtr+1],a
+	ret
+	
 ; ================================================================
 
 DoneUpdating:
-	call	UpdateRegisters
-	pop	hl
-	pop	de
-	pop	bc
-	pop	af
-	ret
-	
-; ================================================================	
 
 UpdateRegisters:
 	ld	a,[FadeType]
@@ -1172,14 +1312,12 @@ UpdateRegisters:
 	xor	a
 	ld	[FadeType],a
 	jr	.continue
-.fadeoutstop	; TODO:	This causes lag, figure out why.
+.fadeoutstop
 	ld	a,[GlobalVolume]
 	and	a
 	jr	z,.dostop
 	dec	a
 	ld	[GlobalVolume],a
-	ld	a,3
-	ld	[GlobalTimer],a
 	jr	.continue
 .dostop
 	call	DS_Stop
@@ -1288,7 +1426,7 @@ CH1_UpdateRegisters:
 	ld	a,[hl]
 	ldh	[rNR14],a
 	ld	e,a	
-	
+
 ; get note frequency
 ;	ld	a,[hl+]
 ;	ld	d,a
@@ -1764,6 +1902,10 @@ CH4_UpdateRegisters:
 .done
 	
 DoneUpdatingRegisters:
+	pop	hl
+	pop	de
+	pop	bc
+	pop	af
 	ret
 
 ; ================================================================
@@ -1803,8 +1945,8 @@ NoiseTable:	; taken from deflemask
 	db	$57,$56,$55,$54,$47,$46,$45,$44,$37,$36,$35,$34,$27,$26,$25,$24
 	db	$17,$16,$15,$14,$07,$06,$05,$04,$03,$02,$01,$00
 	db	$ac	; 7 steps
-	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$64
-	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$24
+	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$6c
+	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$2c
 	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$07,$06,$05,$04
 
 ; ================================================================

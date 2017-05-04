@@ -7,6 +7,8 @@
 ErrorHandler:
 
 	; store stack pointer
+	inc	sp
+	inc	sp
 	ld	[tempSP],sp
 	
 	push	hl
