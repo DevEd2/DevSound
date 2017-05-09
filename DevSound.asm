@@ -110,6 +110,11 @@ DevSound_Init:
 	ld	[CH2RetPtr+1],a
 	ld	[CH3RetPtr+1],a
 	ld	[CH4RetPtr+1],a
+	ld	a,$11
+	ld	[CH1Pan],a
+	ld	[CH2Pan],a
+	ld	[CH3Pan],a
+	ld	[CH4Pan],a
 	; get tempo
 	ld	hl,SongSpeedTable
 	pop	af		; see? I TOLD you there was a method to my madness!
@@ -135,13 +140,13 @@ DevSound_Init:
 DefaultRegTable:
 	db	7,0,0,0,0,0,0,1,1,1,1,1
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0	; the $FF is so that the wave is updated properly on the first frame
 	dw	DummyChannel,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
@@ -433,9 +438,10 @@ CH1_CommandTable:
 	inc	c
 	jp	CH1_CheckByte	; too far for jr
 
-.setPan			; TODO
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH1Pan],a
 	inc	c
 	jp	CH1_CheckByte	; too far for jr
 
@@ -691,9 +697,10 @@ CH2_CommandTable:
 	inc	c
 	jp	CH2_CheckByte	; too far for jr
 
-.setPan			; TODO
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH2Pan],a
 	inc	c
 	jp	CH2_CheckByte	; too far for jr
 
@@ -952,9 +959,10 @@ CH3_CommandTable:
 	inc	c
 	jp	CH3_CheckByte	; too far for jr
 
-.setPan			; TODO
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH3Pan],a
 	inc	c
 	jp	CH3_CheckByte	; too far for jr
 
@@ -1209,9 +1217,10 @@ CH4_CommandTable:
 	inc	c
 	jp	CH4_CheckByte	; too far for jr
 
-.setPan			; unused for ch4
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH4Pan],a
 	inc	c
 	jp	CH4_CheckByte	; too far for jr
 
@@ -1273,6 +1282,30 @@ CH4_SetInstrument:
 DoneUpdating:
 
 UpdateRegisters:
+	; update panning
+	ld	b,b
+	xor	a
+	ld	b,a
+	ld	a,[CH1Pan]
+	add	b
+	ld	b,a
+	ld	a,[CH2Pan]
+	rla
+	add	b
+	ld	b,a
+	ld	a,[CH3Pan]
+	rla
+	rla
+	add	b
+	ld	b,a
+	ld	a,[CH4Pan]
+	rla
+	rla
+	rla
+	add	b
+	ldh	[rNR51],a
+
+	; update global volume + fade system
 	ld	a,[FadeType]
 	and	3
 	or	a

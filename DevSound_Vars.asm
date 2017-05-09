@@ -41,6 +41,7 @@ CH1Tick			ds	1
 CH1Reset		ds	1
 CH1Note			ds	1
 CH1Transpose	ds	1
+CH1Pan			ds	1
 CH1Sweep		ds	1
 CH1NoteCount	ds	1
 CH1InsMode		ds	1
@@ -65,6 +66,7 @@ CH2Tick			ds	1
 CH2Reset		ds	1
 CH2Note			ds	1
 CH2Transpose	ds	1
+CH2Pan			ds	1
 CH2NoteCount	ds	1
 CH2InsMode		ds	1
 CH2Ins1			ds	1

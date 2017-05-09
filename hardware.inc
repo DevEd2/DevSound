@@ -401,7 +401,7 @@ rAUDVOL	EQU rNR50
 ; -- Bit 3   - Output sound 4 to SO1 terminal
 ; -- Bit 2   - Output sound 3 to SO1 terminal
 ; -- Bit 1   - Output sound 2 to SO1 terminal
-; -- Bit 0   - Output sound 0 to SO1 terminal
+; -- Bit 0   - Output sound 1 to SO1 terminal
 ; --
 rNR51 EQU $FF25
 rAUDTERM	EQU rNR51

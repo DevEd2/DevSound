@@ -576,12 +576,16 @@ PT_EchoTest:
 EchoTest_CH1:
 	db	SetInsAlternate,_ins_Echo1,_ins_Echo2
 	db	SetLoopPoint
+	db	SetPan,$11
 	db	C_3,2,C_4,2
 	db	D_3,2,C_3,2
+	db	SetPan,$01
 	db	E_3,2,D_3,2
 	db	F_3,2,E_3,2
+	db	SetPan,$11
 	db	G_3,2,F_3,2
 	db	A_3,2,G_3,2
+	db	SetPan,$10
 	db	B_3,2,A_3,2
 	db	C_4,2,B_3,2
 	db	GotoLoopPoint

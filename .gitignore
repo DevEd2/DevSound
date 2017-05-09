@@ -1,0 +1,11 @@
+# object files
+*.obj
+
+# symbol files
+*.sym
+
+# battery saves (the demo ROM shouldn't create any of these but let's put it here just to be safe)
+*.sav
+
+# bgb save states
+*.sn*
