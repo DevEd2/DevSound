@@ -1144,7 +1144,7 @@ CH4_CommandTable:
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
 	dw	.callSection
-
+	dw	.setChannelPtr
 	dw	.pitchBendUp
 	dw	.pitchBendDown
 	dw	.setSweep
