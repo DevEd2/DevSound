@@ -23,6 +23,8 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ================================================================
 
+DevSound:
+
 include	"DevSound_Vars.asm"
 include	"DevSound_Consts.asm"
 include	"DevSound_Macros.asm"
@@ -281,16 +283,17 @@ CH1_CheckByte:
 	inc	c
 	dec	a
 	ld	[CH1Tick],a		; set tick
-	xor	a
+		xor	a
 	ld	[CH1VolPos],a
 	ld	[CH1ArpPos],a
-	inc	a
 	ld	[CH1VibPos],a
-	ld	a,[CH1Reset]	; check for reset flag
-	jp	z,CH1_DoneUpdating
+	ldh	[rNR12],a
+	ld	a,[CH1Reset]
+	and	a
+	jp	nz,.noreset
 	xor	a
 	ld	[CH1PulsePos],a
-	ldh	[rNR12],a
+.noreset
 	ld	hl,CH1VibPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -547,14 +550,17 @@ CH2_CheckByte:
 	inc	c
 	dec	a
 	ld	[CH2Tick],a
-	ld	a,[CH2Reset]
-	jp	z,CH2_DoneUpdating
 	xor	a
 	ld	[CH2VolPos],a
-	ld	[CH2PulsePos],a
 	ld	[CH2ArpPos],a
 	ld	[CH2VibPos],a
 	ldh	[rNR22],a
+	ld	a,[CH2Reset]
+	and	a
+	jp	nz,.noreset
+	xor	a
+	ld	[CH2PulsePos],a
+.noreset
 	ld	a,[CH2NoteCount]
 	inc	a
 	ld	[CH2NoteCount],a
@@ -1137,8 +1143,8 @@ CH4_CommandTable:
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
-	dw	.setChannelPtr
 	dw	.callSection
+
 	dw	.pitchBendUp
 	dw	.pitchBendDown
 	dw	.setSweep
@@ -1283,7 +1289,6 @@ DoneUpdating:
 
 UpdateRegisters:
 	; update panning
-	ld	b,b
 	xor	a
 	ld	b,a
 	ld	a,[CH1Pan]
