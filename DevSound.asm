@@ -283,7 +283,7 @@ CH1_CheckByte:
 	inc	c
 	dec	a
 	ld	[CH1Tick],a		; set tick
-		xor	a
+	xor	a
 	ld	[CH1VolPos],a
 	ld	[CH1ArpPos],a
 	ld	[CH1VibPos],a
