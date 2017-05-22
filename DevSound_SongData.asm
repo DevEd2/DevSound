@@ -9,7 +9,7 @@
 SongSpeedTable:
 	db	4,3			; triumph
 	db	4,3			; insert title here (NOTE: Actual song name.)
-	db	4,4			; vibrato test
+	db	8,8			; vibrato test
 	db	6,6			; gadunk
 	
 	
@@ -118,7 +118,7 @@ pulse_EchoTest:	db	1,$ff
 ; =================================================================
 
 vib_Dummy:	db	0,0,$80,1
-vib_Test:	db	16,1,1,1,1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1,1,$80,17
+vib_Test:	db	4,2,4,6,8,6,4,2,0,-2,-4,-6,-8,-6,-4,-2,0,$80,1
 
 ; =================================================================
 ; Wave sequences
@@ -224,8 +224,8 @@ ins_WaveLeadMed:	Instrument	0,0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_
 ins_WaveLeadLong:	Instrument	0,0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
 ins_WaveLeadLong2:	Instrument	0,0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
 
-ins_Echo1:		Instrument	0,0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Dummy
-ins_Echo2:		Instrument	0,0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Dummy
+ins_Echo1:		Instrument	0,0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Test
+ins_Echo2:		Instrument	0,0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Test
 
 _ins_Gadunk			equ	0
 _ins_Arp1			equ	1

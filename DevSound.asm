@@ -142,11 +142,11 @@ DevSound_Init:
 DefaultRegTable:
 	db	7,0,0,0,0,0,0,1,1,1,1,1
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0	; the $FF is so that the wave is updated properly on the first frame
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0,0	; the $FF is so that the wave is updated properly on the first frame
 	dw	DummyChannel,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
@@ -286,20 +286,15 @@ CH1_CheckByte:
 	xor	a
 	ld	[CH1VolPos],a
 	ld	[CH1ArpPos],a
-	ld	[CH1VibPos],a
 	ldh	[rNR12],a
+	inc	a
+	ld	[CH1VibPos],a
 	ld	a,[CH1Reset]
 	and	a
 	jp	nz,.noreset
 	xor	a
 	ld	[CH1PulsePos],a
 .noreset
-	ld	hl,CH1VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[hl]
-	ld	[CH1VibDelay],a
 	ld	a,[CH1NoteCount]
 	inc	a
 	ld	[CH1NoteCount],a
@@ -509,6 +504,12 @@ CH1_SetInstrument:
 	ld	[CH1VibPtr],a
 	ld	a,[hl+]
 	ld	[CH1VibPtr+1],a
+	ld	hl,CH1VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH1VibDelay],a
 	ret
 	
 ; ================================================================
@@ -553,8 +554,9 @@ CH2_CheckByte:
 	xor	a
 	ld	[CH2VolPos],a
 	ld	[CH2ArpPos],a
-	ld	[CH2VibPos],a
 	ldh	[rNR22],a
+	inc	a
+	ld	[CH2VibPos],a
 	ld	a,[CH2Reset]
 	and	a
 	jp	nz,.noreset
@@ -771,6 +773,12 @@ CH2_SetInstrument:
 	ld	[CH2VibPtr],a
 	ld	a,[hl+]
 	ld	[CH2VibPtr+1],a
+	ld	hl,CH2VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH2VibDelay],a
 	ret
 	
 ; ================================================================
@@ -815,9 +823,10 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-	ld	[CH3VibPos],a
 	xor	$ff
 	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
+	ld	a,1
+	ld	[CH3VibPos],a
 	ld	a,[CH3Reset]
 	and	a
 	jp	nz,CH3_DoneUpdating
@@ -1034,6 +1043,12 @@ CH3_SetInstrument:
 	ld	[CH3VibPtr],a
 	ld	a,[hl+]
 	ld	[CH3VibPtr+1],a
+	ld	hl,CH3VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH3VibDelay],a
 	ret
 
 ; ================================================================
@@ -1458,69 +1473,61 @@ CH1_UpdateRegisters:
 	ld	hl,FreqTable
 	add	hl,bc
 	add	hl,bc	
-	
-	ld	a,[hl+]
-	ldh	[rNR13],a
-	ld	a,[hl]
-	ldh	[rNR14],a
-	ld	e,a	
 
 ; get note frequency
-;	ld	a,[hl+]
-;	ld	d,a
-;	ld	a,[hl]
-;	ld	e,a
+	ld	a,[hl+]
+	ld	d,a
+	ld	a,[hl]
+	ld	e,a
+.updateVibTable
+	ld	a,[CH1VibDelay]
+	and	a
+	jr	z,.doVib
+	dec	a
+	ld	[CH1VibDelay],a
+	jr	.setFreq
+.doVib
+	ld	hl,CH1VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH1VibPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry4
+	inc	h
+.nocarry4
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.noloop2
+	ld	a,[hl+]
+	ld	[CH1VibPos],a
+	jr	.doVib
+.noloop2
+	ld	[CH1FreqOffset],a
+	ld	a,[CH1VibPos]
+	inc	a
+	ld	[CH1VibPos],a
 	
-; get vibrato
-;	ld	b,b
-;	ld	hl,CH1VibPtr
-;	ld	a,[CH1VibPos]
-;	ld	b,a
-;	and	a
-;	jr	z,.doupdatevib
-;	dec	a
-;	ld	[CH1VibPos],a
-;	jr	.setNoteFreq
-;.doupdatevib
-;	ld	a,[hl+]
-;	ld	h,[hl]
-;	ld	l,a
-;	ld	a,b
-;	add	l
-;	ld	l,a
-;	jr	nc,.nocarry4
-;	inc	h
-;.nocarry4
-;	ld	a,[hl+]
-;	cp	$80
-;	jr	nz,.noloopvib
-;	ld	a,[hl+]
-;	ld	[CH1VibPos],a
-;	jr	.doupdatevib
-;.noloopvib
-;	bit	7,a
-;	jr	z,.subtract
-;	add	d
-;	ld	d,a
-;	jr	nc,.contvib
-;	inc	e
-;	jr	.contvib
-;.subtract
-;	sub	d
-;	ld	d,a
-;	jr	nc,.contvib
-;	inc	e
-;.contvib
-;	ld	a,[CH1VibPos]
-;	inc	a
-;	ld	[CH1VibPos],a
-	
-; set note frequency
-;.setNoteFreq
-;	ld	a,d
-;	ldh	[rNR13],a
-;	ld	a,e
-;	ldh	[rNR14],a
+.getPitchOffset
+	ld	a,[CH1FreqOffset]
+	bit	7,a
+	jr	nz,.sub
+	add	d
+	ld	d,a
+	jr	nc,.setFreq
+	inc	e
+	jr	.setFreq
+.sub
+	ld	c,a
+	ld	a,d
+	add	c
+	ld	d,a
+.setFreq	
+	ld	a,d
+	ldh	[rNR13],a
+	ld	a,e
+	ldh	[rNR14],a
 	
 	; update volume
 .updateVolume
@@ -1648,11 +1655,60 @@ CH2_UpdateRegisters:
 	add	hl,bc
 	add	hl,bc
 	
+	; get note frequency
 	ld	a,[hl+]
-	ldh	[rNR23],a
+	ld	d,a
 	ld	a,[hl]
-	ldh	[rNR24],a
 	ld	e,a
+.updateVibTable
+	ld	a,[CH2VibDelay]
+	and	a
+	jr	z,.doVib
+	dec	a
+	ld	[CH2VibDelay],a
+	jr	.setFreq
+.doVib
+	ld	hl,CH2VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH2VibPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry4
+	inc	h
+.nocarry4
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.noloop2
+	ld	a,[hl+]
+	ld	[CH2VibPos],a
+	jr	.doVib
+.noloop2
+	ld	[CH2FreqOffset],a
+	ld	a,[CH2VibPos]
+	inc	a
+	ld	[CH2VibPos],a
+	
+.getPitchOffset
+	ld	a,[CH2FreqOffset]
+	bit	7,a
+	jr	nz,.sub
+	add	d
+	ld	d,a
+	jr	nc,.setFreq
+	inc	e
+	jr	.setFreq
+.sub
+	ld	c,a
+	ld	a,d
+	add	c
+	ld	d,a
+.setFreq	
+	ld	a,d
+	ldh	[rNR23],a
+	ld	a,e
+	ldh	[rNR24],a
 
 	; update volume
 .updateVolume
@@ -1663,9 +1719,9 @@ CH2_UpdateRegisters:
 	ld	a,[CH2VolPos]
 	add	l
 	ld	l,a
-	jr	nc,.nocarry4
+	jr	nc,.nocarry5
 	inc	h
-.nocarry4
+.nocarry5
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.done
@@ -1756,11 +1812,60 @@ CH3_UpdateRegisters:
 	add	hl,bc
 	add	hl,bc
 	
+	; get note frequency
 	ld	a,[hl+]
-	ldh	[rNR33],a
+	ld	d,a
 	ld	a,[hl]
-	ldh	[rNR34],a
 	ld	e,a
+.updateVibTable
+	ld	a,[CH3VibDelay]
+	and	a
+	jr	z,.doVib
+	dec	a
+	ld	[CH3VibDelay],a
+	jr	.setFreq
+.doVib
+	ld	hl,CH3VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH3VibPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry4
+	inc	h
+.nocarry4
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.noloop2
+	ld	a,[hl+]
+	ld	[CH3VibPos],a
+	jr	.doVib
+.noloop2
+	ld	[CH3FreqOffset],a
+	ld	a,[CH3VibPos]
+	inc	a
+	ld	[CH3VibPos],a
+	
+.getPitchOffset
+	ld	a,[CH3FreqOffset]
+	bit	7,a
+	jr	nz,.sub
+	add	d
+	ld	d,a
+	jr	nc,.setFreq
+	inc	e
+	jr	.setFreq
+.sub
+	ld	c,a
+	ld	a,d
+	add	c
+	ld	d,a
+.setFreq	
+	ld	a,d
+	ldh	[rNR33],a
+	ld	a,e
+	ldh	[rNR34],a
 	
 	; update wave
 	ld	hl,CH3WavePtr
@@ -1814,9 +1919,9 @@ CH3_UpdateRegisters:
 	ld	a,[CH3VolPos]
 	add	l
 	ld	l,a
-	jr	nc,.nocarry4
+	jr	nc,.nocarry5
 	inc	h
-.nocarry4
+.nocarry5
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.done

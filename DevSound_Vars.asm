@@ -41,6 +41,7 @@ CH1Tick			ds	1
 CH1Reset		ds	1
 CH1Note			ds	1
 CH1Transpose	ds	1
+CH1FreqOffset	ds	1
 CH1Pan			ds	1
 CH1Sweep		ds	1
 CH1NoteCount	ds	1
@@ -66,6 +67,7 @@ CH2Tick			ds	1
 CH2Reset		ds	1
 CH2Note			ds	1
 CH2Transpose	ds	1
+CH2FreqOffset	ds	1
 CH2Pan			ds	1
 CH2NoteCount	ds	1
 CH2InsMode		ds	1
@@ -90,6 +92,7 @@ CH3Tick			ds	1
 CH3Reset		ds	1
 CH3Note			ds	1
 CH3Transpose	ds	1
+CH3FreqOffset	ds	1
 CH3Vol			ds	1
 CH3Wave			ds	1
 CH3Pan			ds	1
