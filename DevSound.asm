@@ -23,6 +23,8 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ================================================================
 
+UseFXHammer	set	1
+
 DevSound:
 
 include	"DevSound_Vars.asm"
@@ -560,7 +562,13 @@ CH2_CheckByte:
 	xor	a
 	ld	[CH2VolPos],a
 	ld	[CH2ArpPos],a
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,.noupdate
+	endc
 	ldh	[rNR22],a
+.noupdate
 	inc	a
 	ld	[CH2VibPos],a
 	ld	hl,CH2VibPtr
@@ -746,7 +754,7 @@ CH2_CommandTable:
 	ld	[CH1Ins2],a
 	ld	a,1
 	ld	[CH2InsMode],a
-	jp	CH1_CheckByte	
+	jp	CH2_CheckByte	
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1113,7 +1121,13 @@ CH4_CheckByte:
 	xor	a
 	ld	[CH4VolPos],a
 	ld	[CH4NoisePos],a
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jp	z,.noupdate
+	endc
 	ldh	[rNR42],a
+.noupdate
 	ld	a,[CH4NoteCount]
 	inc	a
 	ld	[CH4NoteCount],a
@@ -1586,6 +1600,11 @@ CH1_UpdateRegisters:
 ; ================================================================
 
 CH2_UpdateRegisters:
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,CH3_UpdateRegisters
+	endc
 	ld	a,[CH2Enabled]
 	and	a
 	jp	z,CH3_UpdateRegisters
@@ -1967,6 +1986,11 @@ CH3_UpdateRegisters:
 ; ================================================================
 
 CH4_UpdateRegisters:
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jp	z,DoneUpdatingRegisters
+	endc
 	ld	a,[CH4Enabled]
 	and	a
 	jp	z,DoneUpdatingRegisters
