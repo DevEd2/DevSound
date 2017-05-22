@@ -748,10 +748,10 @@ CH2_CommandTable:
 	pop	hl
 	ld	a,[hl+]
 	inc	c
-	ld	[CH1Ins2],a
+	ld	[CH2Ins1],a
 	ld	a,[hl+]
 	inc	c
-	ld	[CH1Ins2],a
+	ld	[CH2Ins2],a
 	ld	a,1
 	ld	[CH2InsMode],a
 	jp	CH2_CheckByte	
