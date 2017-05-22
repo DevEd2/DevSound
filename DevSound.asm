@@ -289,6 +289,12 @@ CH1_CheckByte:
 	ldh	[rNR12],a
 	inc	a
 	ld	[CH1VibPos],a
+	ld	hl,CH1VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH1VibDelay],a
 	ld	a,[CH1Reset]
 	and	a
 	jp	nz,.noreset
@@ -557,6 +563,12 @@ CH2_CheckByte:
 	ldh	[rNR22],a
 	inc	a
 	ld	[CH2VibPos],a
+	ld	hl,CH2VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH2VibDelay],a
 	ld	a,[CH2Reset]
 	and	a
 	jp	nz,.noreset
@@ -827,6 +839,12 @@ CH3_CheckByte:
 	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,1
 	ld	[CH3VibPos],a
+	ld	hl,CH3VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH3VibDelay],a
 	ld	a,[CH3Reset]
 	and	a
 	jp	nz,CH3_DoneUpdating
