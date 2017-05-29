@@ -11,6 +11,7 @@ SongSpeedTable:
 	db	4,3			; insert title here (NOTE: Actual song name.)
 	db	8,8			; vibrato test
 	db	6,6			; gadunk
+	db	2,2			; McAlbyDrumTest
 	
 	
 SongPointerTable:
@@ -18,6 +19,7 @@ SongPointerTable:
 	dw	PT_InsertTitleHere
 	dw	PT_EchoTest
 	dw	PT_Gadunk
+	dw	PT_McAlbyDrumTest
 
 	
 ; =================================================================
@@ -58,14 +60,20 @@ vol_WaveLeadLong:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,$ff
 vol_WaveLeadLong2:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w1,$ff
 vol_Arp2:			db	$2f,$ff
 
-vol_Kick:		db	$18,$ff
-vol_Snare:		db	$1d,$ff
-vol_OHH:		db	$48,$ff
-vol_CymbQ:		db	$6a,$ff
-vol_CymbL:		db	$3f,$ff
+vol_Kick:			db	$18,$ff
+vol_Snare:			db	$1d,$ff
+vol_OHH:			db	$48,$ff
+vol_CymbQ:			db	$6a,$ff
+vol_CymbL:			db	$3f,$ff
 
 vol_Echo1:			db	12,$ff	
 vol_Echo2:			db	4,$ff
+
+vol_McAlbyKick:		db	15,15,13,9,7,5,$14,$ff
+vol_McAlbyCHH:		db	8,6,4,$32,$ff
+vol_McAlbyOHH:		db	10,6,3,$32,$ff
+vol_McAlbySnare:	db	15,15,15,10,3,4,$35,$ff
+vol_McAlbyCymb:		db	12,8,6,$45,$ff
 
 ; =================================================================
 ; Arpeggio sequences
@@ -97,6 +105,13 @@ s7	equ	$2d
 noiseseq_Kick:	db	32,26,37,$80,2
 noiseseq_Snare:	db	s7+29,s7+23,s7+20,35,$80,3
 noiseseq_Hat:	db	41,43,$80,1
+
+noiseseq_McAlbyKick:	db	42,28,24,20,12,20,28,$80,6
+noiseseq_McAlbySnare:	db	28,24,28,32,36,40,40,$80,6
+noiseseq_McAlbyHat:		db	40,42,44,$80,2
+noiseseq_McAlbyCymb:	db	40,42,36,$80,2
+
+
 
 ; =================================================================
 ; Pulse sequences
@@ -195,6 +210,12 @@ InstrumentTable:
 	
 	dw	ins_Echo1
 	dw	ins_Echo2
+	
+	dw	ins_McAlbyKick
+	dw	ins_McAlbySnare
+	dw	ins_McAlbyCHH
+	dw	ins_McAlbyOHH
+	dw	ins_McAlbyCymb
 
 ; Instrument format: [no reset flag],[wave mode (ch3 only)],[voltable id],[arptable id],[pulsetable/wavetable id],[vibtable id]
 ; note that wave mode must be 0 for non-wave instruments
@@ -224,8 +245,14 @@ ins_WaveLeadMed:	Instrument	0,0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_
 ins_WaveLeadLong:	Instrument	0,0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
 ins_WaveLeadLong2:	Instrument	0,0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
 
-ins_Echo1:		Instrument	0,0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Test
-ins_Echo2:		Instrument	0,0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Test
+ins_Echo1:			Instrument	0,0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Test
+ins_Echo2:			Instrument	0,0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Test
+
+ins_McAlbyKick:		Instrument	0,0,vol_McAlbyKick,noiseseq_McAlbyKick,DummyTable,DummyTable
+ins_McAlbySnare:	Instrument	0,0,vol_McAlbySnare,noiseseq_McAlbySnare,DummyTable,DummyTable
+ins_McAlbyCHH:		Instrument	0,0,vol_McAlbyCHH,noiseseq_McAlbyHat,DummyTable,DummyTable
+ins_McAlbyOHH:		Instrument	0,0,vol_McAlbyOHH,noiseseq_McAlbyHat,DummyTable,DummyTable
+ins_McAlbyCymb:		Instrument	0,0,vol_McAlbyCymb,noiseseq_McAlbyCymb,DummyTable,DummyTable
 
 _ins_Gadunk			equ	0
 _ins_Arp1			equ	1
@@ -259,6 +286,11 @@ OHH					equ	_ins_OHH
 CymbQ				equ	_ins_CymbQ
 CymbL				equ	_ins_CymbL
 
+AKick				equ	24
+ASnare				equ	25
+ACHH				equ	26
+AOHH				equ	27
+ACymb				equ	28
 
 ; =================================================================
 
@@ -589,3 +621,52 @@ EchoTest_CH1:
 	db	B_3,2,A_3,2
 	db	C_4,2,B_3,2
 	db	GotoLoopPoint
+
+; =================================================================
+
+PT_McAlbyDrumTest:
+	dw	McAlbyDrumTest_CH1,McAlbyDrumTest_CH2,McAlbyDrumTest_CH3,McAlbyDrumTest_CH4
+	
+McAlbyDrumTest_CH1:
+	db	EndChannel
+	
+McAlbyDrumTest_CH2:
+	db	EndChannel
+	
+McAlbyDrumTest_CH3:
+	db	EndChannel
+	
+McAlbyDrumTest_CH4:
+	db	SetLoopPoint
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	Drum	AKick,4
+	Drum	ACHH,4
+	Drum	ACHH,4
+	Drum	ACHH,4
+	Drum	ASnare,4
+	Drum	ACHH,4
+	Drum	AOHH,2
+	Drum	AOHH,2
+	Drum	ACHH,4
+	Drum	AKick,4
+	Drum	ACHH,4
+	Drum	ACymb,4
+	Drum	ACHH,4
+	Drum	ASnare,4
+	Drum	ACHH,4
+	Drum	ACymb,4
+	Drum	ACHH,4
+	db	GotoLoopPoint
+.block0
+	Drum	AKick,4
+	Drum	ACHH,4
+	Drum	ACHH,4
+	Drum	ACHH,4
+	Drum	ASnare,4
+	Drum	ACHH,4
+	Drum	ACHH,4
+	Drum	ACHH,4
+	ret

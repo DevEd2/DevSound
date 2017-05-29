@@ -269,7 +269,10 @@ MainLoop:
 	ld	a,2
 	call	DS_Fade
 	jr	.continue
-.fadein
+.fadein	
+;	ld	hl,DefaultWave
+;	ld	bc,wave_Bass	
+;	call	CombineWaves
 	ld	a,[CurrentSong]
 	call	DS_Init
 	ld	a,1
@@ -329,33 +332,17 @@ Font_End:
 ; Draw decimal number A at HL
 ; ================================================================
 
-; Routine copied from GBS2GB with some modifications to not display
-; leading zeroes. Could use a bit of optimization...
+; Routine copied from GBS2GB.
 
 DrawDec:
-	and	a
-	jr	nz,.notzero
-	ld	a,"0"-32
-	ld	[hl-],a
-	ld	a," "-32
-	ld	[hl-],a
-	ld	[hl],a
-	ret
-.notzero
 	call	.div10	; get 1's digit
 	ld	[hl-],a		; write char
 	ld	a,c
 	call	.div10	; get 10's digit
-	cp	$10
-	jr	nz,.notzero2
-	ld	a," "-32
 .notzero2
 	ld	[hl-],a		; write char
 	ld	a,c
 	add	$10			; add offset to tile #
-	cp	$10
-	jr	nz,.notzero3
-	ld	a," "-32
 .notzero3
 	ld	[hl],a		; write 100's digit
 	ret

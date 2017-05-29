@@ -141,19 +141,6 @@ DevSound_Init:
 	ldh	[rNR50],a
 	ret
 
-DefaultRegTable:
-	db	7,0,0,0,0,0,0,1,1,1,1,1
-	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0,0	; the $FF is so that the wave is updated properly on the first frame
-	dw	DummyChannel,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	
-DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
-
 ; ================================================================
 ; Stop routine
 ; ================================================================
@@ -862,6 +849,9 @@ CH3_CheckByte:
 	inc	a
 	ld	[CH3NoteCount],a
 	ld	b,a
+	ld	a,[CH3Vol]
+	ldh	[rNR32],a	; fix for volume not updating when unpausing
+	
 	; check if instrument mode is 1 (alternating)
 	ld	a,[CH3InsMode]
 	and	a
@@ -2112,6 +2102,58 @@ LoadWave:
 	ret
 
 ; ================================================================
+; Combine two waves.
+; INPUT: hl = first wave addr
+;        bc = second wave addr
+; ================================================================
+CombineWaves:
+	ld	de,WaveBuffer
+	ld	a,$10
+	ld	[WaveCounter],a
+.loop
+	ld	a,[bc]
+	ld	[WaveTempByte1],a
+	inc	bc
+	ld	a,[hl+]
+	ld	[WaveTempByte2],a
+
+	push	bc
+	ld	a,[WaveTempByte1]
+	and	$f0
+	rra
+	and	$f0
+	ld	b,a
+	ld	a,[WaveTempByte2]
+	and	$f0
+	rra
+	and	$f0
+	add	b
+	ld	[WaveTempByte3],a
+	
+	ld	a,[WaveTempByte1]
+	and	$0f
+	rra
+	ld	b,a
+	ld	a,[WaveTempByte2]
+	and	$0f
+	rra
+	add	b
+	ld	[WaveTempByte4],a
+	ld	b,a
+	ld	a,[WaveTempByte3]
+	add	b
+	ld	[de],a
+	inc	de
+	
+	pop	bc
+	ld	a,[WaveCounter]
+	dec	a
+	ld	[WaveCounter],a
+	jr	nz,.loop
+
+	ret
+	
+; ================================================================
 ; Frequency table
 ; ================================================================
 
@@ -2134,6 +2176,30 @@ NoiseTable:	; taken from deflemask
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$2c
 	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$0b,$0a,$09,$08
 
+; ================================================================
+; misc stuff
+; ================================================================
+	
+DefaultRegTable:
+	; global flags
+	db	7,0,0,0,0,0,0,1,1,1,1,1
+	; ch1
+	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	; ch2
+	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	; ch3
+	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0
+	; ch4
+	dw	DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	; wave buffer
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	
+DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
+	
 ; ================================================================
 ; Dummy data
 ; ================================================================

@@ -121,6 +121,14 @@ CH4InsMode		ds	1
 CH4Ins1			ds	1
 CH4Ins2			ds	1
 
+WaveBuffer		ds	16
+; ran out of registers so i'm using RAM for this
+WaveCounter		ds	1
+WaveTempByte1	ds	1
+WaveTempByte2	ds	1
+WaveTempByte3	ds	1
+WaveTempByte4	ds	1
+
 DSVarsEnd
 
 endc
