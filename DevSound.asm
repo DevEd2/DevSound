@@ -53,6 +53,7 @@ DevSound_Init:
 	push	af		; i swear there's a method to my madness here
 	xor	a
 	ldh	[rNR52],a	; disable sound
+	ld	[PWMEnabled],a
 	ld	[WaveBufUpdateFlag],a
 
 	; init sound RAM area
