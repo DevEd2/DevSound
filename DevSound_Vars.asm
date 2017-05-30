@@ -120,15 +120,13 @@ CH4NoteCount	ds	1
 CH4InsMode		ds	1
 CH4Ins1			ds	1
 CH4Ins2			ds	1
-
-WaveBuffer		ds	16
-; ran out of registers so i'm using RAM for this
-WaveCounter		ds	1
-WaveTempByte1	ds	1
-WaveTempByte2	ds	1
-WaveTempByte3	ds	1
-WaveTempByte4	ds	1
-
 DSVarsEnd
 
+WaveBuffer		ds	16
+WavePos			ds	1
+PWMEnabled		ds	1
+PWMVol			ds	1
+PWMSpeed		ds	1
+PWMTimer		ds	1
+PWMDir			ds	1
 endc

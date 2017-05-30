@@ -12,6 +12,7 @@ SongSpeedTable:
 	db	8,8			; vibrato test
 	db	6,6			; gadunk
 	db	2,2			; McAlbyDrumTest
+	db	4,4			; flash title
 	
 	
 SongPointerTable:
@@ -20,7 +21,7 @@ SongPointerTable:
 	dw	PT_EchoTest
 	dw	PT_Gadunk
 	dw	PT_McAlbyDrumTest
-
+	dw	PT_FlashTitle
 	
 ; =================================================================
 ; Volume sequences
@@ -52,8 +53,10 @@ vol_Bass1:			db	w3,$ff
 vol_Bass2:			db	w3,w3,w3,w3,w1,$ff
 vol_Bass3:			db	w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w1,$ff
 vol_PulseBass:		db	15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,$ff
+vol_PulseBass2:		db	15,14,13,12,11,11,10,10,9,9,8,8,7,7,7,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff
 
 vol_Tom:			db	$1f,$ff
+vol_Tom2:			db	$3f,$ff
 vol_WaveLeadShort:	db	w3,w3,w3,w3,w2,$ff
 vol_WaveLeadMed:	db	w3,w3,w3,w3,w3,w3,w3,w2,$ff
 vol_WaveLeadLong:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,$ff
@@ -87,6 +90,12 @@ arp_Pluck:		db	12,0,$ff
 arp_037:		db	0,0,3,3,7,7,$80,0
 arp_038:		db	0,0,3,3,8,8,$80,0
 arp_Tom:		db	22,20,18,16,14,12,10,9,7,6,4,3,2,1,0,$ff
+
+arp_017C:		db	12,12,7,7,1,1,0,0,$80,0
+arp_057C:		db	12,12,7,7,5,5,0,0,$80,0
+arp_950:		db	9,9,5,5,0,0,$80,0
+arp_740:		db	7,7,4,4,0,0,$80,0
+arp_830:		db	8,8,3,3,0,0,$80,0
 
 ; =================================================================
 ; Noise sequences
@@ -149,6 +158,8 @@ WaveTable:
 	dw	wave_PWM9,wave_PWMA,wave_PWMB,wave_PWMC
 	dw	wave_PWMD,wave_PWME,wave_PWMF,wave_PWM10
 	
+	dw	wave_PseudoSquare
+	
 wave_Bass:		db	$00,$01,$11,$11,$22,$11,$00,$02,$57,$76,$7a,$cc,$ee,$fc,$b1,$23
 
 wave_PWM1:	db	$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -168,9 +179,14 @@ wave_PWME:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00
 wave_PWMF:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00
 wave_PWM10:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00
 
+wave_PseudoSquare:
+			db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
+
+; use $c0 to use the wave buffer
 waveseq_Bass:		db	0,$ff
 waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
+waveseq_Square:		db	$c0,$ff
 waveseq_PWM:		db	3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,9,9,9,9,9,9,9
 					db	10,10,10,10,10,10,10,11,11,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,13,13,13
 					db	14,14,14,14,14,14,14,15,15,15,15,15,15,15,16,16,16,16,16,16,16,17,17,17,17,17,17,17
@@ -216,6 +232,15 @@ InstrumentTable:
 	dw	ins_McAlbyCHH
 	dw	ins_McAlbyOHH
 	dw	ins_McAlbyCymb
+	
+	dw	ins_Tom2
+	dw	ins_PWM1
+	dw	ins_Arp017C
+	dw	ins_Arp057C
+	dw	ins_PulseBass2
+	dw	ins_Arp950
+	dw	ins_Arp740
+	dw	ins_Arp830
 
 ; Instrument format: [no reset flag],[wave mode (ch3 only)],[voltable id],[arptable id],[pulsetable/wavetable id],[vibtable id]
 ; note that wave mode must be 0 for non-wave instruments
@@ -254,6 +279,15 @@ ins_McAlbyCHH:		Instrument	0,0,vol_McAlbyCHH,noiseseq_McAlbyHat,DummyTable,Dummy
 ins_McAlbyOHH:		Instrument	0,0,vol_McAlbyOHH,noiseseq_McAlbyHat,DummyTable,DummyTable
 ins_McAlbyCymb:		Instrument	0,0,vol_McAlbyCymb,noiseseq_McAlbyCymb,DummyTable,DummyTable
 
+ins_Tom2:			Instrument	0,0,vol_Tom2,arp_Tom,pulse_Square,vib_Dummy
+ins_PWM1:			Instrument	0,0,vol_WaveLeadShort,arp_Pluck,waveseq_Square,vib_Dummy
+ins_Arp017C:		Instrument	0,0,vol_PulseBass2,arp_017C,pulse_OctArp,vib_Dummy
+ins_Arp057C:		Instrument	0,0,vol_PulseBass2,arp_057C,pulse_OctArp,vib_Dummy
+ins_PulseBass2:		Instrument	0,0,vol_PulseBass2,arp_Pluck,pulse_Bass,vib_Dummy
+ins_Arp950:			Instrument	0,0,vol_PulseBass2,arp_950,pulse_OctArp,vib_Dummy
+ins_Arp740:			Instrument	0,0,vol_PulseBass2,arp_740,pulse_OctArp,vib_Dummy
+ins_Arp830:			Instrument	0,0,vol_PulseBass2,arp_830,pulse_OctArp,vib_Dummy
+
 _ins_Gadunk			equ	0
 _ins_Arp1			equ	1
 _ins_Arp2			equ	2
@@ -291,6 +325,16 @@ ASnare				equ	25
 ACHH				equ	26
 AOHH				equ	27
 ACymb				equ	28
+
+
+_ins_Tom2			equ	29
+_ins_PWM1			equ	30
+_ins_Arp017C		equ	31
+_ins_Arp057C		equ	32
+_ins_PulseBass2		equ	33
+_ins_Arp950			equ	34
+_ins_Arp740			equ	35
+_ins_Arp830			equ	36
 
 ; =================================================================
 
@@ -358,8 +402,7 @@ Gadunk_CH3:
 	
 ; =================================================================
 	
-PT_Triumph:
-	dw	Triumph_CH1,Triumph_CH2,Triumph_CH3,Triumph_CH4
+PT_Triumph:	dw	Triumph_CH1,Triumph_CH2,Triumph_CH3,Triumph_CH4
 	
 Triumph_CH1:
 	db	SetInstrument,_ins_OctArp
@@ -479,8 +522,7 @@ Triumph_CH4:
 	
 ; =================================================================
 
-PT_InsertTitleHere:
-	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
+PT_InsertTitleHere:	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
 	
 InsertTitleHere_CH1:	; TODO: Implement a way to optimize this, as it is it's a redundant mess.
 	db	CallSection
@@ -602,8 +644,7 @@ InsertTitleHere_CH4:
 	
 ; =================================================================
 
-PT_EchoTest:
-	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
+PT_EchoTest:	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
 	
 EchoTest_CH1:
 	db	SetInsAlternate,_ins_Echo1,_ins_Echo2
@@ -624,8 +665,7 @@ EchoTest_CH1:
 
 ; =================================================================
 
-PT_McAlbyDrumTest:
-	dw	McAlbyDrumTest_CH1,McAlbyDrumTest_CH2,McAlbyDrumTest_CH3,McAlbyDrumTest_CH4
+PT_McAlbyDrumTest:	dw	McAlbyDrumTest_CH1,McAlbyDrumTest_CH2,McAlbyDrumTest_CH3,McAlbyDrumTest_CH4
 	
 McAlbyDrumTest_CH1:
 	db	EndChannel
@@ -669,4 +709,213 @@ McAlbyDrumTest_CH4:
 	Drum	ACHH,4
 	Drum	ACHH,4
 	Drum	ACHH,4
+	ret
+	
+; =================================================================
+
+PT_FlashTitle:	dw	FlashTitle_CH1,FlashTitle_CH2,FlashTitle_CH3,FlashTitle_CH4
+
+FlashTitle_CH1:
+	db	SetLoopPoint
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block1
+	db	GotoLoopPoint
+	
+.block0	
+	db	SetInstrument,_ins_PulseBass2
+	db	A#2,4
+	db	A#2,4
+	Drum	_ins_Tom2,4
+	db	SetInstrument,_ins_PulseBass2
+	db	A#2,4
+	db	A#2,4
+	db	A#2,4
+	Drum	_ins_Tom2,4
+	db	SetInstrument,_ins_PulseBass2
+	db	A#2,4
+	db	A#2,2
+	db	A#2,2
+	db	A#2,4
+	Drum	_ins_Tom2,4
+	db	SetInstrument,_ins_PulseBass2
+	db	A#2,4
+	db	A#2,4
+	db	A#2,4
+	Drum	_ins_Tom2,4
+	db	SetInstrument,_ins_PulseBass2
+	db	A#2,4
+	ret
+	
+.block1
+	Drum	_ins_Tom2,4
+	db	rest,2
+	Drum	_ins_Tom2,4
+	db	rest,2
+	Drum	_ins_Tom2,4
+	db	rest,2
+	Drum	_ins_Tom2,4
+	db	rest,2
+	Drum	_ins_Tom2,2
+	Drum	_ins_Tom2,2
+	Drum	_ins_Tom2,2
+	Drum	_ins_Tom2,2
+	ret
+
+FlashTitle_CH2:
+	db	SetLoopPoint
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block1
+	db	GotoLoopPoint
+.block0
+	db	SetInstrument,_ins_Arp017C
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	SetInstrument,_ins_Arp057C
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	db	A#4,4
+	ret
+.block1
+	db	SetInstrument,_ins_Arp950
+	db	G#4,6
+	db	SetInstrument,_ins_Arp740
+	db	G#4,6
+	db	SetInstrument,_ins_Arp950
+	db	A#4,6
+	db	G#4,6
+	db	SetInstrument,_ins_Arp830
+	db	F_4,4
+	db	D#4,4
+	ret
+FlashTitle_CH3:
+	db	EnablePWM,$f,7
+	db	SetInstrument,_ins_PWM1
+	db	SetLoopPoint
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block1
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block2
+	db	CallSection
+	dw	.block2
+	db	CallSection
+	dw	.block1
+	db	GotoLoopPoint
+	db	EndChannel
+.block0
+	db	A#5,2
+	db	D#6,2
+	db	F_6,2
+	db	rest,2
+	db	F_6,2
+	db	A#5,2
+	db	B_5,2
+	db	F_6,2
+	db	rest,2
+	db	A#5,2
+	db	B_5,2
+	db	F_6,2
+	db	A#5,4
+	db	A#5,2
+	db	rest,2
+	ret
+.block1
+	db	F_6,6
+	db	D#6,2
+	db	rest,4
+	db	G_6,6
+	db	G#6,2
+	db	rest,4
+	db	C#6,4
+	db	B_5,2
+	db	C#6,1
+	db	B_5,1
+	ret
+.block2
+	db	A#6,2
+	db	D#7,2
+	db	F_7,2
+	db	rest,2
+	db	F_7,2
+	db	A#6,2
+	db	B_6,2
+	db	F_7,2
+	db	rest,2
+	db	A#6,2
+	db	B_6,2
+	db	F_7,2
+	db	A#6,4
+	db	A#6,2
+	db	rest,2
+	ret
+
+FlashTitle_CH4:
+	db	SetLoopPoint
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block0
+	db	CallSection
+	dw	.block1
+	db	GotoLoopPoint
+
+.block0
+	Drum	Kick,4
+	Drum	OHH,4
+	Drum	Snare,4
+	Drum	Kick,4
+	Drum	OHH,4
+	Drum	Kick,4
+	Drum	Snare,4
+	Drum	Kick,4
+	Drum	Kick,2
+	Drum	Kick,2
+	Drum	OHH,4
+	Drum	Snare,4
+	Drum	Kick,4
+	Drum	CHH,4
+	Drum	OHH,4
+	Drum	Snare,4
+	Drum	OHH,4
+	ret
+
+.block1
+	Drum	Snare,6
+	Drum	Snare,6
+	Drum	Snare,6
+	Drum	Snare,6
+	Drum	Snare,2
+	Drum	Snare,2
+	Drum	Snare,2
+	Drum	Snare,2
 	ret

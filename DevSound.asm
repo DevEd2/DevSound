@@ -68,6 +68,7 @@ DevSound_Init:
 	; load default waveform
 	ld	hl,DefaultWave
 	call	LoadWave
+	call	ClearWaveBuffer
 	
 	; set up song pointers
 	ld	hl,SongPointerTable
@@ -359,6 +360,9 @@ CH1_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
 
 .setInstrument
 	pop	hl
@@ -460,6 +464,36 @@ CH1_CommandTable:
 	ld	[CH1Ins2],a
 	ld	a,1
 	ld	[CH1InsMode],a
+	jp	CH1_CheckByte
+	
+.randomizeWave
+	pop	hl
+	jp	CH1_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH1_CheckByte	
+	
+.enablePWM
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc2
+	inc	h
+.nc2
+	ld	a,c
+	add	2
+	ld	c,a
 	jp	CH1_CheckByte
 	
 CH1_SetInstrument:
@@ -640,6 +674,9 @@ CH2_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
 
 .setInstrument
 	pop	hl
@@ -741,7 +778,37 @@ CH2_CommandTable:
 	ld	[CH2Ins2],a
 	ld	a,1
 	ld	[CH2InsMode],a
+	jp	CH2_CheckByte
+
+.randomizeWave
+	pop	hl
+	jp	CH2_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
 	jp	CH2_CheckByte	
+	
+.enablePWM
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc2
+	inc	h
+.nc2
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -918,6 +985,9 @@ CH3_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
 
 .setInstrument
 	pop	hl
@@ -1019,6 +1089,49 @@ CH3_CommandTable:
 	ld	[CH3Ins2],a
 	ld	a,1
 	ld	[CH3InsMode],a
+	jp	CH3_CheckByte
+	
+.randomizeWave
+	call	_RandomizeWave
+	pop	hl
+	jp	CH3_CheckByte
+
+.combineWaves
+	pop	hl
+	push	bc
+	ld	a,[hl+]
+	ld	c,a
+	ld	a,[hl+]
+	ld	b,a
+	ld	a,[hl+]
+	ld	e,a
+	ld	a,[hl+]
+	ld	d,a
+	push	hl
+	call	_CombineWaves
+	pop	hl
+	pop	bc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH3_CheckByte
+	
+.enablePWM
+	pop	hl
+	ld	a,[hl+]
+	ld	[PWMVol],a
+	ld	a,[hl+]
+	ld	[PWMSpeed],a
+	ld	a,$ff
+	ld	[WavePos],a
+	xor	a
+	ld	[PWMDir],a
+	inc	a
+	ld	[PWMEnabled],a
+	ld	[PWMTimer],a
+	ld	a,c
+	add	2
+	ld	c,a
 	jp	CH3_CheckByte
 	
 CH3_SetInstrument:
@@ -1188,6 +1301,9 @@ CH4_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
 
 .setInstrument
 	pop	hl
@@ -1289,6 +1405,36 @@ CH4_CommandTable:
 	ld	[CH4Ins2],a
 	ld	a,1
 	ld	[CH4InsMode],a
+	jp	CH4_CheckByte
+	
+.randomizeWave
+	pop	hl
+	jp	CH4_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH4_CheckByte	
+	
+.enablePWM
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc2
+	inc	h
+.nc2
+	ld	a,c
+	add	2
+	ld	c,a
 	jp	CH4_CheckByte
 
 CH4_SetInstrument:
@@ -1906,7 +2052,7 @@ CH3_UpdateRegisters:
 	inc	h
 .nocarry2
 	ld	a,[hl+]
-	cp	$ff
+	cp	$ff					; table end?
 	jr	z,.updateVolume
 	ld	b,a
 	ld	a,[CH3Wave]
@@ -1914,6 +2060,11 @@ CH3_UpdateRegisters:
 	jr	z,.noreset2
 	ld	a,b
 	ld	[CH3Wave],a
+	cp	$c0					; if value = $c0, use wave buffer
+	jr	nz,.notwavebuf
+	ld	hl,WaveBuffer
+	jr	.loadwave
+.notwavebuf
 	add	a
 	ld	hl,WaveTable
 	add	l
@@ -1924,6 +2075,7 @@ CH3_UpdateRegisters:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
+.loadwave
 	call	LoadWave
 	ld	a,e
 	or	%10000000
@@ -1972,6 +2124,7 @@ CH3_UpdateRegisters:
 	ld	a,[hl]
 	ld	[CH3VolPos],a
 .done
+	call	DoPWM
 
 ; ================================================================
 
@@ -2084,7 +2237,7 @@ DoneUpdatingRegisters:
 	ret
 
 ; ================================================================
-; Subroutines
+; Wave routines
 ; ================================================================
 
 LoadWave:
@@ -2100,64 +2253,174 @@ LoadWave:
 	ld	a,%10000000
 	ldh	[rNR30],a	; enable CH3
 	ret
-
-; ================================================================
-; Combine two waves.
-; INPUT: hl = first wave addr
-;        bc = second wave addr
-; ================================================================
-CombineWaves:
-	ld	de,WaveBuffer
-	ld	a,$10
-	ld	[WaveCounter],a
-.loop
-	ld	a,[bc]
-	ld	[WaveTempByte1],a
-	inc	bc
-	ld	a,[hl+]
-	ld	[WaveTempByte2],a
-
-	push	bc
-	ld	a,[WaveTempByte1]
-	and	$f0
-	rra
-	and	$f0
-	ld	b,a
-	ld	a,[WaveTempByte2]
-	and	$f0
-	rra
-	and	$f0
-	add	b
-	ld	[WaveTempByte3],a
 	
-	ld	a,[WaveTempByte1]
-	and	$0f
-	rra
+ClearWaveBuffer:
+	ld	a,$10
 	ld	b,a
-	ld	a,[WaveTempByte2]
-	and	$0f
-	rra
-	add	b
-	ld	[WaveTempByte4],a
-	ld	b,a
-	ld	a,[WaveTempByte3]
-	add	b
+	xor	a
+	ld	hl,WaveBuffer
+.loop
+	ld	[hl+],a		; copy to wave ram
+	dec	b
+	jr	nz,.loop	; loop until done
+	ret
+
+; Combine two waves. Optimized by Pigu
+; INPUT: bc = first wave addr
+;        de = second wave addr
+
+_CombineWaves:
+    ld hl,WaveBuffer
+    ld a, 16
+.loop
+    push af
+    push hl
+	ld a, [bc]
+    and $f
+    ld l, a
+    ld a, [de]
+    and $f
+    add l
+    rra
+    ld l, a
+    ld a, [bc]
+    inc bc
+    and $f0
+    ld h, a
+    ld a, [de]
+    inc de
+    and $f0
+    add h
+    rra
+    and $f0
+    or l
+    pop hl
+    ld [hli], a
+    pop af
+    dec a
+    jr nz, .loop
+    ret
+	
+; Randomize the wave buffer
+
+_RandomizeWave:
+	ld	hl,NoiseData
+	ld	de,WaveBuffer
+	ld	b,$10
+	ld	a,[WavePos]
+	inc	a
+	ld	[WavePos],a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	hl,NoiseData
+	add	l
+	ld	l,a
+	jr	nc,.loop
+	inc	h
+.loop
+	ld	a,[hl+]
 	ld	[de],a
 	inc	de
-	
-	pop	bc
-	ld	a,[WaveCounter]
-	dec	a
-	ld	[WaveCounter],a
+	dec	b
 	jr	nz,.loop
+	ret
 
+; Do PWM
+DoPWM:
+	ld	a,[PWMEnabled]
+	and	a
+	ret	z	; if PWM is not enabled, return
+	ld	a,[PWMTimer]
+	dec	a
+	ld	[PWMTimer],a
+	and	a
+	ret	nz
+	ld	a,[PWMSpeed]
+	ld	[PWMTimer],a
+	; actually do PWM
+
+	ld	a,[PWMDir]
+	and	a
+	jr	nz,.decPos
+.incPos	
+	ld	a,[WavePos]
+	inc	a
+	ld	[WavePos],a
+	cp	$1e
+	jr	nz,.continue
+	ld	a,[PWMDir]
+	xor	1
+	ld	[PWMDir],a
+	jr	.continue
+.decPos
+	ld	a,[WavePos]
+	dec	a
+	ld	[WavePos],a
+	and	a
+	jr	nz,.continue2
+	ld	a,[PWMDir]
+	xor	1
+	ld	[PWMDir],a
+	jr	.continue2
+.continue
+	ld	hl,WaveBuffer
+	ld	a,[WavePos]
+	rra
+	push	af
+	and	$f
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	pop	af
+	jr	c,.odd
+.even
+	ld	a,[PWMVol]
+	swap	a
+	ld	[hl],a
+	ret
+.odd
+	ld	a,[hl]
+	ld	b,a
+	ld	a,[PWMVol]
+	or	b
+	ld	[hl],a
+	ret
+	
+.continue2
+	ld	hl,WaveBuffer
+	ld	a,[WavePos]
+	inc	a
+	rra
+	push	af
+	and	$f
+	add	l
+	ld	l,a
+	jr	nc,.nocarry2
+	inc	h
+.nocarry2
+	pop	af
+	jr	nc,.odd2
+.even2
+	ld	a,[PWMVol]
+	swap	a
+	ld	[hl],a
+	ret
+.odd2
+	xor	a
+	ld	[hl],a
 	ret
 	
 ; ================================================================
 ; Frequency table
 ; ================================================================
 
-FreqTable:  
+FreqTable:  ; TODO: Add at least one extra octave
 ;	     C-x  C#x  D-x  D#x  E-x  F-x  F#x  G-x  G#x  A-x  A#x  B-x
 	dw	$02c,$09c,$106,$16b,$1c9,$223,$277,$2c6,$312,$356,$39b,$3da ; octave 1
 	dw	$416,$44e,$483,$4b5,$4e5,$511,$53b,$563,$589,$5ac,$5ce,$5ed ; octave 2
@@ -2195,10 +2458,10 @@ DefaultRegTable:
 	; ch4
 	dw	DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	; wave buffer
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
+
+NoiseData:		incbin	"NoiseData.bin"
 	
 ; ================================================================
 ; Dummy data

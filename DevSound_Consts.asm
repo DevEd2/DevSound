@@ -96,7 +96,10 @@ SetSweep		equ	$87
 SetPan			equ	$88
 SetSpeed		equ	$89
 SetInsAlternate	equ	$8a
-DummyCommand	equ	$8b
+RandomizeWave	equ	$8b
+CombineWaves	equ	$8c
+EnablePWM		equ	$8d
+DummyCommand	equ	$8e
 EndChannel		equ	$FF
 
 endc

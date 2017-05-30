@@ -9,7 +9,7 @@ DebugFlag	set	1
 
 ; If set to 1, display numbers in decimal instead of hexadecimal.
 
-UseDecimal	set	1
+UseDecimal	set	0
 
 ; ================================================================
 ; Project includes
@@ -217,7 +217,25 @@ MainLoop:
 		call	DrawHex
 	endc
 	
-	; playback controls
+	ld	a,[rLY]			; wait for scanline 0
+	and	a
+	jp	nz,.continue
+	ldh	a,[rBGP]		; get current palette
+	ld	b,a				; copy to B for later use
+	xor	$ff				; invert palette
+	ldh	[rBGP],a		; (draw CPU meter from top of screen)
+	call	DS_Play		; update sound
+	
+	ldh	a,[rLY]			; get current scanline
+	ld	c,a
+	ld	a,b				; restore palette
+	ldh	[rBGP],a		; (stop drawing CPU meter)
+	halt				; wait for VBlank
+	
+	ld	a,c
+	ld	hl,$9a11		; raster time display address in VRAM
+	call	DrawHex		; draw raster time
+		; playback controls
 	call	CheckInput
 	ld	a,[sys_btnPress]
 	bit	btnUp,a
@@ -270,33 +288,11 @@ MainLoop:
 	call	DS_Fade
 	jr	.continue
 .fadein	
-;	ld	hl,DefaultWave
-;	ld	bc,wave_Bass	
-;	call	CombineWaves
 	ld	a,[CurrentSong]
 	call	DS_Init
 	ld	a,1
 	call	DS_Fade
-	
 .continue
-	ld	a,[rLY]			; wait for scanline 0
-	and	a
-	jr	nz,.continue
-	ldh	a,[rBGP]		; get current palette
-	ld	b,a				; copy to B for later use
-	xor	$ff				; invert palette
-	ldh	[rBGP],a		; (draw CPU meter from top of screen)
-	call	DS_Play		; update sound
-	
-	ldh	a,[rLY]			; get current scanline
-	ld	c,a
-	ld	a,b				; restore palette
-	ldh	[rBGP],a		; (stop drawing CPU meter)
-	halt				; wait for VBlank
-	
-	ld	a,c
-	ld	hl,$9a11		; raster time display address in VRAM
-	call	DrawHex		; draw raster time
 	jp	MainLoop
 	
 ; ================================================================
