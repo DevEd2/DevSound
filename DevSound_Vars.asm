@@ -130,4 +130,7 @@ PWMVol				ds	1
 PWMSpeed			ds	1
 PWMTimer			ds	1
 PWMDir				ds	1
+RandomizerEnabled	ds	1
+RandomizerTimer		ds	1
+RandomizerSpeed		ds	1
 endc

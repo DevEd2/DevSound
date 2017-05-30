@@ -85,21 +85,23 @@ fix		equ	C_2
 
 ; Command definitions
 
-SetInstrument	equ	$80
-SetLoopPoint	equ	$81
-GotoLoopPoint	equ	$82
-CallSection		equ	$83
-SetChannelPtr	equ	$84
-PitchBendUp		equ	$85
-PitchBendDown	equ	$86
-SetSweep		equ	$87
-SetPan			equ	$88
-SetSpeed		equ	$89
-SetInsAlternate	equ	$8a
-RandomizeWave	equ	$8b
-CombineWaves	equ	$8c
-EnablePWM		equ	$8d
-DummyCommand	equ	$8e
-EndChannel		equ	$FF
+SetInstrument		equ	$80
+SetLoopPoint		equ	$81
+GotoLoopPoint		equ	$82
+CallSection			equ	$83
+SetChannelPtr		equ	$84
+PitchBendUp			equ	$85
+PitchBendDown		equ	$86
+SetSweep			equ	$87
+SetPan				equ	$88
+SetSpeed			equ	$89
+SetInsAlternate		equ	$8a
+RandomizeWave		equ	$8b
+CombineWaves		equ	$8c
+EnablePWM			equ	$8d
+EnableRandomizer	equ	$8e
+DisableAutoWave		equ	$8f
+DummyCommand		equ	$90
+EndChannel			equ	$FF
 
 endc

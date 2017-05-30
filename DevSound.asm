@@ -54,6 +54,7 @@ DevSound_Init:
 	xor	a
 	ldh	[rNR52],a	; disable sound
 	ld	[PWMEnabled],a
+	ld	[RandomizerEnabled],a
 	ld	[WaveBufUpdateFlag],a
 
 	; init sound RAM area
@@ -365,6 +366,8 @@ CH1_CommandTable:
 	dw	.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
 
 .setInstrument
 	pop	hl
@@ -496,6 +499,16 @@ CH1_CommandTable:
 	ld	a,c
 	add	2
 	ld	c,a
+	jp	CH1_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH1_CheckByte
+
+.disableAutoWave
+	pop	hl
 	jp	CH1_CheckByte
 	
 CH1_SetInstrument:
@@ -679,6 +692,8 @@ CH2_CommandTable:
 	dw	.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
 
 .setInstrument
 	pop	hl
@@ -811,6 +826,16 @@ CH2_CommandTable:
 	add	2
 	ld	c,a
 	jp	CH2_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH1_CheckByte
+
+.disableAutoWave
+	pop	hl
+	jp	CH1_CheckByte
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -990,6 +1015,8 @@ CH3_CommandTable:
 	dw	.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
 
 .setInstrument
 	pop	hl
@@ -1119,6 +1146,7 @@ CH3_CommandTable:
 	jp	CH3_CheckByte
 	
 .enablePWM
+	call	ClearWaveBuffer
 	pop	hl
 	ld	a,[hl+]
 	ld	[PWMVol],a
@@ -1134,6 +1162,28 @@ CH3_CommandTable:
 	ld	a,c
 	add	2
 	ld	c,a
+	xor	a
+	ld	[RandomizerEnabled],a
+	jp	CH3_CheckByte
+	
+.enableRandomizer
+	call	ClearWaveBuffer
+	pop	hl
+	inc	c
+	ld	a,[hl+]
+	ld	[RandomizerSpeed],a
+	ld	a,1
+	ld	[RandomizerTimer],a
+	ld	[RandomizerEnabled],a
+	xor	a
+	ld	[PWMEnabled],a
+	jp	CH3_CheckByte
+	
+.disableAutoWave
+	pop	hl
+	xor	a
+	ld	[PWMEnabled],a
+	ld	[RandomizerEnabled],a
 	jp	CH3_CheckByte
 	
 CH3_SetInstrument:
@@ -1306,6 +1356,8 @@ CH4_CommandTable:
 	dw	.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
 
 .setInstrument
 	pop	hl
@@ -1437,6 +1489,16 @@ CH4_CommandTable:
 	ld	a,c
 	add	2
 	ld	c,a
+	jp	CH4_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH4_CheckByte
+
+.disableAutoWave
+	pop	hl
 	jp	CH4_CheckByte
 
 CH4_SetInstrument:
@@ -2127,6 +2189,10 @@ CH3_UpdateRegisters:
 	ld	[CH3VolPos],a
 .done
 	call	DoPWM
+	call	DoRandomizer
+	ld	a,[CH3Wave]
+	cp	$c0
+	jr	nz,.noupdate
 	ld	a,[WaveBufUpdateFlag]
 	and	a
 	jr	z,.noupdate
@@ -2280,7 +2346,7 @@ ClearWaveBuffer:
 
 ; Combine two waves. Optimized by Pigu
 ; INPUT: bc = first wave addr
-;        de = second wave addr
+;	  de = second wave addr
 
 _CombineWaves:
     ld hl,WaveBuffer
@@ -2319,6 +2385,7 @@ _CombineWaves:
 ; Randomize the wave buffer
 
 _RandomizeWave:
+	push	de
 	ld	hl,NoiseData
 	ld	de,WaveBuffer
 	ld	b,$10
@@ -2344,6 +2411,7 @@ _RandomizeWave:
 	jr	nz,.loop
 	ld	a,1
 	ld	[WaveBufUpdateFlag],a
+	pop	de
 	ret
 
 ; Do PWM
@@ -2434,6 +2502,19 @@ DoPWM:
 	ld	[WaveBufUpdateFlag],a
 	ret
 	
+DoRandomizer:
+	ld	a,[RandomizerEnabled]
+	and	a
+	ret	z	; if randomizer is disabled, return
+	ld	a,[RandomizerTimer]
+	dec	a
+	ld	[RandomizerTimer],a
+	ret	nz
+	ld	a,[RandomizerSpeed]
+	ld	[RandomizerTimer],a
+	call	_RandomizeWave
+	ret
+	
 ; ================================================================
 ; Frequency table
 ; ================================================================
@@ -2446,6 +2527,7 @@ FreqTable:  ; TODO: Add at least one extra octave
 	dw	$706,$714,$721,$72d,$739,$744,$74f,$759,$762,$76b,$773,$77b ; octave 4
 	dw	$783,$78a,$790,$797,$79d,$7a2,$7a7,$7ac,$7b1,$7b4,$7ba,$7be ; octave 5
 	dw	$7c1,$7c4,$7c8,$7cb,$7ce,$7d1,$7d4,$7d6,$7d9,$7db,$7dd,$7df ; octave 6
+	dw	$7e0,$7e2,$7e4,$7e5,$7e7,$7e8,$7ea,$7eb,$7ec,$7ed,$7ee,$7ef ; extra octave (not used directly)
 	
 NoiseTable:	; taken from deflemask
 	db	$a4	; 15 steps

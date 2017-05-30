@@ -248,7 +248,7 @@ MainLoop:
 	jr	nz,.add1
 	bit	btnA,a
 	jr	nz,.loadSong
-	bit	btnB,b
+	bit	btnB,a
 	jr	nz,.stopSong
 	bit	btnStart,a
 	jr	nz,.fadeout

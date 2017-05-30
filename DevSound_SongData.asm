@@ -93,9 +93,9 @@ arp_Tom:		db	22,20,18,16,14,12,10,9,7,6,4,3,2,1,0,$ff
 
 arp_017C:		db	12,12,7,7,1,1,0,0,$80,0
 arp_057C:		db	12,12,7,7,5,5,0,0,$80,0
-arp_950:		db	9,9,5,5,0,0,$80,0
-arp_740:		db	7,7,4,4,0,0,$80,0
-arp_830:		db	8,8,3,3,0,0,$80,0
+arp_950:		db	9,5,0,9,9,5,5,0,0,$80,3
+arp_740:		db	7,4,0,7,7,4,4,0,0,$80,3
+arp_830:		db	8,3,0,8,8,3,3,0,0,$80,3
 
 ; =================================================================
 ; Noise sequences
@@ -183,7 +183,7 @@ wave_PseudoSquare:
 			db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
 
 ; use $c0 to use the wave buffer
-waveseq_Bass:		db	0,$ff
+waveseq_Bass:		db	$c0,$ff
 waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
 waveseq_Square:		db	$c0,$ff
@@ -426,8 +426,10 @@ Triumph_CH2:
 Triumph_CH3:
 	db	SetInstrument,4
 	db	SetLoopPoint
+	db	EnableRandomizer,3
 	db	C#3,4,C#4,2,$80,5,C#3,2,$80,4,G#3,4,C#4,4,C#3,4,$80,6,C#4,4,$80,4,G#3,4,C#4,4
 	db	G#2,4,G#3,2,$80,5,G#2,2,$80,4,D#3,4,G#3,4,G#2,4,$80,6,G#3,4,$80,4,G#2,4,A#2,4
+	db	EnablePWM,$f,7
 	db	B_2,4,B_3,2,$80,5,B_2,2,$80,4,F#3,4,B_3,4,B_2,4,$80,6,B_3,4,$80,4,C#4,4,B_3,4
 	db	F#2,4,F#3,2,$80,5,F#2,2,$80,4,C#3,4,F#3,4,F#2,4,$80,6,F#3,4,$80,4,B_2,4,B_3,4
 	db	GotoLoopPoint
