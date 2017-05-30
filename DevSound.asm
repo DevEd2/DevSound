@@ -53,6 +53,7 @@ DevSound_Init:
 	push	af		; i swear there's a method to my madness here
 	xor	a
 	ldh	[rNR52],a	; disable sound
+	ld	[WaveBufUpdateFlag],a
 
 	; init sound RAM area
 	ld	de,DSVarsStart
@@ -1925,7 +1926,7 @@ CH3_UpdateRegisters:
 	ld	a,[CH3Enabled]
 	and	a
 	jp	z,CH4_UpdateRegisters
-	
+
 	ld	a,[CH3Note]
 	cp	rest
 	jr	nz,.norest
@@ -2125,6 +2126,17 @@ CH3_UpdateRegisters:
 	ld	[CH3VolPos],a
 .done
 	call	DoPWM
+	ld	a,[WaveBufUpdateFlag]
+	and	a
+	jr	z,.noupdate
+	ld	hl,WaveBuffer
+	call	LoadWave
+	xor	a
+	ld	[WaveBufUpdateFlag],a
+	ld	a,e
+	or	$80
+	ldh	[rNR34],a
+.noupdate
 
 ; ================================================================
 
@@ -2299,6 +2311,8 @@ _CombineWaves:
     pop af
     dec a
     jr nz, .loop
+	ld	a,1
+	ld	[WaveBufUpdateFlag],a
     ret
 	
 ; Randomize the wave buffer
@@ -2327,6 +2341,8 @@ _RandomizeWave:
 	inc	de
 	dec	b
 	jr	nz,.loop
+	ld	a,1
+	ld	[WaveBufUpdateFlag],a
 	ret
 
 ; Do PWM
@@ -2341,8 +2357,6 @@ DoPWM:
 	ret	nz
 	ld	a,[PWMSpeed]
 	ld	[PWMTimer],a
-	; actually do PWM
-
 	ld	a,[PWMDir]
 	and	a
 	jr	nz,.decPos
@@ -2383,14 +2397,14 @@ DoPWM:
 	ld	a,[PWMVol]
 	swap	a
 	ld	[hl],a
-	ret
+	jr	.done
 .odd
 	ld	a,[hl]
 	ld	b,a
 	ld	a,[PWMVol]
 	or	b
 	ld	[hl],a
-	ret
+	jr	.done
 	
 .continue2
 	ld	hl,WaveBuffer
@@ -2410,10 +2424,13 @@ DoPWM:
 	ld	a,[PWMVol]
 	swap	a
 	ld	[hl],a
-	ret
+	jr	.done
 .odd2
 	xor	a
 	ld	[hl],a
+.done
+	ld	a,1
+	ld	[WaveBufUpdateFlag],a
 	ret
 	
 ; ================================================================

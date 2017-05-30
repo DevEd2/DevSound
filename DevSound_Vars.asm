@@ -122,11 +122,12 @@ CH4Ins1			ds	1
 CH4Ins2			ds	1
 DSVarsEnd
 
-WaveBuffer		ds	16
-WavePos			ds	1
-PWMEnabled		ds	1
-PWMVol			ds	1
-PWMSpeed		ds	1
-PWMTimer		ds	1
-PWMDir			ds	1
+WaveBuffer			ds	16
+WavePos				ds	1
+WaveBufUpdateFlag	ds	1
+PWMEnabled			ds	1
+PWMVol				ds	1
+PWMSpeed			ds	1
+PWMTimer			ds	1
+PWMDir				ds	1
 endc

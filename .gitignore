@@ -10,5 +10,8 @@
 # nezplug++ ini file
 nezplay.ini
 
+# FamiTracker modules (i use GBSImport for testing in some cases)
+*.ftm
+
 # bgb save states
 *.sn*
