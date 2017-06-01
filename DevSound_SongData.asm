@@ -118,8 +118,6 @@ noiseseq_McAlbySnare:	db	28,24,28,32,36,40,40,$80,6
 noiseseq_McAlbyHat:		db	40,42,44,$80,2
 noiseseq_McAlbyCymb:	db	40,42,36,$80,2
 
-
-
 ; =================================================================
 ; Pulse sequences
 ; =================================================================
@@ -236,47 +234,47 @@ InstrumentTable:
 ; Instrument format: [no reset flag],[wave mode (ch3 only)],[voltable id],[arptable id],[pulsetable/wavetable id],[vibtable id]
 ; note that wave mode must be 0 for non-wave instruments
 ; !!! REMEMBER TO ADD INSTRUMENTS TO THE INSTRUMENT POINTER TABLE !!!
-ins_Gadunk:			Instrument	0,0,vol_Gadunk,arp_Gadunk,pulse_Dummy,vib_Dummy
-ins_Arp1:			Instrument	0,0,vol_Arp,arp_Pluck059,pulse_Arp,vib_Dummy
-ins_Arp2:			Instrument	0,0,vol_Arp,arp_Pluck047,pulse_Arp,vib_Dummy
-ins_OctArp:			Instrument	0,0,vol_OctArp,arp_Octave,pulse_OctArp,vib_Dummy
-ins_Bass1:			Instrument	0,0,vol_Bass1,arp_Pluck,waveseq_Bass,vib_Dummy
-ins_Bass2:			Instrument	0,0,vol_Bass2,arp_Pluck,waveseq_Bass,vib_Dummy
-ins_Bass3:			Instrument	0,0,vol_Bass3,arp_Pluck,waveseq_Bass,vib_Dummy
-ins_GadunkWave:		Instrument	0,0,vol_Bass1,arp_Gadunk,waveseq_Tri,vib_Dummy
-ins_Kick:			Instrument	0,0,vol_Kick,noiseseq_Kick,DummyTable,DummyTable	; pulse/waveseq and vibrato unused by noise instruments
-ins_Snare:			Instrument	0,0,vol_Snare,noiseseq_Snare,DummyTable,DummyTable
-ins_CHH:			Instrument	0,0,vol_Kick,noiseseq_Hat,DummyTable,DummyTable
-ins_OHH:			Instrument	0,0,vol_OHH,noiseseq_Hat,DummyTable,DummyTable
-ins_CymbQ:			Instrument	0,0,vol_CymbQ,noiseseq_Hat,DummyTable,DummyTable
-ins_CymbL:			Instrument	0,0,vol_CymbL,noiseseq_Hat,DummyTable,DummyTable
+ins_Gadunk:			Instrument	0,vol_Gadunk,arp_Gadunk,pulse_Dummy,vib_Dummy
+ins_Arp1:			Instrument	0,vol_Arp,arp_Pluck059,pulse_Arp,vib_Dummy
+ins_Arp2:			Instrument	0,vol_Arp,arp_Pluck047,pulse_Arp,vib_Dummy
+ins_OctArp:			Instrument	0,vol_OctArp,arp_Octave,pulse_OctArp,vib_Dummy
+ins_Bass1:			Instrument	0,vol_Bass1,arp_Pluck,waveseq_Bass,vib_Dummy
+ins_Bass2:			Instrument	0,vol_Bass2,arp_Pluck,waveseq_Bass,vib_Dummy
+ins_Bass3:			Instrument	0,vol_Bass3,arp_Pluck,waveseq_Bass,vib_Dummy
+ins_GadunkWave:		Instrument	0,vol_Bass1,arp_Gadunk,waveseq_Tri,vib_Dummy
+ins_Kick:			Instrument	0,vol_Kick,noiseseq_Kick,DummyTable,DummyTable	; pulse/waveseq and vibrato unused by noise instruments
+ins_Snare:			Instrument	0,vol_Snare,noiseseq_Snare,DummyTable,DummyTable
+ins_CHH:			Instrument	0,vol_Kick,noiseseq_Hat,DummyTable,DummyTable
+ins_OHH:			Instrument	0,vol_OHH,noiseseq_Hat,DummyTable,DummyTable
+ins_CymbQ:			Instrument	0,vol_CymbQ,noiseseq_Hat,DummyTable,DummyTable
+ins_CymbL:			Instrument	0,vol_CymbL,noiseseq_Hat,DummyTable,DummyTable
 
-ins_PulseBass:		Instrument	0,0,vol_PulseBass,arp_Pluck,pulse_Bass,vib_Dummy
-ins_Tom:			Instrument	0,0,vol_Tom,arp_Tom,pulse_Square,vib_Dummy
-ins_Arp:			Instrument	0,0,vol_Arp2,ArpBuffer,pulse_Arp2,vib_Dummy
+ins_PulseBass:		Instrument	0,vol_PulseBass,arp_Pluck,pulse_Bass,vib_Dummy
+ins_Tom:			Instrument	0,vol_Tom,arp_Tom,pulse_Square,vib_Dummy
+ins_Arp:			Instrument	0,vol_Arp2,ArpBuffer,pulse_Arp2,vib_Dummy
 
-ins_WaveLeadShort:	Instrument	0,0,vol_WaveLeadShort,arp_Pluck,waveseq_PulseLead,vib_Dummy
-ins_WaveLeadMed:	Instrument	0,0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_Dummy
-ins_WaveLeadLong:	Instrument	0,0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
-ins_WaveLeadLong2:	Instrument	0,0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
+ins_WaveLeadShort:	Instrument	0,vol_WaveLeadShort,arp_Pluck,waveseq_PulseLead,vib_Dummy
+ins_WaveLeadMed:	Instrument	0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_Dummy
+ins_WaveLeadLong:	Instrument	0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
+ins_WaveLeadLong2:	Instrument	0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
 
-ins_Echo1:			Instrument	0,0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Test
-ins_Echo2:			Instrument	0,0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Test
+ins_Echo1:			Instrument	0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Test
+ins_Echo2:			Instrument	0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Test
 
-ins_McAlbyKick:		Instrument	0,0,vol_McAlbyKick,noiseseq_McAlbyKick,DummyTable,DummyTable
-ins_McAlbySnare:	Instrument	0,0,vol_McAlbySnare,noiseseq_McAlbySnare,DummyTable,DummyTable
-ins_McAlbyCHH:		Instrument	0,0,vol_McAlbyCHH,noiseseq_McAlbyHat,DummyTable,DummyTable
-ins_McAlbyOHH:		Instrument	0,0,vol_McAlbyOHH,noiseseq_McAlbyHat,DummyTable,DummyTable
-ins_McAlbyCymb:		Instrument	0,0,vol_McAlbyCymb,noiseseq_McAlbyCymb,DummyTable,DummyTable
+ins_McAlbyKick:		Instrument	0,vol_McAlbyKick,noiseseq_McAlbyKick,DummyTable,DummyTable
+ins_McAlbySnare:	Instrument	0,vol_McAlbySnare,noiseseq_McAlbySnare,DummyTable,DummyTable
+ins_McAlbyCHH:		Instrument	0,vol_McAlbyCHH,noiseseq_McAlbyHat,DummyTable,DummyTable
+ins_McAlbyOHH:		Instrument	0,vol_McAlbyOHH,noiseseq_McAlbyHat,DummyTable,DummyTable
+ins_McAlbyCymb:		Instrument	0,vol_McAlbyCymb,noiseseq_McAlbyCymb,DummyTable,DummyTable
 
-ins_Tom2:			Instrument	0,0,vol_Tom2,arp_Tom,pulse_Square,vib_Dummy
-ins_PWM1:			Instrument	0,0,vol_WaveLeadShort,arp_Pluck,waveseq_Square,vib_Dummy
-ins_Arp017C:		Instrument	0,0,vol_PulseBass2,arp_017C,pulse_OctArp,vib_Dummy
-ins_Arp057C:		Instrument	0,0,vol_PulseBass2,arp_057C,pulse_OctArp,vib_Dummy
-ins_PulseBass2:		Instrument	0,0,vol_PulseBass2,arp_Pluck,pulse_Bass,vib_Dummy
-ins_Arp950:			Instrument	0,0,vol_PulseBass2,arp_950,pulse_OctArp,vib_Dummy
-ins_Arp740:			Instrument	0,0,vol_PulseBass2,arp_740,pulse_OctArp,vib_Dummy
-ins_Arp830:			Instrument	0,0,vol_PulseBass2,arp_830,pulse_OctArp,vib_Dummy
+ins_Tom2:			Instrument	0,vol_Tom2,arp_Tom,pulse_Square,vib_Dummy
+ins_PWM1:			Instrument	0,vol_WaveLeadShort,arp_Pluck,waveseq_Square,vib_Dummy
+ins_Arp017C:		Instrument	0,vol_PulseBass2,arp_017C,pulse_OctArp,vib_Dummy
+ins_Arp057C:		Instrument	0,vol_PulseBass2,arp_057C,pulse_OctArp,vib_Dummy
+ins_PulseBass2:		Instrument	0,vol_PulseBass2,arp_Pluck,pulse_Bass,vib_Dummy
+ins_Arp950:			Instrument	0,vol_PulseBass2,arp_950,pulse_OctArp,vib_Dummy
+ins_Arp740:			Instrument	0,vol_PulseBass2,arp_740,pulse_OctArp,vib_Dummy
+ins_Arp830:			Instrument	0,vol_PulseBass2,arp_830,pulse_OctArp,vib_Dummy
 
 _ins_Gadunk			equ	0
 _ins_Arp1			equ	1
@@ -513,7 +511,7 @@ Triumph_CH4:
 
 PT_InsertTitleHere:	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
 	
-InsertTitleHere_CH1:	; TODO: Implement a way to optimize this, as it is it's a redundant mess.
+InsertTitleHere_CH1:
 	db	CallSection
 	dw	.block0
 	db	CallSection

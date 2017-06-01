@@ -96,7 +96,6 @@ CH3FreqOffset	ds	1
 CH3Vol			ds	1
 CH3Wave			ds	1
 CH3Pan			ds	1
-CH3Mode			ds	1
 CH3NoteCount	ds	1
 CH3InsMode		ds	1
 CH3Ins1			ds	1

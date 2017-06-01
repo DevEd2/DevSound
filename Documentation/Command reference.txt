@@ -1,0 +1,109 @@
+DEVSOUND COMMAND REFERENCE
+==========================
+
+NOTE: Pointer parameters must be specified with dw, otherwise use db.
+
+$00 - fix
+  Essentially the same as note C-2. Allows playing fixed arpeggio sequences.
+  Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
+  
+$00 - $47 - [note]
+  Play a note at the given frequency. Note range is from C_2 to B_7.
+  Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
+  
+$48 - rest
+  Silences a channel for the specified length.
+  Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
+
+$80 - SetInstrument
+  Sets the instrument for the current channel.
+  Parameter 1: Instrument ID (1 byte)
+  
+$81 - SetLoopPoint
+  Sets a loop point, which you can return to with the GotoLoopPoint command (see below).
+  No parameters.
+  
+$82 - GotoLoopPoint
+  Returns to the loop point, provided it has been set with the SetLoopPoint command (see above).
+  No parameters.
+  
+$83 - CallSection
+  Calls a section of song data.
+  Parameter 1: Section pointer (2 bytes)
+  NOTE: Nesting sections will not work!
+ 
+$84 - SetChannelPointer
+  Jumps to a section of song data.
+  Parameter 1: Section pointer (2 bytes)
+  
+$85 - PitchBendUp (NYI)
+  Start an upwards pitch bend. Lasts until a new note is triggered.
+  Parameter 1: Speed (1 byte)
+  
+$86 - PitchBendDown (NYI)
+  Start a downwards pitch bend. Lasts until a new note is triggered.
+  Parameter 1: Speed (1 byte)
+  
+$87 - SetSweep (CH1 only) (NYI)
+  Enables hardware sweep for CH1.
+  Parameter 1: Raw value to write to NR10 (1 byte)
+
+$88 - SetPan
+  Set panning for the current channel.
+  Parameter 1: Panning flags (1 byte)
+    - Upper nybble controls left speaker output (must be 1). Ditto for lower nybble which controls right speaker output.
+	- Example: $10 to pan to the left speaker, $01 to pan to the right speaker, $11 for both speakers, $00 to mute channel
+	
+$89 - SetSpeed
+  Set global song speed (affects all channels!)
+  Parameter 1: First speed (1 byte)
+  Parameter 2: Second speed (1 byte)
+  
+$8A - SetInsAlternate
+  Enable alternating between two different instruments. Can be used for single channel echo effects.
+  Parameter 1: First instrument ID (1 byte)
+  Parameter 2: Second instrument ID (1 byte)
+  
+$8B - RandomizeWave (CH3 only)
+  Randomize the wave buffer.
+  No parameters.
+  NOTE: This will not affect the current instrument unless it is set to use the wave buffer!
+  
+$8C - CombineWaves (CH3 only)
+  Combine two waveforms, outputting the result to the wave buffer.
+  Parameter 1: Pointer to first wave (2 bytes)
+  Parameter 2: Pointer to second wave (2 bytes)
+  NOTE: This will not affect the current instrument unless it is set to use the wave buffer!
+  
+$8D - EnablePWM (CH3 only)
+  Enable pulse width modulation for the wave channel with the given volume and speed.
+  Parameter 1: Volume (can be anywhere from 0 to 15) (1 byte)
+  Parameter 2: Speed (lower values = higher speed) (1 byte)
+  NOTE: This will not affect the current instrument unless it is set to use the wave buffer!
+  
+$8E - EnableRandomizer (CH3 only)
+  Enable the randomizer for the wave channel with the given speed.
+  Parameter 1: Speed (lower values = higher speed) (1 byte)
+  NOTE: This will not affect the current instrument unless it is set to use the wave buffer!
+
+$8F - DisableAutoWave
+  Disable any active wave synthesis features (e.g. PWM, randomizer)
+  No parameters.
+  NOTE: This will not affect the current instrument unless it is set to use the wave buffer!
+  
+$90 - Arp (CH1, CH2, CH3)
+  Dynamically create an arpeggio sequence. Useful for simulating chords.
+  Parameter 1: Speed (0 = 1 frame, 1 = 2 frames) (1 byte)
+  Parameter 2: Arp value (upper nybble = value 1, lower nybble = value 2) (1 byte)
+  Example usage: $00,$47 will result in [0 4 7], $01,$59 will result in [0 0 5 5 9 9]
+  NOTE: This will not affect the current instrument unless it is set to use the arpeggio buffer!
+  
+$C9 - ret
+  Return from a section. (The ret instruction can be used, as long as it is not preceded with a db or dw instruction)
+  No parameters.
+  NOTE: You can only return from a section if it was specifically called!
+  
+$FF - EndChannel
+  Ends the current channel.
+  No parameters.
+  NOTE: Any song data after this command will be ignored!

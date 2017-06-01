@@ -536,8 +536,6 @@ CH1_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH1Reset],a
 	ld	b,a
-	; wave mode flag (unused for ch1)
-	inc	hl
 	; vol table
 	ld	a,[hl+]
 	ld	[CH1VolPtr],a
@@ -871,8 +869,6 @@ CH2_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH2Reset],a
 	ld	b,a
-	; wave mode flag (unused for CH2)
-	inc	hl
 	; vol table
 	ld	a,[hl+]
 	ld	[CH2VolPtr],a
@@ -1229,9 +1225,6 @@ CH3_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH3Reset],a
 	ld	b,a
-	; wave mode flag
-	ld	a,[hl+]
-	ld	[CH3Mode],a
 	; vol table
 	ld	a,[hl+]
 	ld	[CH3VolPtr],a
@@ -1558,8 +1551,6 @@ CH4_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH4Reset],a
 	ld	b,a
-	; wave mode flag (unused for CH4)
-	inc	hl
 	; vol table
 	ld	a,[hl+]
 	ld	[CH4VolPtr],a
@@ -2665,7 +2656,7 @@ DefaultRegTable:
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch3
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0
 	; ch4
 	dw	DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
