@@ -72,6 +72,7 @@ DevSound_Init:
 	ld	hl,DefaultWave
 	call	LoadWave
 	call	ClearWaveBuffer
+	call	ClearArpBuffer
 	
 	; set up song pointers
 	ld	hl,SongPointerTable
@@ -368,6 +369,7 @@ CH1_CommandTable:
 	dw	.enablePWM
 	dw	.enableRandomizer
 	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -509,6 +511,14 @@ CH1_CommandTable:
 
 .disableAutoWave
 	pop	hl
+	jp	CH1_CheckByte
+	
+.arp
+	pop	hl
+	call	DoArp
+	ld	a,c
+	add	2
+	ld	c,a
 	jp	CH1_CheckByte
 	
 CH1_SetInstrument:
@@ -694,6 +704,7 @@ CH2_CommandTable:
 	dw	.enablePWM
 	dw	.enableRandomizer
 	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -836,6 +847,14 @@ CH2_CommandTable:
 .disableAutoWave
 	pop	hl
 	jp	CH1_CheckByte
+	
+.arp
+	pop	hl
+	call	DoArp
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1017,6 +1036,7 @@ CH3_CommandTable:
 	dw	.enablePWM
 	dw	.enableRandomizer
 	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -1184,6 +1204,14 @@ CH3_CommandTable:
 	xor	a
 	ld	[PWMEnabled],a
 	ld	[RandomizerEnabled],a
+	jp	CH3_CheckByte
+
+.arp
+	pop	hl
+	call	DoArp
+	ld	a,c
+	add	2
+	ld	c,a
 	jp	CH3_CheckByte
 	
 CH3_SetInstrument:
@@ -1358,6 +1386,7 @@ CH4_CommandTable:
 	dw	.enablePWM
 	dw	.enableRandomizer
 	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -1499,6 +1528,19 @@ CH4_CommandTable:
 
 .disableAutoWave
 	pop	hl
+	jp	CH4_CheckByte
+
+.arp
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc3
+	inc	h
+.nc3
+	ld	a,c
+	add	2
+	ld	c,a
 	jp	CH4_CheckByte
 
 CH4_SetInstrument:
@@ -2515,6 +2557,75 @@ DoRandomizer:
 	call	_RandomizeWave
 	ret
 	
+; ================================================================
+; Misc routines
+; ================================================================
+
+ClearArpBuffer:
+	ld	hl,ArpBuffer
+	push	hl
+	inc	hl
+	ld	b,7
+	xor	a
+.loop
+	ld	a,[hl+]
+	dec	b
+	jr	nz,.loop
+	dec	a
+	pop	hl
+	ld	a,[hl]
+	ret
+	
+DoArp:
+	ld	de,ArpBuffer
+	ld	a,[hl+]
+	and	a
+	jr	nz,.slow
+.fast
+	xor	a
+	ld	[de],a
+	inc	de
+	ld	a,[hl]
+	swap	a
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	a,[hl+]
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	a,$80
+	ld	[de],a
+	inc	de
+	xor	a
+	ld	[de],a
+	ret
+.slow
+	xor	a
+	ld	[de],a
+	inc	de
+	ld	[de],a
+	inc	de
+	ld	a,[hl]
+	swap	a
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	[de],a
+	inc	de
+	ld	a,[hl+]
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	[de],a
+	inc	de
+	ld	a,$80
+	ld	[de],a
+	inc	de
+	xor	a
+	ld	[de],a
+	ret
+
 ; ================================================================
 ; Frequency table
 ; ================================================================

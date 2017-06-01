@@ -101,7 +101,8 @@ CombineWaves		equ	$8c
 EnablePWM			equ	$8d
 EnableRandomizer	equ	$8e
 DisableAutoWave		equ	$8f
-DummyCommand		equ	$90
+Arp					equ	$90
+DummyCommand		equ	$91
 EndChannel			equ	$FF
 
 endc

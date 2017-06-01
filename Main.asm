@@ -216,10 +216,10 @@ MainLoop:
 		ld	hl,$98b1
 		call	DrawHex
 	endc
-	
+.loop	
 	ld	a,[rLY]			; wait for scanline 0
 	and	a
-	jp	nz,.continue
+	jp	nz,.loop
 	ldh	a,[rBGP]		; get current palette
 	ld	b,a				; copy to B for later use
 	xor	$ff				; invert palette

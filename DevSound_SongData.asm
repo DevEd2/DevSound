@@ -87,8 +87,6 @@ arp_Pluck059:	db	19,0,5,5,9,9,0,$80,1
 arp_Pluck047:	db	19,0,4,4,7,7,0,$80,1
 arp_Octave:		db	0,19,12,12,0,0,0,0,12,$80,2
 arp_Pluck:		db	12,0,$ff
-arp_037:		db	0,0,3,3,7,7,$80,0
-arp_038:		db	0,0,3,3,8,8,$80,0
 arp_Tom:		db	22,20,18,16,14,12,10,9,7,6,4,3,2,1,0,$ff
 
 arp_017C:		db	12,12,7,7,1,1,0,0,$80,0
@@ -211,8 +209,7 @@ InstrumentTable:
 	
 	dw	ins_PulseBass
 	dw	ins_Tom
-	dw	ins_Arp037
-	dw	ins_Arp038
+	dw	ins_Arp
 	dw	ins_WaveLeadShort
 	dw	ins_WaveLeadMed
 	dw	ins_WaveLeadLong
@@ -256,8 +253,7 @@ ins_CymbL:			Instrument	0,0,vol_CymbL,noiseseq_Hat,DummyTable,DummyTable
 
 ins_PulseBass:		Instrument	0,0,vol_PulseBass,arp_Pluck,pulse_Bass,vib_Dummy
 ins_Tom:			Instrument	0,0,vol_Tom,arp_Tom,pulse_Square,vib_Dummy
-ins_Arp037:			Instrument	0,0,vol_Arp2,arp_037,pulse_Arp2,vib_Dummy
-ins_Arp038:			Instrument	0,0,vol_Arp2,arp_038,pulse_Arp2,vib_Dummy
+ins_Arp:			Instrument	0,0,vol_Arp2,ArpBuffer,pulse_Arp2,vib_Dummy
 
 ins_WaveLeadShort:	Instrument	0,0,vol_WaveLeadShort,arp_Pluck,waveseq_PulseLead,vib_Dummy
 ins_WaveLeadMed:	Instrument	0,0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_Dummy
@@ -298,14 +294,13 @@ _ins_CymbQ			equ	12
 _ins_CymbL			equ	13
 _ins_PulseBass		equ	14
 _ins_Tom			equ	15
-_ins_Arp037			equ	16
-_ins_Arp038			equ	17
-_ins_WaveLeadShort	equ	18
-_ins_WaveLeadMed	equ	19
-_ins_WaveLeadLong	equ	20
-_ins_WaveLeadLong2	equ	21
-_ins_Echo1			equ	22
-_ins_Echo2			equ	23
+_ins_Arp			equ	16
+_ins_WaveLeadShort	equ	17
+_ins_WaveLeadMed	equ	18
+_ins_WaveLeadLong	equ	19
+_ins_WaveLeadLong2	equ	20
+_ins_Echo1			equ	21
+_ins_Echo2			equ	22
 
 Kick				equ	_ins_Kick
 Snare				equ	_ins_Snare
@@ -314,21 +309,21 @@ OHH					equ	_ins_OHH
 CymbQ				equ	_ins_CymbQ
 CymbL				equ	_ins_CymbL
 
-AKick				equ	24
-ASnare				equ	25
-ACHH				equ	26
-AOHH				equ	27
-ACymb				equ	28
+AKick				equ	23
+ASnare				equ	24
+ACHH				equ	25
+AOHH				equ	26
+ACymb				equ	27
 
 
-_ins_Tom2			equ	29
-_ins_PWM1			equ	30
-_ins_Arp017C		equ	31
-_ins_Arp057C		equ	32
-_ins_PulseBass2		equ	33
-_ins_Arp950			equ	34
-_ins_Arp740			equ	35
-_ins_Arp830			equ	36
+_ins_Tom2			equ	28
+_ins_PWM1			equ	29
+_ins_Arp017C		equ	30
+_ins_Arp057C		equ	31
+_ins_PulseBass2		equ	32
+_ins_Arp950			equ	33
+_ins_Arp740			equ	34
+_ins_Arp830			equ	35
 
 ; =================================================================
 
@@ -420,10 +415,8 @@ Triumph_CH2:
 Triumph_CH3:
 	db	SetInstrument,4
 	db	SetLoopPoint
-	db	EnableRandomizer,3
 	db	C#3,4,C#4,2,$80,5,C#3,2,$80,4,G#3,4,C#4,4,C#3,4,$80,6,C#4,4,$80,4,G#3,4,C#4,4
 	db	G#2,4,G#3,2,$80,5,G#2,2,$80,4,D#3,4,G#3,4,G#2,4,$80,6,G#3,4,$80,4,G#2,4,A#2,4
-	db	EnablePWM,$f,7
 	db	B_2,4,B_3,2,$80,5,B_2,2,$80,4,F#3,4,B_3,4,B_2,4,$80,6,B_3,4,$80,4,C#4,4,B_3,4
 	db	F#2,4,F#3,2,$80,5,F#2,2,$80,4,C#3,4,F#3,4,F#2,4,$80,6,F#3,4,$80,4,B_2,4,B_3,4
 	db	GotoLoopPoint
@@ -559,6 +552,7 @@ InsertTitleHere_CH1:	; TODO: Implement a way to optimize this, as it is it's a r
 	ret
 	
 InsertTitleHere_CH2:
+	db	SetInstrument,_ins_Arp
 	db	CallSection
 	dw	.block0
 	db	CallSection
@@ -584,31 +578,39 @@ InsertTitleHere_CH2:
 	db	EndChannel
 
 .block0
-	db	$80,16,E_4,10,E_4,8,E_4,6,$80,17,E_4,10,E_4,8,E_4,6
-	db	B_3,10,B_3,8,B_3,6,D#4,10,D#4,8,D#4,6
+	db	Arp,1,$37
+	db	E_4,10,E_4,8,E_4,6
+	db	Arp,1,$38
+	db	E_4,10,E_4,8,E_4,6
+	db	B_3,10,B_3,8,B_3,6
+	db	D#4,10,D#4,8,D#4,6
 	ret
 .block1
-	db	$80,16,F#4,10,F#4,8,F#4,6,$80,17,F#4,10,F#4,8,F#4,6
-	db	C#4,10,C#4,8,C#4,6,F_4,10,F_4,8,F_4,6
+	db	Arp,1,$37
+	db	F#4,10,F#4,8,F#4,6
+	db	Arp,1,$38
+	db	F#4,10,F#4,8,F#4,6
+	db	C#4,10,C#4,8,C#4,6
+	db	F_4,10,F_4,8,F_4,6
 	ret
 
 InsertTitleHere_CH3:
 	db	rest,192
 	db	SetLoopPoint
-	db	$80,20,B_5,6,A_5,6,$80,19,G_5,4,$80,18,A_5,2,$80,19,G_5,4,$80,18,E_5,2
-	db	$80,19,D_5,4,$80,18,E_5,2,$80,19,G_5,4,$80,21,D_5,12,$80,18,B_4,2
-	db	$80,20,D_5,6,B_4,6,$80,19,D_5,4,$80,18,B_4,2,$80,19,D_5,4,$80,18,B_4,2
-	db	$80,20,D#5,6,B_4,6,$80,19,D#5,4,$80,18,B_4,2,$80,19,A_4,4,$80,18,B_4,2
-	db	$80,21,E_4,18,rest,78
-	db	$80,20,B_5,6,A_5,6,$80,19,G_5,4,$80,18,A_5,2,$80,19,G_5,4,$80,18,E_5,2
-	db	$80,19,B_5,4,$80,18,A_5,2,$80,19,G_5,4,$80,21,D_5,12,$80,18,E_5,2
-	db	$80,20,G_5,6,E_5,6,$80,19,G_5,4,$80,20,A_5,6,$80,18,A#5,2
-	db	$80,20,B_5,6,A_5,6,$80,19,D#5,4,$80,20,G_5,6,$80,18,D_5,2
-	db	$80,21,E_5,18,rest,78
+	db	$80,19,B_5,6,A_5,6,$80,18,G_5,4,$80,17,A_5,2,$80,18,G_5,4,$80,17,E_5,2
+	db	$80,18,D_5,4,$80,17,E_5,2,$80,18,G_5,4,$80,20,D_5,12,$80,17,B_4,2
+	db	$80,19,D_5,6,B_4,6,$80,18,D_5,4,$80,17,B_4,2,$80,18,D_5,4,$80,17,B_4,2
+	db	$80,19,D#5,6,B_4,6,$80,18,D#5,4,$80,17,B_4,2,$80,18,A_4,4,$80,17,B_4,2
+	db	$80,20,E_4,18,rest,78
+	db	$80,19,B_5,6,A_5,6,$80,18,G_5,4,$80,17,A_5,2,$80,18,G_5,4,$80,17,E_5,2
+	db	$80,18,B_5,4,$80,17,A_5,2,$80,18,G_5,4,$80,20,D_5,12,$80,17,E_5,2
+	db	$80,19,G_5,6,E_5,6,$80,18,G_5,4,$80,19,A_5,6,$80,17,A#5,2
+	db	$80,19,B_5,6,A_5,6,$80,18,D#5,4,$80,19,G_5,6,$80,17,D_5,2
+	db	$80,20,E_5,18,rest,78
 	db	CallSection
 	dw	.block1
 	db	rest,10
-	db	$80,18,C#5,2,$80,19,E_5,4,$80,18,C#5,2,$80,19,E_5,4,$80,18,C#5,2,$80,19,B_4,4,$80,18,C#5,2
+	db	$80,17,C#5,2,$80,18,E_5,4,$80,17,C#5,2,$80,18,E_5,4,$80,17,C#5,2,$80,18,B_4,4,$80,17,C#5,2
 	db	CallSection
 	dw	.block1
 	db	rest,30
@@ -616,13 +618,13 @@ InsertTitleHere_CH3:
 	db	EndChannel
 
 .block1
-	db	$80,21,F#5,10,E_5,8,$80,20,C#5,6
-	db	D_5,6,$80,19,E_5,4,$80,20,D_5,6,$80,18,A_4,2,$80,19,D_5,4,$80,18,E_5,2
-	db	$80,21,A_5,10,F#5,8,$80,20,C#5,6
-	db	$80,19,E_5,4,$80,18,F#5,2,$80,19,E_5,4,$80,18,F#5,2,$80,19,A_5,4,$80,18,F#5,2,$80,19,E_5,4,$80,18,C#5,2
-	db	$80,21,F#5,10,E_5,8,$80,20,C#5,6
-	db	A_5,6,$80,19,B_5,4,$80,20,A_5,6,$80,18,F#5,2,$80,19,E_5,4,$80,18,F#5,2
-	db	$80,21,E_5,18
+	db	$80,20,F#5,10,E_5,8,$80,19,C#5,6
+	db	D_5,6,$80,18,E_5,4,$80,19,D_5,6,$80,17,A_4,2,$80,18,D_5,4,$80,17,E_5,2
+	db	$80,20,A_5,10,F#5,8,$80,19,C#5,6
+	db	$80,18,E_5,4,$80,17,F#5,2,$80,18,E_5,4,$80,17,F#5,2,$80,18,A_5,4,$80,17,F#5,2,$80,18,E_5,4,$80,17,C#5,2
+	db	$80,20,F#5,10,E_5,8,$80,19,C#5,6
+	db	A_5,6,$80,18,B_5,4,$80,19,A_5,6,$80,17,F#5,2,$80,18,E_5,4,$80,17,F#5,2
+	db	$80,20,E_5,18
 	ret
 	
 InsertTitleHere_CH4:
