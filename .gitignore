@@ -1,0 +1,17 @@
+# object files
+*.obj
+
+# symbol files
+*.sym
+
+# battery saves (the demo ROM shouldn't create any of these but let's put it here just to be safe)
+*.sav
+
+# nezplug++ ini file
+nezplay.ini
+
+# FamiTracker modules (i use GBSImport for testing in some cases)
+*.ftm
+
+# bgb save states
+*.sn*

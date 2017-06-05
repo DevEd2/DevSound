@@ -23,6 +23,10 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ================================================================
 
+UseFXHammer	set	1
+
+DevSound:
+
 include	"DevSound_Vars.asm"
 include	"DevSound_Consts.asm"
 include	"DevSound_Macros.asm"
@@ -49,6 +53,9 @@ DevSound_Init:
 	push	af		; i swear there's a method to my madness here
 	xor	a
 	ldh	[rNR52],a	; disable sound
+	ld	[PWMEnabled],a
+	ld	[RandomizerEnabled],a
+	ld	[WaveBufUpdateFlag],a
 
 	; init sound RAM area
 	ld	de,DSVarsStart
@@ -64,6 +71,8 @@ DevSound_Init:
 	; load default waveform
 	ld	hl,DefaultWave
 	call	LoadWave
+	call	ClearWaveBuffer
+	call	ClearArpBuffer
 	
 	; set up song pointers
 	ld	hl,SongPointerTable
@@ -110,6 +119,11 @@ DevSound_Init:
 	ld	[CH2RetPtr+1],a
 	ld	[CH3RetPtr+1],a
 	ld	[CH4RetPtr+1],a
+	ld	a,$11
+	ld	[CH1Pan],a
+	ld	[CH2Pan],a
+	ld	[CH3Pan],a
+	ld	[CH4Pan],a
 	; get tempo
 	ld	hl,SongSpeedTable
 	pop	af		; see? I TOLD you there was a method to my madness!
@@ -131,19 +145,6 @@ DevSound_Init:
 	ldh	[rNR51],a
 	ldh	[rNR50],a
 	ret
-
-DefaultRegTable:
-	db	7,0,0,0,0,0,0,1,1,1,1,1
-	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	dw	DummyChannel,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0	; the $FF is so that the wave is updated properly on the first frame
-	dw	DummyChannel,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	
-DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
 ; ================================================================
 ; Stop routine
@@ -279,19 +280,21 @@ CH1_CheckByte:
 	xor	a
 	ld	[CH1VolPos],a
 	ld	[CH1ArpPos],a
+	ldh	[rNR12],a
 	inc	a
 	ld	[CH1VibPos],a
-	ld	a,[CH1Reset]	; check for reset flag
-	jp	z,CH1_DoneUpdating
-	xor	a
-	ld	[CH1PulsePos],a
-	ldh	[rNR12],a
 	ld	hl,CH1VibPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
 	ld	a,[hl]
 	ld	[CH1VibDelay],a
+	ld	a,[CH1Reset]
+	and	a
+	jp	nz,.noreset
+	xor	a
+	ld	[CH1PulsePos],a
+.noreset
 	ld	a,[CH1NoteCount]
 	inc	a
 	ld	[CH1NoteCount],a
@@ -361,6 +364,12 @@ CH1_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -433,9 +442,10 @@ CH1_CommandTable:
 	inc	c
 	jp	CH1_CheckByte	; too far for jr
 
-.setPan			; TODO
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH1Pan],a
 	inc	c
 	jp	CH1_CheckByte	; too far for jr
 
@@ -463,6 +473,54 @@ CH1_CommandTable:
 	ld	[CH1InsMode],a
 	jp	CH1_CheckByte
 	
+.randomizeWave
+	pop	hl
+	jp	CH1_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH1_CheckByte	
+	
+.enablePWM
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc2
+	inc	h
+.nc2
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH1_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH1_CheckByte
+
+.disableAutoWave
+	pop	hl
+	jp	CH1_CheckByte
+	
+.arp
+	pop	hl
+	call	DoArp
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH1_CheckByte
+	
 CH1_SetInstrument:
 	ld	hl,InstrumentTable
 	add	a
@@ -478,8 +536,6 @@ CH1_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH1Reset],a
 	ld	b,a
-	; wave mode flag (unused for ch1)
-	inc	hl
 	; vol table
 	ld	a,[hl+]
 	ld	[CH1VolPtr],a
@@ -500,6 +556,12 @@ CH1_SetInstrument:
 	ld	[CH1VibPtr],a
 	ld	a,[hl+]
 	ld	[CH1VibPtr+1],a
+	ld	hl,CH1VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH1VibDelay],a
 	ret
 	
 ; ================================================================
@@ -541,14 +603,30 @@ CH2_CheckByte:
 	inc	c
 	dec	a
 	ld	[CH2Tick],a
-	ld	a,[CH2Reset]
-	jp	z,CH2_DoneUpdating
 	xor	a
 	ld	[CH2VolPos],a
-	ld	[CH2PulsePos],a
 	ld	[CH2ArpPos],a
-	ld	[CH2VibPos],a
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,.noupdate
+	endc
 	ldh	[rNR22],a
+.noupdate
+	inc	a
+	ld	[CH2VibPos],a
+	ld	hl,CH2VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH2VibDelay],a
+	ld	a,[CH2Reset]
+	and	a
+	jp	nz,.noreset
+	xor	a
+	ld	[CH2PulsePos],a
+.noreset
 	ld	a,[CH2NoteCount]
 	inc	a
 	ld	[CH2NoteCount],a
@@ -619,6 +697,12 @@ CH2_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -691,9 +775,10 @@ CH2_CommandTable:
 	inc	c
 	jp	CH2_CheckByte	; too far for jr
 
-.setPan			; TODO
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH2Pan],a
 	inc	c
 	jp	CH2_CheckByte	; too far for jr
 
@@ -713,13 +798,61 @@ CH2_CommandTable:
 	pop	hl
 	ld	a,[hl+]
 	inc	c
-	ld	[CH1Ins2],a
+	ld	[CH2Ins1],a
 	ld	a,[hl+]
 	inc	c
-	ld	[CH1Ins2],a
+	ld	[CH2Ins2],a
 	ld	a,1
 	ld	[CH2InsMode],a
-	jp	CH1_CheckByte	
+	jp	CH2_CheckByte
+
+.randomizeWave
+	pop	hl
+	jp	CH2_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH2_CheckByte	
+	
+.enablePWM
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc2
+	inc	h
+.nc2
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH2_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH1_CheckByte
+
+.disableAutoWave
+	pop	hl
+	jp	CH1_CheckByte
+	
+.arp
+	pop	hl
+	call	DoArp
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -736,8 +869,6 @@ CH2_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH2Reset],a
 	ld	b,a
-	; wave mode flag (unused for CH2)
-	inc	hl
 	; vol table
 	ld	a,[hl+]
 	ld	[CH2VolPtr],a
@@ -758,6 +889,12 @@ CH2_SetInstrument:
 	ld	[CH2VibPtr],a
 	ld	a,[hl+]
 	ld	[CH2VibPtr+1],a
+	ld	hl,CH2VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH2VibDelay],a
 	ret
 	
 ; ================================================================
@@ -802,9 +939,16 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-	ld	[CH3VibPos],a
 	xor	$ff
 	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
+	ld	a,1
+	ld	[CH3VibPos],a
+	ld	hl,CH3VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH3VibDelay],a
 	ld	a,[CH3Reset]
 	and	a
 	jp	nz,CH3_DoneUpdating
@@ -814,6 +958,9 @@ CH3_CheckByte:
 	inc	a
 	ld	[CH3NoteCount],a
 	ld	b,a
+	ld	a,[CH3Vol]
+	ldh	[rNR32],a	; fix for volume not updating when unpausing
+	
 	; check if instrument mode is 1 (alternating)
 	ld	a,[CH3InsMode]
 	and	a
@@ -880,6 +1027,12 @@ CH3_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -952,9 +1105,10 @@ CH3_CommandTable:
 	inc	c
 	jp	CH3_CheckByte	; too far for jr
 
-.setPan			; TODO
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH3Pan],a
 	inc	c
 	jp	CH3_CheckByte	; too far for jr
 
@@ -982,6 +1136,80 @@ CH3_CommandTable:
 	ld	[CH3InsMode],a
 	jp	CH3_CheckByte
 	
+.randomizeWave
+	call	_RandomizeWave
+	pop	hl
+	jp	CH3_CheckByte
+
+.combineWaves
+	pop	hl
+	push	bc
+	ld	a,[hl+]
+	ld	c,a
+	ld	a,[hl+]
+	ld	b,a
+	ld	a,[hl+]
+	ld	e,a
+	ld	a,[hl+]
+	ld	d,a
+	push	hl
+	call	_CombineWaves
+	pop	hl
+	pop	bc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH3_CheckByte
+	
+.enablePWM
+	call	ClearWaveBuffer
+	pop	hl
+	ld	a,[hl+]
+	ld	[PWMVol],a
+	ld	a,[hl+]
+	ld	[PWMSpeed],a
+	ld	a,$ff
+	ld	[WavePos],a
+	xor	a
+	ld	[PWMDir],a
+	inc	a
+	ld	[PWMEnabled],a
+	ld	[PWMTimer],a
+	ld	a,c
+	add	2
+	ld	c,a
+	xor	a
+	ld	[RandomizerEnabled],a
+	jp	CH3_CheckByte
+	
+.enableRandomizer
+	call	ClearWaveBuffer
+	pop	hl
+	inc	c
+	ld	a,[hl+]
+	ld	[RandomizerSpeed],a
+	ld	a,1
+	ld	[RandomizerTimer],a
+	ld	[RandomizerEnabled],a
+	xor	a
+	ld	[PWMEnabled],a
+	jp	CH3_CheckByte
+	
+.disableAutoWave
+	pop	hl
+	xor	a
+	ld	[PWMEnabled],a
+	ld	[RandomizerEnabled],a
+	jp	CH3_CheckByte
+
+.arp
+	pop	hl
+	call	DoArp
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH3_CheckByte
+	
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
 	add	a
@@ -997,9 +1225,6 @@ CH3_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH3Reset],a
 	ld	b,a
-	; wave mode flag
-	ld	a,[hl+]
-	ld	[CH3Mode],a
 	; vol table
 	ld	a,[hl+]
 	ld	[CH3VolPtr],a
@@ -1020,6 +1245,12 @@ CH3_SetInstrument:
 	ld	[CH3VibPtr],a
 	ld	a,[hl+]
 	ld	[CH3VibPtr+1],a
+	ld	hl,CH3VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[hl]
+	ld	[CH3VibDelay],a
 	ret
 
 ; ================================================================
@@ -1066,7 +1297,13 @@ CH4_CheckByte:
 	xor	a
 	ld	[CH4VolPos],a
 	ld	[CH4NoisePos],a
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jp	z,.noupdate
+	endc
 	ldh	[rNR42],a
+.noupdate
 	ld	a,[CH4NoteCount]
 	inc	a
 	ld	[CH4NoteCount],a
@@ -1129,14 +1366,20 @@ CH4_CommandTable:
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
-	dw	.setChannelPtr
 	dw	.callSection
+	dw	.setChannelPtr
 	dw	.pitchBendUp
 	dw	.pitchBendDown
 	dw	.setSweep
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
+	dw	.randomizeWave
+	dw	.combineWaves
+	dw	.enablePWM
+	dw	.enableRandomizer
+	dw	.disableAutoWave
+	dw	.arp
 
 .setInstrument
 	pop	hl
@@ -1209,9 +1452,10 @@ CH4_CommandTable:
 	inc	c
 	jp	CH4_CheckByte	; too far for jr
 
-.setPan			; unused for ch4
+.setPan
 	pop	hl
-	inc	hl
+	ld	a,[hl+]
+	ld	[CH4Pan],a
 	inc	c
 	jp	CH4_CheckByte	; too far for jr
 
@@ -1238,6 +1482,59 @@ CH4_CommandTable:
 	ld	a,1
 	ld	[CH4InsMode],a
 	jp	CH4_CheckByte
+	
+.randomizeWave
+	pop	hl
+	jp	CH4_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH4_CheckByte	
+	
+.enablePWM
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc2
+	inc	h
+.nc2
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH4_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH4_CheckByte
+
+.disableAutoWave
+	pop	hl
+	jp	CH4_CheckByte
+
+.arp
+	pop	hl
+	ld	a,l
+	add	2
+	ld	l,a
+	jr	nc,.nc3
+	inc	h
+.nc3
+	ld	a,c
+	add	2
+	ld	c,a
+	jp	CH4_CheckByte
 
 CH4_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1254,8 +1551,6 @@ CH4_SetInstrument:
 	ld	a,[hl+]
 	ld	[CH4Reset],a
 	ld	b,a
-	; wave mode flag (unused for CH4)
-	inc	hl
 	; vol table
 	ld	a,[hl+]
 	ld	[CH4VolPtr],a
@@ -1273,6 +1568,29 @@ CH4_SetInstrument:
 DoneUpdating:
 
 UpdateRegisters:
+	; update panning
+	xor	a
+	ld	b,a
+	ld	a,[CH1Pan]
+	add	b
+	ld	b,a
+	ld	a,[CH2Pan]
+	rla
+	add	b
+	ld	b,a
+	ld	a,[CH3Pan]
+	rla
+	rla
+	add	b
+	ld	b,a
+	ld	a,[CH4Pan]
+	rla
+	rla
+	rla
+	add	b
+	ldh	[rNR51],a
+
+	; update global volume + fade system
 	ld	a,[FadeType]
 	and	3
 	or	a
@@ -1420,69 +1738,61 @@ CH1_UpdateRegisters:
 	ld	hl,FreqTable
 	add	hl,bc
 	add	hl,bc	
-	
-	ld	a,[hl+]
-	ldh	[rNR13],a
-	ld	a,[hl]
-	ldh	[rNR14],a
-	ld	e,a	
 
 ; get note frequency
-;	ld	a,[hl+]
-;	ld	d,a
-;	ld	a,[hl]
-;	ld	e,a
+	ld	a,[hl+]
+	ld	d,a
+	ld	a,[hl]
+	ld	e,a
+.updateVibTable
+	ld	a,[CH1VibDelay]
+	and	a
+	jr	z,.doVib
+	dec	a
+	ld	[CH1VibDelay],a
+	jr	.setFreq
+.doVib
+	ld	hl,CH1VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH1VibPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry4
+	inc	h
+.nocarry4
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.noloop2
+	ld	a,[hl+]
+	ld	[CH1VibPos],a
+	jr	.doVib
+.noloop2
+	ld	[CH1FreqOffset],a
+	ld	a,[CH1VibPos]
+	inc	a
+	ld	[CH1VibPos],a
 	
-; get vibrato
-;	ld	b,b
-;	ld	hl,CH1VibPtr
-;	ld	a,[CH1VibPos]
-;	ld	b,a
-;	and	a
-;	jr	z,.doupdatevib
-;	dec	a
-;	ld	[CH1VibPos],a
-;	jr	.setNoteFreq
-;.doupdatevib
-;	ld	a,[hl+]
-;	ld	h,[hl]
-;	ld	l,a
-;	ld	a,b
-;	add	l
-;	ld	l,a
-;	jr	nc,.nocarry4
-;	inc	h
-;.nocarry4
-;	ld	a,[hl+]
-;	cp	$80
-;	jr	nz,.noloopvib
-;	ld	a,[hl+]
-;	ld	[CH1VibPos],a
-;	jr	.doupdatevib
-;.noloopvib
-;	bit	7,a
-;	jr	z,.subtract
-;	add	d
-;	ld	d,a
-;	jr	nc,.contvib
-;	inc	e
-;	jr	.contvib
-;.subtract
-;	sub	d
-;	ld	d,a
-;	jr	nc,.contvib
-;	inc	e
-;.contvib
-;	ld	a,[CH1VibPos]
-;	inc	a
-;	ld	[CH1VibPos],a
-	
-; set note frequency
-;.setNoteFreq
-;	ld	a,d
-;	ldh	[rNR13],a
-;	ld	a,e
-;	ldh	[rNR14],a
+.getPitchOffset
+	ld	a,[CH1FreqOffset]
+	bit	7,a
+	jr	nz,.sub
+	add	d
+	ld	d,a
+	jr	nc,.setFreq
+	inc	e
+	jr	.setFreq
+.sub
+	ld	c,a
+	ld	a,d
+	add	c
+	ld	d,a
+.setFreq	
+	ld	a,d
+	ldh	[rNR13],a
+	ld	a,e
+	ldh	[rNR14],a
 	
 	; update volume
 .updateVolume
@@ -1523,6 +1833,11 @@ CH1_UpdateRegisters:
 ; ================================================================
 
 CH2_UpdateRegisters:
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,CH3_UpdateRegisters
+	endc
 	ld	a,[CH2Enabled]
 	and	a
 	jp	z,CH3_UpdateRegisters
@@ -1610,11 +1925,60 @@ CH2_UpdateRegisters:
 	add	hl,bc
 	add	hl,bc
 	
+	; get note frequency
 	ld	a,[hl+]
-	ldh	[rNR23],a
+	ld	d,a
 	ld	a,[hl]
-	ldh	[rNR24],a
 	ld	e,a
+.updateVibTable
+	ld	a,[CH2VibDelay]
+	and	a
+	jr	z,.doVib
+	dec	a
+	ld	[CH2VibDelay],a
+	jr	.setFreq
+.doVib
+	ld	hl,CH2VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH2VibPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry4
+	inc	h
+.nocarry4
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.noloop2
+	ld	a,[hl+]
+	ld	[CH2VibPos],a
+	jr	.doVib
+.noloop2
+	ld	[CH2FreqOffset],a
+	ld	a,[CH2VibPos]
+	inc	a
+	ld	[CH2VibPos],a
+	
+.getPitchOffset
+	ld	a,[CH2FreqOffset]
+	bit	7,a
+	jr	nz,.sub
+	add	d
+	ld	d,a
+	jr	nc,.setFreq
+	inc	e
+	jr	.setFreq
+.sub
+	ld	c,a
+	ld	a,d
+	add	c
+	ld	d,a
+.setFreq	
+	ld	a,d
+	ldh	[rNR23],a
+	ld	a,e
+	ldh	[rNR24],a
 
 	; update volume
 .updateVolume
@@ -1625,9 +1989,9 @@ CH2_UpdateRegisters:
 	ld	a,[CH2VolPos]
 	add	l
 	ld	l,a
-	jr	nc,.nocarry4
+	jr	nc,.nocarry5
 	inc	h
-.nocarry4
+.nocarry5
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.done
@@ -1658,7 +2022,7 @@ CH3_UpdateRegisters:
 	ld	a,[CH3Enabled]
 	and	a
 	jp	z,CH4_UpdateRegisters
-	
+
 	ld	a,[CH3Note]
 	cp	rest
 	jr	nz,.norest
@@ -1718,11 +2082,60 @@ CH3_UpdateRegisters:
 	add	hl,bc
 	add	hl,bc
 	
+	; get note frequency
 	ld	a,[hl+]
-	ldh	[rNR33],a
+	ld	d,a
 	ld	a,[hl]
-	ldh	[rNR34],a
 	ld	e,a
+.updateVibTable
+	ld	a,[CH3VibDelay]
+	and	a
+	jr	z,.doVib
+	dec	a
+	ld	[CH3VibDelay],a
+	jr	.setFreq
+.doVib
+	ld	hl,CH3VibPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH3VibPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry4
+	inc	h
+.nocarry4
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.noloop2
+	ld	a,[hl+]
+	ld	[CH3VibPos],a
+	jr	.doVib
+.noloop2
+	ld	[CH3FreqOffset],a
+	ld	a,[CH3VibPos]
+	inc	a
+	ld	[CH3VibPos],a
+	
+.getPitchOffset
+	ld	a,[CH3FreqOffset]
+	bit	7,a
+	jr	nz,.sub
+	add	d
+	ld	d,a
+	jr	nc,.setFreq
+	inc	e
+	jr	.setFreq
+.sub
+	ld	c,a
+	ld	a,d
+	add	c
+	ld	d,a
+.setFreq	
+	ld	a,d
+	ldh	[rNR33],a
+	ld	a,e
+	ldh	[rNR34],a
 	
 	; update wave
 	ld	hl,CH3WavePtr
@@ -1736,7 +2149,7 @@ CH3_UpdateRegisters:
 	inc	h
 .nocarry2
 	ld	a,[hl+]
-	cp	$ff
+	cp	$ff					; table end?
 	jr	z,.updateVolume
 	ld	b,a
 	ld	a,[CH3Wave]
@@ -1744,6 +2157,11 @@ CH3_UpdateRegisters:
 	jr	z,.noreset2
 	ld	a,b
 	ld	[CH3Wave],a
+	cp	$c0					; if value = $c0, use wave buffer
+	jr	nz,.notwavebuf
+	ld	hl,WaveBuffer
+	jr	.loadwave
+.notwavebuf
 	add	a
 	ld	hl,WaveTable
 	add	l
@@ -1754,6 +2172,7 @@ CH3_UpdateRegisters:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
+.loadwave
 	call	LoadWave
 	ld	a,e
 	or	%10000000
@@ -1776,9 +2195,9 @@ CH3_UpdateRegisters:
 	ld	a,[CH3VolPos]
 	add	l
 	ld	l,a
-	jr	nc,.nocarry4
+	jr	nc,.nocarry5
 	inc	h
-.nocarry4
+.nocarry5
 	ld	a,[hl+]
 	cp	$ff
 	jr	z,.done
@@ -1802,10 +2221,31 @@ CH3_UpdateRegisters:
 	ld	a,[hl]
 	ld	[CH3VolPos],a
 .done
+	call	DoPWM
+	call	DoRandomizer
+	ld	a,[CH3Wave]
+	cp	$c0
+	jr	nz,.noupdate
+	ld	a,[WaveBufUpdateFlag]
+	and	a
+	jr	z,.noupdate
+	ld	hl,WaveBuffer
+	call	LoadWave
+	xor	a
+	ld	[WaveBufUpdateFlag],a
+	ld	a,e
+	or	$80
+	ldh	[rNR34],a
+.noupdate
 
 ; ================================================================
 
 CH4_UpdateRegisters:
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jp	z,DoneUpdatingRegisters
+	endc
 	ld	a,[CH4Enabled]
 	and	a
 	jp	z,DoneUpdatingRegisters
@@ -1909,7 +2349,7 @@ DoneUpdatingRegisters:
 	ret
 
 ; ================================================================
-; Subroutines
+; Wave routines
 ; ================================================================
 
 LoadWave:
@@ -1925,12 +2365,263 @@ LoadWave:
 	ld	a,%10000000
 	ldh	[rNR30],a	; enable CH3
 	ret
+	
+ClearWaveBuffer:
+	ld	a,$10
+	ld	b,a
+	xor	a
+	ld	hl,WaveBuffer
+.loop
+	ld	[hl+],a		; copy to wave ram
+	dec	b
+	jr	nz,.loop	; loop until done
+	ret
+
+; Combine two waves. Optimized by Pigu
+; INPUT: bc = first wave addr
+;	  de = second wave addr
+
+_CombineWaves:
+    ld hl,WaveBuffer
+    ld a, 16
+.loop
+    push af
+    push hl
+	ld a, [bc]
+    and $f
+    ld l, a
+    ld a, [de]
+    and $f
+    add l
+    rra
+    ld l, a
+    ld a, [bc]
+    inc bc
+    and $f0
+    ld h, a
+    ld a, [de]
+    inc de
+    and $f0
+    add h
+    rra
+    and $f0
+    or l
+    pop hl
+    ld [hli], a
+    pop af
+    dec a
+    jr nz, .loop
+	ld	a,1
+	ld	[WaveBufUpdateFlag],a
+    ret
+	
+; Randomize the wave buffer
+
+_RandomizeWave:
+	push	de
+	ld	hl,NoiseData
+	ld	de,WaveBuffer
+	ld	b,$10
+	ld	a,[WavePos]
+	inc	a
+	ld	[WavePos],a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	hl,NoiseData
+	add	l
+	ld	l,a
+	jr	nc,.loop
+	inc	h
+.loop
+	ld	a,[hl+]
+	ld	[de],a
+	inc	de
+	dec	b
+	jr	nz,.loop
+	ld	a,1
+	ld	[WaveBufUpdateFlag],a
+	pop	de
+	ret
+
+; Do PWM
+DoPWM:
+	ld	a,[PWMEnabled]
+	and	a
+	ret	z	; if PWM is not enabled, return
+	ld	a,[PWMTimer]
+	dec	a
+	ld	[PWMTimer],a
+	and	a
+	ret	nz
+	ld	a,[PWMSpeed]
+	ld	[PWMTimer],a
+	ld	a,[PWMDir]
+	and	a
+	jr	nz,.decPos
+.incPos	
+	ld	a,[WavePos]
+	inc	a
+	ld	[WavePos],a
+	cp	$1e
+	jr	nz,.continue
+	ld	a,[PWMDir]
+	xor	1
+	ld	[PWMDir],a
+	jr	.continue
+.decPos
+	ld	a,[WavePos]
+	dec	a
+	ld	[WavePos],a
+	and	a
+	jr	nz,.continue2
+	ld	a,[PWMDir]
+	xor	1
+	ld	[PWMDir],a
+	jr	.continue2
+.continue
+	ld	hl,WaveBuffer
+	ld	a,[WavePos]
+	rra
+	push	af
+	and	$f
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	pop	af
+	jr	c,.odd
+.even
+	ld	a,[PWMVol]
+	swap	a
+	ld	[hl],a
+	jr	.done
+.odd
+	ld	a,[hl]
+	ld	b,a
+	ld	a,[PWMVol]
+	or	b
+	ld	[hl],a
+	jr	.done
+	
+.continue2
+	ld	hl,WaveBuffer
+	ld	a,[WavePos]
+	inc	a
+	rra
+	push	af
+	and	$f
+	add	l
+	ld	l,a
+	jr	nc,.nocarry2
+	inc	h
+.nocarry2
+	pop	af
+	jr	nc,.odd2
+.even2
+	ld	a,[PWMVol]
+	swap	a
+	ld	[hl],a
+	jr	.done
+.odd2
+	xor	a
+	ld	[hl],a
+.done
+	ld	a,1
+	ld	[WaveBufUpdateFlag],a
+	ret
+	
+DoRandomizer:
+	ld	a,[RandomizerEnabled]
+	and	a
+	ret	z	; if randomizer is disabled, return
+	ld	a,[RandomizerTimer]
+	dec	a
+	ld	[RandomizerTimer],a
+	ret	nz
+	ld	a,[RandomizerSpeed]
+	ld	[RandomizerTimer],a
+	call	_RandomizeWave
+	ret
+	
+; ================================================================
+; Misc routines
+; ================================================================
+
+ClearArpBuffer:
+	ld	hl,ArpBuffer
+	push	hl
+	inc	hl
+	ld	b,7
+	xor	a
+.loop
+	ld	a,[hl+]
+	dec	b
+	jr	nz,.loop
+	dec	a
+	pop	hl
+	ld	a,[hl]
+	ret
+	
+DoArp:
+	ld	de,ArpBuffer
+	ld	a,[hl+]
+	and	a
+	jr	nz,.slow
+.fast
+	xor	a
+	ld	[de],a
+	inc	de
+	ld	a,[hl]
+	swap	a
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	a,[hl+]
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	a,$80
+	ld	[de],a
+	inc	de
+	xor	a
+	ld	[de],a
+	ret
+.slow
+	xor	a
+	ld	[de],a
+	inc	de
+	ld	[de],a
+	inc	de
+	ld	a,[hl]
+	swap	a
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	[de],a
+	inc	de
+	ld	a,[hl+]
+	and	$f
+	ld	[de],a
+	inc	de
+	ld	[de],a
+	inc	de
+	ld	a,$80
+	ld	[de],a
+	inc	de
+	xor	a
+	ld	[de],a
+	ret
 
 ; ================================================================
 ; Frequency table
 ; ================================================================
 
-FreqTable:  
+FreqTable:  ; TODO: Add at least one extra octave
 ;	     C-x  C#x  D-x  D#x  E-x  F-x  F#x  G-x  G#x  A-x  A#x  B-x
 	dw	$02c,$09c,$106,$16b,$1c9,$223,$277,$2c6,$312,$356,$39b,$3da ; octave 1
 	dw	$416,$44e,$483,$4b5,$4e5,$511,$53b,$563,$589,$5ac,$5ce,$5ed ; octave 2
@@ -1938,6 +2629,7 @@ FreqTable:
 	dw	$706,$714,$721,$72d,$739,$744,$74f,$759,$762,$76b,$773,$77b ; octave 4
 	dw	$783,$78a,$790,$797,$79d,$7a2,$7a7,$7ac,$7b1,$7b4,$7ba,$7be ; octave 5
 	dw	$7c1,$7c4,$7c8,$7cb,$7ce,$7d1,$7d4,$7d6,$7d9,$7db,$7dd,$7df ; octave 6
+	dw	$7e0,$7e2,$7e4,$7e5,$7e7,$7e8,$7ea,$7eb,$7ec,$7ed,$7ee,$7ef ; extra octave (not used directly)
 	
 NoiseTable:	; taken from deflemask
 	db	$a4	; 15 steps
@@ -1947,8 +2639,32 @@ NoiseTable:	; taken from deflemask
 	db	$ac	; 7 steps
 	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$6c
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$2c
-	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$07,$06,$05,$04
+	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$0b,$0a,$09,$08
 
+; ================================================================
+; misc stuff
+; ================================================================
+	
+DefaultRegTable:
+	; global flags
+	db	7,0,0,0,0,0,0,1,1,1,1,1
+	; ch1
+	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	; ch2
+	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	; ch3
+	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0
+	; ch4
+	dw	DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	
+DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
+
+NoiseData:		incbin	"NoiseData.bin"
+	
 ; ================================================================
 ; Dummy data
 ; ================================================================

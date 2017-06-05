@@ -6,8 +6,8 @@ if !def(incDSMacros)
 incDSMacros	set	1
 
 Instrument:		macro
-	db	\1,\2
-	dw	\3,\4,\5,\6
+	db	\1
+	dw	\2,\3,\4,\5
 	endm
 
 Drum:			macro

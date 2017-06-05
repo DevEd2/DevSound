@@ -41,6 +41,8 @@ CH1Tick			ds	1
 CH1Reset		ds	1
 CH1Note			ds	1
 CH1Transpose	ds	1
+CH1FreqOffset	ds	1
+CH1Pan			ds	1
 CH1Sweep		ds	1
 CH1NoteCount	ds	1
 CH1InsMode		ds	1
@@ -65,6 +67,8 @@ CH2Tick			ds	1
 CH2Reset		ds	1
 CH2Note			ds	1
 CH2Transpose	ds	1
+CH2FreqOffset	ds	1
+CH2Pan			ds	1
 CH2NoteCount	ds	1
 CH2InsMode		ds	1
 CH2Ins1			ds	1
@@ -88,10 +92,10 @@ CH3Tick			ds	1
 CH3Reset		ds	1
 CH3Note			ds	1
 CH3Transpose	ds	1
+CH3FreqOffset	ds	1
 CH3Vol			ds	1
 CH3Wave			ds	1
 CH3Pan			ds	1
-CH3Mode			ds	1
 CH3NoteCount	ds	1
 CH3InsMode		ds	1
 CH3Ins1			ds	1
@@ -115,7 +119,19 @@ CH4NoteCount	ds	1
 CH4InsMode		ds	1
 CH4Ins1			ds	1
 CH4Ins2			ds	1
-
 DSVarsEnd
 
+WaveBuffer			ds	16
+WavePos				ds	1
+WaveBufUpdateFlag	ds	1
+PWMEnabled			ds	1
+PWMVol				ds	1
+PWMSpeed			ds	1
+PWMTimer			ds	1
+PWMDir				ds	1
+RandomizerEnabled	ds	1
+RandomizerTimer		ds	1
+RandomizerSpeed		ds	1
+
+ArpBuffer			ds	8
 endc

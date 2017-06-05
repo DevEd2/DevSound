@@ -9,7 +9,7 @@ DebugFlag	set	1
 
 ; If set to 1, display numbers in decimal instead of hexadecimal.
 
-UseDecimal	set	1
+UseDecimal	set	0
 
 ; ================================================================
 ; Project includes
@@ -216,8 +216,26 @@ MainLoop:
 		ld	hl,$98b1
 		call	DrawHex
 	endc
+.loop	
+	ld	a,[rLY]			; wait for scanline 0
+	and	a
+	jp	nz,.loop
+	ldh	a,[rBGP]		; get current palette
+	ld	b,a				; copy to B for later use
+	xor	$ff				; invert palette
+	ldh	[rBGP],a		; (draw CPU meter from top of screen)
+	call	DS_Play		; update sound
 	
-	; playback controls
+	ldh	a,[rLY]			; get current scanline
+	ld	c,a
+	ld	a,b				; restore palette
+	ldh	[rBGP],a		; (stop drawing CPU meter)
+	halt				; wait for VBlank
+	
+	ld	a,c
+	ld	hl,$9a11		; raster time display address in VRAM
+	call	DrawHex		; draw raster time
+		; playback controls
 	call	CheckInput
 	ld	a,[sys_btnPress]
 	bit	btnUp,a
@@ -230,7 +248,7 @@ MainLoop:
 	jr	nz,.add1
 	bit	btnA,a
 	jr	nz,.loadSong
-	bit	btnB,b
+	bit	btnB,a
 	jr	nz,.stopSong
 	bit	btnStart,a
 	jr	nz,.fadeout
@@ -269,31 +287,12 @@ MainLoop:
 	ld	a,2
 	call	DS_Fade
 	jr	.continue
-.fadein
+.fadein	
 	ld	a,[CurrentSong]
 	call	DS_Init
 	ld	a,1
 	call	DS_Fade
-	
 .continue
-	ld	a,[rLY]			; wait for scanline 0
-	and	a
-	jr	nz,.continue
-	ldh	a,[rBGP]		; get current palette
-	ld	b,a				; copy to B for later use
-	xor	$ff				; invert palette
-	ldh	[rBGP],a		; (draw CPU meter from top of screen)
-	call	DS_Play		; update sound
-	
-	ldh	a,[rLY]			; get current scanline
-	ld	c,a
-	ld	a,b				; restore palette
-	ldh	[rBGP],a		; (stop drawing CPU meter)
-	halt				; wait for VBlank
-	
-	ld	a,c
-	ld	hl,$9a11		; raster time display address in VRAM
-	call	DrawHex		; draw raster time
 	jp	MainLoop
 	
 ; ================================================================
@@ -329,33 +328,17 @@ Font_End:
 ; Draw decimal number A at HL
 ; ================================================================
 
-; Routine copied from GBS2GB with some modifications to not display
-; leading zeroes. Could use a bit of optimization...
+; Routine copied from GBS2GB.
 
 DrawDec:
-	and	a
-	jr	nz,.notzero
-	ld	a,"0"-32
-	ld	[hl-],a
-	ld	a," "-32
-	ld	[hl-],a
-	ld	[hl],a
-	ret
-.notzero
 	call	.div10	; get 1's digit
 	ld	[hl-],a		; write char
 	ld	a,c
 	call	.div10	; get 10's digit
-	cp	$10
-	jr	nz,.notzero2
-	ld	a," "-32
 .notzero2
 	ld	[hl-],a		; write char
 	ld	a,c
 	add	$10			; add offset to tile #
-	cp	$10
-	jr	nz,.notzero3
-	ld	a," "-32
 .notzero3
 	ld	[hl],a		; write 100's digit
 	ret
