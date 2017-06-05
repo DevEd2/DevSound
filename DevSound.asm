@@ -49,8 +49,8 @@ db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
 ; ================================================================
 
 DevSound_Init:
-	push	af
-	push	af		; i swear there's a method to my madness here
+	ld	c,a		; Preserve song ID
+	
 	xor	a
 	ldh	[rNR52],a	; disable sound
 	ld	[PWMEnabled],a
@@ -67,6 +67,8 @@ DevSound_Init:
 	inc	de
 	dec	b
 	jr	nz,.initLoop
+	
+	ld	d,c		; Transfer song ID
 
 	; load default waveform
 	ld	hl,DefaultWave
@@ -76,7 +78,7 @@ DevSound_Init:
 	
 	; set up song pointers
 	ld	hl,SongPointerTable
-	pop	af
+	ld	a,d
 	add	a
 	add	l
 	ld	l,a
@@ -84,11 +86,8 @@ DevSound_Init:
 	inc	h
 .nocarry		; HERE BE HACKS
 	ld	a,[hl+]
-	ld	e,a
-	ld	a,[hl]
-	ld	d,a
-	ld	h,d
-	ld	l,e
+	ld	h,[hl]
+	ld	l,a
 	ld	a,[hl+]
 	ld	[CH1Ptr],a
 	ld	a,[hl+]
@@ -126,7 +125,7 @@ DevSound_Init:
 	ld	[CH4Pan],a
 	; get tempo
 	ld	hl,SongSpeedTable
-	pop	af		; see? I TOLD you there was a method to my madness!
+	ld	a,d		; Retrieve song ID one last time
 	add	a
 	add	l
 	ld	l,a
@@ -141,7 +140,7 @@ DevSound_Init:
 	ld	[GlobalSpeed2],a
 	ld	a,%10000000
 	ldh	[rNR52],a
-	or	$7f
+	ld	a,$FF
 	ldh	[rNR51],a
 	ldh	[rNR50],a
 	ret
