@@ -1832,15 +1832,15 @@ CH1_UpdateRegisters:
 ; ================================================================
 
 CH2_UpdateRegisters:
-	if(UseFXHammer)
-	ld	a,[$c7cc]
-	cp	3
-	jp	z,CH3_UpdateRegisters
-	endc
 	ld	a,[CH2Enabled]
 	and	a
 	jp	z,CH3_UpdateRegisters
 	
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jr	z,.norest
+	endc
 	ld	a,[CH2Note]
 	cp	rest
 	jr	nz,.norest
@@ -1899,6 +1899,13 @@ CH2_UpdateRegisters:
 	swap	a		; swap lower and upper nybbles
 	rla			; rotate left
 	rla			;   ""    ""
+	if(UseFXHammer)
+	ld	e,a
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,.noreset2
+	ld	a,e
+	endc
 	ldh	[rNR21],a	; transfer to register
 .noreset2
 	ld	a,[CH2PulsePos]
@@ -1974,6 +1981,11 @@ CH2_UpdateRegisters:
 	add	c
 	ld	d,a
 .setFreq	
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,.updateVolume
+	endc
 	ld	a,d
 	ldh	[rNR23],a
 	ld	a,e
@@ -1996,6 +2008,11 @@ CH2_UpdateRegisters:
 	jr	z,.done
 	swap	a
 	ld	b,a
+	if(UseFXHammer)
+	ld	a,[$c7cc]
+	cp	3
+	jp	z,.noreset3
+	endc
 	ldh	a,[rNR22]
 	cp	b
 	jr	z,.noreset3
@@ -2240,15 +2257,15 @@ CH3_UpdateRegisters:
 ; ================================================================
 
 CH4_UpdateRegisters:
-	if(UseFXHammer)
-	ld	a,[$c7d9]
-	cp	3
-	jp	z,DoneUpdatingRegisters
-	endc
 	ld	a,[CH4Enabled]
 	and	a
 	jp	z,DoneUpdatingRegisters
 	
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jr	z,.norest
+	endc
 	ld	a,[CH4Mode]
 	cp	rest
 	jr	nz,.norest
@@ -2302,6 +2319,11 @@ CH4_UpdateRegisters:
 	inc	h
 .nocarry2
 	
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jr	z,.updateVolume
+	endc
 	ld	a,[hl+]
 	ldh	[rNR43],a	
 
@@ -2322,6 +2344,11 @@ CH4_UpdateRegisters:
 	jr	z,.done
 	swap	a
 	ld	b,a
+	if(UseFXHammer)
+	ld	a,[$c7d9]
+	cp	3
+	jr	z,.noreset3
+	endc
 	ldh	a,[rNR42]
 	cp	b
 	jr	z,.noreset3
