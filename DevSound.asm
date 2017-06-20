@@ -938,8 +938,8 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-	xor	$ff
-	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
+;	xor	$ff
+;	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,1
 	ld	[CH3VibPos],a
 	ld	hl,CH3VibPtr
@@ -2653,9 +2653,9 @@ FreqTable:  ; TODO: Add at least one extra octave
 	dw	$416,$44e,$483,$4b5,$4e5,$511,$53b,$563,$589,$5ac,$5ce,$5ed ; octave 2
 	dw	$60a,$627,$642,$65b,$672,$689,$69e,$6b2,$6c4,$6d6,$6e7,$6f7 ; octave 3
 	dw	$706,$714,$721,$72d,$739,$744,$74f,$759,$762,$76b,$773,$77b ; octave 4
-	dw	$783,$78a,$790,$797,$79d,$7a2,$7a7,$7ac,$7b1,$7b4,$7ba,$7be ; octave 5
+	dw	$783,$78a,$790,$797,$79d,$7a2,$7a7,$7ac,$7b1,$7b6,$7ba,$7be ; octave 5
 	dw	$7c1,$7c4,$7c8,$7cb,$7ce,$7d1,$7d4,$7d6,$7d9,$7db,$7dd,$7df ; octave 6
-	dw	$7e0,$7e2,$7e4,$7e5,$7e7,$7e8,$7ea,$7eb,$7ec,$7ed,$7ee,$7ef ; extra octave (not used directly)
+	dw	$7e0,$7e2,$7e4,$7e5,$7e7,$7e8,$7ea,$7eb,$7ec,$7ee,$7ee,$7ef ; octave 7 (not used directly, is slightly out of tune)
 	
 NoiseTable:	; taken from deflemask
 	db	$a4	; 15 steps
