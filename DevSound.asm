@@ -248,7 +248,7 @@ UpdateCH1:
 	jr	z,.continue
 	dec	a
 	ld	[CH1Tick],a
-	jp	UpdateCH2		; too far for jr
+	jp	UpdateCH2
 .continue
 	ld	hl,CH1Ptr		; get pointer
 	ld	a,[hl+]
@@ -277,7 +277,6 @@ CH1_CheckByte:
 	dec	a
 	ld	[CH1Tick],a		; set tick
 	xor	a
-	ld	[CH1VolPos],a
 	ld	[CH1ArpPos],a
 	ldh	[rNR12],a
 	inc	a
@@ -290,9 +289,15 @@ CH1_CheckByte:
 	ld	[CH1VibDelay],a
 	ld	a,[CH1Reset]
 	and	a
-	jp	nz,.noreset
+	jr	nz,.noreset_checkvol
 	xor	a
 	ld	[CH1PulsePos],a
+.noreset_checkvol
+	ld	a,[CH1Reset]
+	cp	2
+	jr	z,.noreset
+	xor	a
+	ld	[CH1VolPos],a
 .noreset
 	ld	a,[CH1NoteCount]
 	inc	a
@@ -349,7 +354,7 @@ CH1_CheckByte:
 CH1_DoneUpdating:
 	ld	a,c
 	ld	[CH1Pos],a
-	jp	UpdateCH2	; too far for jr
+	jp	UpdateCH2
 		
 CH1_CommandTable:
 	dw	.setInstrument
@@ -379,19 +384,19 @@ CH1_CommandTable:
 	xor	a
 	ld	[CH1InsMode],a
 	pop	hl
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 	
 .setLoopPoint
 	pop	hl
 	ld	a,c
 	ld	[CH1LoopPos],a
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 	
 .gotoLoopPoint
 	pop	hl
 	ld	a,[CH1LoopPos]
 	ld	[CH1Pos],a
-	jp	UpdateCH1		; too far for jr
+	jp	UpdateCH1
 
 .callSection
 	pop	hl
@@ -410,7 +415,7 @@ CH1_CommandTable:
 	xor	a
 	ld	[CH1Pos],a
 	ld	c,a
-	jp	UpdateCH1	; too far for jr
+	jp	UpdateCH1
 	
 .setChannelPtr
 	pop	hl
@@ -427,26 +432,26 @@ CH1_CommandTable:
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 	
 .pitchBendDown	; TODO
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 
 .setSweep		; TODO
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 
 .setPan
 	pop	hl
 	ld	a,[hl+]
 	ld	[CH1Pan],a
 	inc	c
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 
 .setSpeed
 	pop	hl
@@ -458,7 +463,7 @@ CH1_CommandTable:
 	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH1_CheckByte	; too far for jr
+	jp	CH1_CheckByte
 	
 .setInsAlternate
 	pop	hl
@@ -574,7 +579,7 @@ UpdateCH2:
 	jr	z,.continue
 	dec	a
 	ld	[CH2Tick],a
-	jp	UpdateCH3	; too far for jr
+	jp	UpdateCH3
 .continue
 	ld	hl,CH2Ptr	; get pointer
 	ld	a,[hl+]
@@ -603,7 +608,6 @@ CH2_CheckByte:
 	dec	a
 	ld	[CH2Tick],a
 	xor	a
-	ld	[CH2VolPos],a
 	ld	[CH2ArpPos],a
 	if(UseFXHammer)
 	ld	a,[$c7cc]
@@ -622,9 +626,15 @@ CH2_CheckByte:
 	ld	[CH2VibDelay],a
 	ld	a,[CH2Reset]
 	and	a
-	jp	nz,.noreset
+	jr	nz,.noreset_checkvol
 	xor	a
 	ld	[CH2PulsePos],a
+.noreset_checkvol
+	ld	a,[CH2Reset]
+	cp	2
+	jr	z,.noreset
+	xor	a
+	ld	[CH2VolPos],a
 .noreset
 	ld	a,[CH2NoteCount]
 	inc	a
@@ -712,19 +722,19 @@ CH2_CommandTable:
 	pop	hl
 	xor	a
 	ld	[CH2InsMode],a
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 	
 .setLoopPoint
 	pop	hl
 	ld	a,c
 	ld	[CH2LoopPos],a
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 	
 .gotoLoopPoint
 	pop	hl
 	ld	a,[CH2LoopPos]
 	ld	[CH2Pos],a
-	jp	UpdateCH2		; too far for jr
+	jp	UpdateCH2
 	
 .callSection
 	pop	hl
@@ -743,7 +753,7 @@ CH2_CommandTable:
 	xor	a
 	ld	[CH2Pos],a
 	ld	c,a
-	jp	UpdateCH2	; too far for jr
+	jp	UpdateCH2
 	
 .setChannelPtr
 	pop	hl
@@ -760,26 +770,26 @@ CH2_CommandTable:
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 	
 .pitchBendDown	; TODO
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 
 .setSweep		; TODO
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 
 .setPan
 	pop	hl
 	ld	a,[hl+]
 	ld	[CH2Pan],a
 	inc	c
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 
 .setSpeed
 	pop	hl
@@ -791,7 +801,7 @@ CH2_CommandTable:
 	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH2_CheckByte	; too far for jr
+	jp	CH2_CheckByte
 
 .setInsAlternate
 	pop	hl
@@ -907,7 +917,7 @@ UpdateCH3:
 	jr	z,.continue
 	dec	a
 	ld	[CH3Tick],a
-	jp	UpdateCH4	; too far for jr
+	jp	UpdateCH4
 .continue
 	ld	hl,CH3Ptr	; get pointer
 	ld	a,[hl+]
@@ -938,8 +948,8 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-;	xor	$ff
-;	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
+	xor	$ff
+	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,1
 	ld	[CH3VibPos],a
 	ld	hl,CH3VibPtr
@@ -1012,7 +1022,7 @@ CH3_CheckByte:
 CH3_DoneUpdating:
 	ld	a,c
 	ld	[CH3Pos],a
-	jp	UpdateCH4	; too far for jr
+	jp	UpdateCH4
 		
 CH3_CommandTable:
 	dw	.setInstrument
@@ -1042,19 +1052,19 @@ CH3_CommandTable:
 	pop	hl
 	xor	a
 	ld	[CH3InsMode],a
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 	
 .setLoopPoint
 	pop	hl
 	ld	a,c
 	ld	[CH3LoopPos],a
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 	
 .gotoLoopPoint
 	pop	hl
 	ld	a,[CH3LoopPos]
 	ld	[CH3Pos],a
-	jp	UpdateCH3		; too far for jr
+	jp	UpdateCH3
 	
 .callSection
 	pop	hl
@@ -1073,7 +1083,7 @@ CH3_CommandTable:
 	xor	a
 	ld	[CH3Pos],a
 	ld	c,a
-	jp	UpdateCH3	; too far for jr
+	jp	UpdateCH3
 	
 .setChannelPtr
 	pop	hl
@@ -1090,26 +1100,26 @@ CH3_CommandTable:
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 	
 .pitchBendDown	; TODO
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 
 .setSweep		; TODO
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 
 .setPan
 	pop	hl
 	ld	a,[hl+]
 	ld	[CH3Pan],a
 	inc	c
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 
 .setSpeed
 	pop	hl
@@ -1121,7 +1131,7 @@ CH3_CommandTable:
 	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH3_CheckByte	; too far for jr
+	jp	CH3_CheckByte
 	
 .setInsAlternate
 	pop	hl
@@ -1263,7 +1273,7 @@ UpdateCH4:
 	jr	z,.continue
 	dec	a
 	ld	[CH4Tick],a
-	jp	DoneUpdating	; too far for jr
+	jp	DoneUpdating
 .continue
 	ld	hl,CH4Ptr	; get pointer
 	ld	a,[hl+]
@@ -1389,19 +1399,19 @@ CH4_CommandTable:
 	pop	hl
 	xor	a
 	ld	[CH4InsMode],a
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 	
 .setLoopPoint
 	pop	hl
 	ld	a,c
 	ld	[CH4LoopPos],a
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 	
 .gotoLoopPoint
 	pop	hl
 	ld	a,[CH4LoopPos]
 	ld	[CH4Pos],a
-	jp	UpdateCH4		; too far for jr
+	jp	UpdateCH4
 	
 .callSection
 	pop	hl
@@ -1420,7 +1430,7 @@ CH4_CommandTable:
 	xor	a
 	ld	[CH4Pos],a
 	ld	c,a
-	jp	UpdateCH4	; too far for jr
+	jp	UpdateCH4
 	
 .setChannelPtr
 	pop	hl
@@ -1437,26 +1447,26 @@ CH4_CommandTable:
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 	
 .pitchBendDown	; unused for ch4
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 
 .setSweep		; unused for ch4
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 
 .setPan
 	pop	hl
 	ld	a,[hl+]
 	ld	[CH4Pan],a
 	inc	c
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 
 .setSpeed
 	pop	hl
@@ -1468,7 +1478,7 @@ CH4_CommandTable:
 	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH4_CheckByte	; too far for jr
+	jp	CH4_CheckByte
 	
 .setInsAlternate
 	pop	hl
@@ -1637,7 +1647,7 @@ UpdateRegisters:
 	ld	[GlobalVolume],a
 	jr	.continue
 .dostop
-	call	DS_Stop
+	call	DevSound_Stop
 .continue
 	ld	a,[GlobalVolume]
 	and	7
@@ -1709,10 +1719,10 @@ CH1_UpdateRegisters:
 	cp	$ff
 	jr	z,.updateNote
 	; convert pulse value
-	and	3		; make sure value does not exceed 3
+	and	3			; make sure value does not exceed 3
 	swap	a		; swap lower and upper nybbles
-	rla			; rotate left
-	rla			;   ""    ""
+	rla				; rotate left
+	rla				;   ""    ""
 	ldh	[rNR11],a	; transfer to register
 .noreset2
 	ld	a,[CH1PulsePos]
@@ -1895,10 +1905,10 @@ CH2_UpdateRegisters:
 	cp	$ff
 	jr	z,.updateNote
 	; convert pulse value
-	and	3		; make sure value does not exceed 3
+	and	3			; make sure value does not exceed 3
 	swap	a		; swap lower and upper nybbles
-	rla			; rotate left
-	rla			;   ""    ""
+	rla				; rotate left
+	rla				;   ""    ""
 	if(UseFXHammer)
 	ld	e,a
 	ld	a,[$c7cc]
@@ -2393,8 +2403,7 @@ LoadWave:
 	ret
 	
 ClearWaveBuffer:
-	ld	a,$10
-	ld	b,a
+	ld	b,$10
 	xor	a
 	ld	hl,WaveBuffer
 .loop
@@ -2405,41 +2414,41 @@ ClearWaveBuffer:
 
 ; Combine two waves. Optimized by Pigu
 ; INPUT: bc = first wave addr
-;	  de = second wave addr
+;		 de = second wave addr
 
 _CombineWaves:
-    ld hl,WaveBuffer
-    ld a, 16
+	ld hl,WaveBuffer
+	ld a,16
 .loop
-    push af
-    push hl
-	ld a, [bc]
-    and $f
-    ld l, a
-    ld a, [de]
-    and $f
-    add l
-    rra
-    ld l, a
-    ld a, [bc]
-    inc bc
-    and $f0
-    ld h, a
-    ld a, [de]
-    inc de
-    and $f0
-    add h
-    rra
-    and $f0
-    or l
-    pop hl
-    ld [hli], a
-    pop af
-    dec a
-    jr nz, .loop
+	push	af
+	push	hl
+	ld	a,[bc]
+	and	$f
+	ld	l,a
+	ld	a,[de]
+	and	$f
+	add	l
+	rra
+	ld	l,a
+	ld	a,[bc]
+	inc	bc
+	and	$f0
+	ld	h,a
+	ld	a,[de]
+	inc	de
+	and	$f0
+	add	h
+	rra
+	and	$f0
+	or	l
+	pop	hl
+	ld	[hl+],a
+	pop	af
+	dec	a
+	jr	nz, .loop
 	ld	a,1
 	ld	[WaveBufUpdateFlag],a
-    ret
+	ret
 	
 ; Randomize the wave buffer
 
