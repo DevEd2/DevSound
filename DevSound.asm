@@ -948,8 +948,8 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-	xor	$ff
-	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
+;	xor	$ff
+;	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,1
 	ld	[CH3VibPos],a
 	ld	hl,CH3VibPtr
@@ -2267,6 +2267,7 @@ CH3_UpdateRegisters:
 ; ================================================================
 
 CH4_UpdateRegisters:
+	ld	b,b
 	ld	a,[CH4Enabled]
 	and	a
 	jp	z,DoneUpdatingRegisters
@@ -2304,7 +2305,7 @@ CH4_UpdateRegisters:
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH4NoisePos],a
-	jr	.updatearp
+	jr	.updateNote
 .noloop
 	cp	$ff
 	jr	z,.continue
