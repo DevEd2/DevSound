@@ -2267,7 +2267,6 @@ CH3_UpdateRegisters:
 ; ================================================================
 
 CH4_UpdateRegisters:
-	ld	b,b
 	ld	a,[CH4Enabled]
 	and	a
 	jp	z,DoneUpdatingRegisters
