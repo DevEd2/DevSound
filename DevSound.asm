@@ -948,8 +948,8 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-;	xor	$ff
-;	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
+	xor	$ff
+	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,1
 	ld	[CH3VibPos],a
 	ld	hl,CH3VibPtr
@@ -1578,8 +1578,7 @@ DoneUpdating:
 
 UpdateRegisters:
 	; update panning
-	xor	a
-	ld	b,a
+	ld	b,0
 	ld	a,[CH1Pan]
 	add	b
 	ld	b,a
@@ -1602,7 +1601,7 @@ UpdateRegisters:
 	; update global volume + fade system
 	ld	a,[FadeType]
 	and	3
-	or	a
+	and	a
 	jr	z,CH1_UpdateRegisters
 	ld	a,[FadeTimer]
 	and	a

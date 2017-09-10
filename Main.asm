@@ -137,55 +137,6 @@ ProgramStart:
 	
 	CopyTileset1BPP	Font,0,(Font_End-Font)/8
 	
-	; Emulator check!
-	; This routine uses echo RAM access to detect lesser
-	; emulators (such as VBA) which are more likely to
-	; break when given situations that real hardware
-	; handles just fine.
-	ld	a,"e"				; this value isn't important
-	ld	[VBACheck],a		; copy value to WRAM
-	ld	b,a
-	ld	a,[VBACheck+$2000]	; read value back from echo RAM
-	cp	b					; (fails in emulators which don't emulate echo RAM)
-	jp	z,.noemu			; if check passes, don't display warning
-.emuscreen	
-	ld	hl,.emutext
-	call	LoadMapText		; assumes font is already loaded into VRAM
-	ld	a,%11100100			; 3 2 1 0
-	ldh	[rBGP],a			; set background palette
-	ld	a,%10010001			; LCD on + BG on + BG $8000
-	ldh	[rLCDC],a			; enable LCD
-.emuwait
-	call	CheckInput
-	ld	a,[sys_btnPress]
-	bit	btnA,a				; check if A is pressed
-	jp	nz,.emubreak		; if a is pressed, break from loop
-	jr	.emuwait
-.emutext					; 20x18 char tilemap
-	db	"Nice emulator you   "
-	db	"got there :^)       "
-	db	"                    "
-	db	"For best results,   "
-	db	"please use a better "
-	db	"emulator (such as   "
-	db	"bgb or gambatte) or "
-	db	"run this ROM on real"
-	db	"hardware.           "
-	db	"                    "
-	db	"Press A to continue "
-	db	"anyway, but don't   "
-	db	"blame me if any part"
-	db	"of this ROM doesn't "
-	db	"work correctly due  "
-	db	"to your terrible    "
-	db	"choice of emulator! "
-	db	"                    "
-	
-.emubreak
-	; no need to wait for vblank first because this code only runs in emulators
-	xor	a
-	ldh	[rLCDC],a			; disable lcd
-.noemu
 	ld	hl,MainText			; load main text
 	call	LoadMapText
 	ld	a,%11100100			; 3 2 1 0
