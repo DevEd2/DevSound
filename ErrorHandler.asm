@@ -5,16 +5,15 @@
 ; ================================================================
 
 ErrorHandler:
-
 	; store stack pointer
-	inc	sp
-	inc	sp
 	ld	[tempSP],sp
 	
 	push	hl
 	push	af
 	
 	; store AF
+	; Note that F normally cannot be read directly, so we must first
+	; push af and then pop it to hl.
 	pop	hl
 	ld	a,h
 	ldh	[tempAF],a
