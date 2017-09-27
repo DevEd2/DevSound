@@ -142,8 +142,8 @@ DevSound_Init:
 	ldh	[rNR52],a
 	ld	a,$FF
 	ldh	[rNR51],a
-	ld	a,$77
-	ldh	[rNR50],a
+	ld	a,7
+	ld	[GlobalVolume],a
 	ret
 
 ; ================================================================
@@ -949,7 +949,7 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
-	xor	$ff
+	cpl
 	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
 	ld	a,1
 	ld	[CH3VibPos],a
@@ -1579,7 +1579,8 @@ DoneUpdating:
 
 UpdateRegisters:
 	; update panning
-	ld	b,0
+	xor	a
+	ld	b,a
 	ld	a,[CH1Pan]
 	add	b
 	ld	b,a
@@ -1602,14 +1603,14 @@ UpdateRegisters:
 	; update global volume + fade system
 	ld	a,[FadeType]
 	and	3
-	and	a
-	jr	z,CH1_UpdateRegisters
+	or	a
+	jr	z,.updateVolume ; Update volume
 	ld	a,[FadeTimer]
 	and	a
 	jr	z,.doupdate
 	dec	a
 	ld	[FadeTimer],a
-	jr	.continue
+	jr	.updateVolume
 .doupdate
 	ld	a,7
 	ld	[FadeTimer],a
@@ -1620,36 +1621,37 @@ UpdateRegisters:
 	jr	z,.fadein
 	dec	a
 	jr	z,.fadeoutstop
-	jr	.continue
+	jr	.updateVolume
 .fadeout
 	ld	a,[GlobalVolume]
 	and	a
-	jr	z,.continue
+	jr	z,.directlyUpdateVolume
 	dec	a
 	ld	[GlobalVolume],a
-	jr	.continue
+	jr	.updateVolume
 .fadein
 	ld	a,[GlobalVolume]
 	cp	7
 	jr	z,.done
 	inc	a
 	ld	[GlobalVolume],a
-	jr	.continue
+	jr	.directlyUpdateVolume
 .done
 	xor	a
 	ld	[FadeType],a
-	jr	.continue
+	jr	.updateVolume
 .fadeoutstop
 	ld	a,[GlobalVolume]
 	and	a
 	jr	z,.dostop
 	dec	a
 	ld	[GlobalVolume],a
-	jr	.continue
+	jr	.directlyUpdateVolume
 .dostop
 	call	DevSound_Stop
-.continue
+.updateVolume
 	ld	a,[GlobalVolume]
+.directlyUpdateVolume ; Call when volume is already known
 	and	7
 	ld	b,a
 	swap	a
