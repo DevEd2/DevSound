@@ -31,7 +31,7 @@ include	"DevSound_Vars.asm"
 include	"DevSound_Consts.asm"
 include	"DevSound_Macros.asm"
 
-SECTION	"DevSound",ROMX
+SECTION	"DevSound",ROM0[$1000]
 
 DevSound_JumpTable:
 
