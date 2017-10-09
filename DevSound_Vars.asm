@@ -5,7 +5,7 @@
 if !def(incDSVars)
 incDSVars	set	1
 
-SECTION	"DevSound variables",BSS
+SECTION	"DevSound variables",WRAM0
 
 DSVarsStart
 
