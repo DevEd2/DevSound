@@ -133,5 +133,5 @@ RandomizerEnabled	ds	1
 RandomizerTimer		ds	1
 RandomizerSpeed		ds	1
 
-ArpBuffer			ds	8
+arp_Buffer			ds	8
 endc

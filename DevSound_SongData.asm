@@ -89,11 +89,11 @@ arp_Octave:		db	0,19,12,12,0,0,0,0,12,$80,2
 arp_Pluck:		db	12,0,$ff
 arp_Tom:		db	22,20,18,16,14,12,10,9,7,6,4,3,2,1,0,$ff
 
-arp_017C:		db	12,12,7,7,1,1,0,0,$80,0
-arp_057C:		db	12,12,7,7,5,5,0,0,$80,0
-arp_950:		db	9,5,0,9,9,5,5,0,0,$80,3
-arp_740:		db	7,4,0,7,7,4,4,0,0,$80,3
-arp_830:		db	8,3,0,8,8,3,3,0,0,$80,3
+arp__017C:		db	12,12,7,7,1,1,0,0,$80,0
+arp__057C:		db	12,12,7,7,5,5,0,0,$80,0
+arp__950:		db	9,5,0,9,9,5,5,0,0,$80,3
+arp__740:		db	7,4,0,7,7,4,4,0,0,$80,3
+arp__830:		db	8,3,0,8,8,3,3,0,0,$80,3
 
 ; =================================================================
 ; Noise sequences
@@ -109,28 +109,27 @@ arp_830:		db	8,3,0,8,8,3,3,0,0,$80,3
 
 s7	equ	$2d
 
-noiseseq_Kick:	db	32,26,37,$80,2
-noiseseq_Snare:	db	s7+29,s7+23,s7+20,35,$80,3
-noiseseq_Hat:	db	41,43,$80,1
+arp_Kick:	db	32,26,37,$80,2
+arp_Snare:	db	s7+29,s7+23,s7+20,35,$80,3
+arp_Hat:	db	41,43,$80,1
 
-noiseseq_McAlbyKick:	db	42,28,24,20,12,20,28,$80,6
-noiseseq_McAlbySnare:	db	28,24,28,32,36,40,40,$80,6
-noiseseq_McAlbyHat:		db	40,42,44,$80,2
-noiseseq_McAlbyCymb:	db	40,42,36,$80,2
+arp_McAlbyKick:	db	42,28,24,20,12,20,28,$80,6
+arp_McAlbySnare:	db	28,24,28,32,36,40,40,$80,6
+arp_McAlbyHat:		db	40,42,44,$80,2
+arp_McAlbyCymb:	db	40,42,36,$80,2
 
 ; =================================================================
 ; Pulse sequences
 ; =================================================================
 
-pulse_Dummy:	db	0,$ff
-pulse_Arp:		db	2,2,2,1,1,1,0,0,0,3,3,3,$80,0
-pulse_OctArp:	db	2,2,2,1,1,2,$ff
+waveseq_Arp:		db	2,2,2,1,1,1,0,0,0,3,3,3,$80,0
+waveseq_OctArp:	db	2,2,2,1,1,2,$ff
 
-pulse_Bass:		db	1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,0,0,0,0,0,0,$80,0
-pulse_Square:	db	2,$ff
-pulse_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$80,00
+waveseq_Bass:		db	1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,0,0,0,0,0,0,$80,0
+waveseq_Square:	db	2,$ff
+waveseq_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$80,00
 
-pulse_EchoTest:	db	1,$ff
+waveseq_EchoTest:	db	1,$ff
 
 ; =================================================================
 ; Vibrato sequences
@@ -179,156 +178,111 @@ wave_PseudoSquare:
 			db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
 
 ; use $c0 to use the wave buffer
-waveseq_Bass:		db	0,$ff
+waveseq_Bass_:		db	0,$ff
 waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
-waveseq_Square:		db	$c0,$ff
+waveseq_Square_:		db	$c0,$ff
 
 ; =================================================================
 ; Instruments
 ; =================================================================
 
 InstrumentTable:
-	dw	ins_Gadunk
-	dw	ins_Arp1
-	dw	ins_Arp2
-	dw	ins_OctArp
-	dw	ins_Bass1
-	dw	ins_Bass2
-	dw	ins_Bass3
-	dw	ins_GadunkWave
+	const_def
+	dins	Gadunk
+	dins	Arp1
+	dins	Arp2
+	dins	OctArp
+	dins	Bass1
+	dins	Bass2
+	dins	Bass3
+	dins	GadunkWave
 	
-	dw	ins_Kick
-	dw	ins_Snare
-	dw	ins_CHH
-	dw	ins_OHH
-	dw	ins_CymbQ
-	dw	ins_CymbL
+	dins	Kick
+	dins	Snare
+	dins	CHH
+	dins	OHH
+	dins	CymbQ
+	dins	CymbL
 	
-	dw	ins_PulseBass
-	dw	ins_Tom
-	dw	ins_Arp
-	dw	ins_WaveLeadShort
-	dw	ins_WaveLeadMed
-	dw	ins_WaveLeadLong
-	dw	ins_WaveLeadLong2
+	dins	PulseBass
+	dins	Tom
+	dins	Arp
+	dins	WaveLeadShort
+	dins	WaveLeadMed
+	dins	WaveLeadLong
+	dins	WaveLeadLong2
 	
-	dw	ins_Echo1
-	dw	ins_Echo2
+	dins	Echo1
+	dins	Echo2
 	
-	dw	ins_McAlbyKick
-	dw	ins_McAlbySnare
-	dw	ins_McAlbyCHH
-	dw	ins_McAlbyOHH
-	dw	ins_McAlbyCymb
+	dins	AKick
+	dins	ASnare
+	dins	ACHH
+	dins	AOHH
+	dins	ACymb
 	
-	dw	ins_Tom2
-	dw	ins_PWM1
-	dw	ins_Arp017C
-	dw	ins_Arp057C
-	dw	ins_PulseBass2
-	dw	ins_Arp950
-	dw	ins_Arp740
-	dw	ins_Arp830
+	dins	Tom2
+	dins	PWM1
+	dins	Arp017C
+	dins	Arp057C
+	dins	PulseBass2
+	dins	Arp950
+	dins	Arp740
+	dins	Arp830
 
-; Instrument format: [no reset flag],[wave mode (ch3 only)],[voltable id],[arptable id],[pulsetable/wavetable id],[vibtable id]
-; note that wave mode must be 0 for non-wave instruments
+; Instrument format: [no reset flag],[voltable id],[arptable id],[wavetable id],[vibtable id]
+; _ for no table
 ; !!! REMEMBER TO ADD INSTRUMENTS TO THE INSTRUMENT POINTER TABLE !!!
-ins_Gadunk:			Instrument	0,vol_Gadunk,arp_Gadunk,pulse_Dummy,vib_Dummy
-ins_Arp1:			Instrument	0,vol_Arp,arp_Pluck059,pulse_Arp,vib_Dummy
-ins_Arp2:			Instrument	0,vol_Arp,arp_Pluck047,pulse_Arp,vib_Dummy
-ins_OctArp:			Instrument	0,vol_OctArp,arp_Octave,pulse_OctArp,vib_Dummy
-ins_Bass1:			Instrument	0,vol_Bass1,arp_Pluck,waveseq_Bass,vib_Dummy
-ins_Bass2:			Instrument	0,vol_Bass2,arp_Pluck,waveseq_Bass,vib_Dummy
-ins_Bass3:			Instrument	0,vol_Bass3,arp_Pluck,waveseq_Bass,vib_Dummy
-ins_GadunkWave:		Instrument	0,vol_Bass1,arp_Gadunk,waveseq_Tri,vib_Dummy
-ins_Kick:			Instrument	0,vol_Kick,noiseseq_Kick,DummyTable,DummyTable	; pulse/waveseq and vibrato unused by noise instruments
-ins_Snare:			Instrument	0,vol_Snare,noiseseq_Snare,DummyTable,DummyTable
-ins_CHH:			Instrument	0,vol_Kick,noiseseq_Hat,DummyTable,DummyTable
-ins_OHH:			Instrument	0,vol_OHH,noiseseq_Hat,DummyTable,DummyTable
-ins_CymbQ:			Instrument	0,vol_CymbQ,noiseseq_Hat,DummyTable,DummyTable
-ins_CymbL:			Instrument	0,vol_CymbL,noiseseq_Hat,DummyTable,DummyTable
+ins_Gadunk:			Instrument	0,Gadunk,Gadunk,_,_
+ins_Arp1:			Instrument	0,Arp,Pluck059,Arp,_
+ins_Arp2:			Instrument	0,Arp,Pluck047,Arp,_
+ins_OctArp:			Instrument	0,OctArp,Octave,OctArp,_
+ins_Bass1:			Instrument	0,Bass1,Pluck,Bass_,_
+ins_Bass2:			Instrument	0,Bass2,Pluck,Bass_,_
+ins_Bass3:			Instrument	0,Bass3,Pluck,Bass_,_
+ins_GadunkWave:		Instrument	0,Bass1,Gadunk,Tri,_
+ins_Kick:			Instrument	0,Kick,Kick,_,_
+ins_Snare:			Instrument	0,Snare,Snare,_,_
+ins_CHH:			Instrument	0,Kick,Hat,_,_
+ins_OHH:			Instrument	0,OHH,Hat,_,_
+ins_CymbQ:			Instrument	0,CymbQ,Hat,_,_
+ins_CymbL:			Instrument	0,CymbL,Hat,_,_
 
-ins_PulseBass:		Instrument	0,vol_PulseBass,arp_Pluck,pulse_Bass,vib_Dummy
-ins_Tom:			Instrument	0,vol_Tom,arp_Tom,pulse_Square,vib_Dummy
-ins_Arp:			Instrument	0,vol_Arp2,ArpBuffer,pulse_Arp2,vib_Dummy
+ins_PulseBass:		Instrument	0,PulseBass,Pluck,Bass,_
+ins_Tom:			Instrument	0,Tom,Tom,Square,_
+ins_Arp:			Instrument	0,Arp2,Buffer,Arp2,_
 
-ins_WaveLeadShort:	Instrument	0,vol_WaveLeadShort,arp_Pluck,waveseq_PulseLead,vib_Dummy
-ins_WaveLeadMed:	Instrument	0,vol_WaveLeadMed,arp_Pluck,waveseq_PulseLead,vib_Dummy
-ins_WaveLeadLong:	Instrument	0,vol_WaveLeadLong,arp_Pluck,waveseq_PulseLead,vib_Dummy
-ins_WaveLeadLong2:	Instrument	0,vol_WaveLeadLong2,arp_Pluck,waveseq_PulseLead,vib_Dummy
+ins_WaveLeadShort:	Instrument	0,WaveLeadShort,Pluck,PulseLead,_
+ins_WaveLeadMed:	Instrument	0,WaveLeadMed,Pluck,PulseLead,_
+ins_WaveLeadLong:	Instrument	0,WaveLeadLong,Pluck,PulseLead,_
+ins_WaveLeadLong2:	Instrument	0,WaveLeadLong2,Pluck,PulseLead,_
 
-ins_Echo1:			Instrument	0,vol_Echo1,arp_Pluck,pulse_EchoTest,vib_Test
-ins_Echo2:			Instrument	0,vol_Echo2,arp_Pluck,pulse_EchoTest,vib_Test
+ins_Echo1:			Instrument	0,Echo1,Pluck,EchoTest,Test
+ins_Echo2:			Instrument	0,Echo2,Pluck,EchoTest,Test
 
-ins_McAlbyKick:		Instrument	0,vol_McAlbyKick,noiseseq_McAlbyKick,DummyTable,DummyTable
-ins_McAlbySnare:	Instrument	0,vol_McAlbySnare,noiseseq_McAlbySnare,DummyTable,DummyTable
-ins_McAlbyCHH:		Instrument	0,vol_McAlbyCHH,noiseseq_McAlbyHat,DummyTable,DummyTable
-ins_McAlbyOHH:		Instrument	0,vol_McAlbyOHH,noiseseq_McAlbyHat,DummyTable,DummyTable
-ins_McAlbyCymb:		Instrument	0,vol_McAlbyCymb,noiseseq_McAlbyCymb,DummyTable,DummyTable
+ins_AKick:			Instrument	0,McAlbyKick,McAlbyKick,_,_
+ins_ASnare:			Instrument	0,McAlbySnare,McAlbySnare,_,_
+ins_ACHH:			Instrument	0,McAlbyCHH,McAlbyHat,_,_
+ins_AOHH:			Instrument	0,McAlbyOHH,McAlbyHat,_,_
+ins_ACymb:			Instrument	0,McAlbyCymb,McAlbyCymb,_,_
 
-ins_Tom2:			Instrument	0,vol_Tom2,arp_Tom,pulse_Square,vib_Dummy
-ins_PWM1:			Instrument	0,vol_WaveLeadShort,arp_Pluck,waveseq_Square,vib_Dummy
-ins_Arp017C:		Instrument	0,vol_PulseBass2,arp_017C,pulse_OctArp,vib_Dummy
-ins_Arp057C:		Instrument	0,vol_PulseBass2,arp_057C,pulse_OctArp,vib_Dummy
-ins_PulseBass2:		Instrument	0,vol_PulseBass2,arp_Pluck,pulse_Bass,vib_Dummy
-ins_Arp950:			Instrument	0,vol_PulseBass2,arp_950,pulse_OctArp,vib_Dummy
-ins_Arp740:			Instrument	0,vol_PulseBass2,arp_740,pulse_OctArp,vib_Dummy
-ins_Arp830:			Instrument	0,vol_PulseBass2,arp_830,pulse_OctArp,vib_Dummy
-
-_ins_Gadunk			equ	0
-_ins_Arp1			equ	1
-_ins_Arp2			equ	2
-_ins_OctArp			equ	3
-_ins_Bass1			equ	4
-_ins_Bass2			equ	5
-_ins_Bass3			equ	6
-_ins_GadunkWave		equ	7
-_ins_Kick			equ	8
-_ins_Snare			equ	9
-_ins_CHH			equ	10
-_ins_OHH			equ	11
-_ins_CymbQ			equ	12
-_ins_CymbL			equ	13
-_ins_PulseBass		equ	14
-_ins_Tom			equ	15
-_ins_Arp			equ	16
-_ins_WaveLeadShort	equ	17
-_ins_WaveLeadMed	equ	18
-_ins_WaveLeadLong	equ	19
-_ins_WaveLeadLong2	equ	20
-_ins_Echo1			equ	21
-_ins_Echo2			equ	22
-
-Kick				equ	_ins_Kick
-Snare				equ	_ins_Snare
-CHH					equ	_ins_CHH
-OHH					equ	_ins_OHH
-CymbQ				equ	_ins_CymbQ
-CymbL				equ	_ins_CymbL
-
-AKick				equ	23
-ASnare				equ	24
-ACHH				equ	25
-AOHH				equ	26
-ACymb				equ	27
-
-
-_ins_Tom2			equ	28
-_ins_PWM1			equ	29
-_ins_Arp017C		equ	30
-_ins_Arp057C		equ	31
-_ins_PulseBass2		equ	32
-_ins_Arp950			equ	33
-_ins_Arp740			equ	34
-_ins_Arp830			equ	35
+ins_Tom2:			Instrument	0,Tom2,Tom,Square,_
+ins_PWM1:			Instrument	0,WaveLeadShort,Pluck,Square_,_
+ins_Arp017C:		Instrument	0,PulseBass2,_017C,OctArp,_
+ins_Arp057C:		Instrument	0,PulseBass2,_057C,OctArp,_
+ins_PulseBass2:		Instrument	0,PulseBass2,Pluck,Bass,_
+ins_Arp950:			Instrument	0,PulseBass2,_950,OctArp,_
+ins_Arp740:			Instrument	0,PulseBass2,_740,OctArp,_
+ins_Arp830:			Instrument	0,PulseBass2,_830,OctArp,_
 
 ; =================================================================
 
 PT_Gadunk:	dw	Gadunk_CH1,DummyChannel,Gadunk_CH3,DummyChannel
 
 Gadunk_CH1:
-	db	SetInstrument,_ins_Gadunk
+
+	db	SetInstrument,id_Gadunk
 	db	SetLoopPoint
 	db	G#3,3,rest,1
 	db	G#3,3,rest,1
@@ -392,7 +346,7 @@ Gadunk_CH3:
 PT_Triumph:	dw	Triumph_CH1,Triumph_CH2,Triumph_CH3,Triumph_CH4
 	
 Triumph_CH1:
-	db	SetInstrument,_ins_OctArp
+	db	SetInstrument,id_OctArp
 	db	SetLoopPoint
 	db	F_5,6,D#5,6,F_5,8,F_5,4,G#5,4,F_5,4,D#5,4,C#5,4,D#5,4,F_5,4,D#5,6,C#5,6,A#4,4
 	db	C#5,20,A#4,4,C#5,4,D#5,4,F_5,6,F#5,6,F_5,4,C#5,8,D#5,8
@@ -550,7 +504,7 @@ InsertTitleHere_CH1:
 	ret
 	
 InsertTitleHere_CH2:
-	db	SetInstrument,_ins_Arp
+	db	SetInstrument,id_Arp
 	db	CallSection
 	dw	.block0
 	db	CallSection
@@ -643,7 +597,7 @@ InsertTitleHere_CH4:
 PT_EchoTest:	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
 	
 EchoTest_CH1:
-	db	SetInsAlternate,_ins_Echo1,_ins_Echo2
+	db	SetInsAlternate,id_Echo1,id_Echo2
 	db	SetLoopPoint
 	db	SetPan,$11
 	db	C_3,2,C_4,2
@@ -722,43 +676,43 @@ FlashTitle_CH1:
 	db	GotoLoopPoint
 	
 .block0	
-	db	SetInstrument,_ins_PulseBass2
+	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	db	A#2,4
-	Drum	_ins_Tom2,4
-	db	SetInstrument,_ins_PulseBass2
+	Drum	Tom2,4
+	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	db	A#2,4
 	db	A#2,4
-	Drum	_ins_Tom2,4
-	db	SetInstrument,_ins_PulseBass2
+	Drum	Tom2,4
+	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	db	A#2,2
 	db	A#2,2
 	db	A#2,4
-	Drum	_ins_Tom2,4
-	db	SetInstrument,_ins_PulseBass2
+	Drum	Tom2,4
+	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	db	A#2,4
 	db	A#2,4
-	Drum	_ins_Tom2,4
-	db	SetInstrument,_ins_PulseBass2
+	Drum	Tom2,4
+	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	ret
 	
 .block1
-	Drum	_ins_Tom2,4
+	Drum	Tom2,4
 	db	rest,2
-	Drum	_ins_Tom2,4
+	Drum	Tom2,4
 	db	rest,2
-	Drum	_ins_Tom2,4
+	Drum	Tom2,4
 	db	rest,2
-	Drum	_ins_Tom2,4
+	Drum	Tom2,4
 	db	rest,2
-	Drum	_ins_Tom2,2
-	Drum	_ins_Tom2,2
-	Drum	_ins_Tom2,2
-	Drum	_ins_Tom2,2
+	Drum	Tom2,2
+	Drum	Tom2,2
+	Drum	Tom2,2
+	Drum	Tom2,2
 	ret
 
 FlashTitle_CH2:
@@ -771,7 +725,7 @@ FlashTitle_CH2:
 	dw	.block1
 	db	GotoLoopPoint
 .block0
-	db	SetInstrument,_ins_Arp017C
+	db	SetInstrument,id_Arp017C
 	db	A#4,4
 	db	A#4,4
 	db	A#4,4
@@ -780,7 +734,7 @@ FlashTitle_CH2:
 	db	A#4,4
 	db	A#4,4
 	db	A#4,4
-	db	SetInstrument,_ins_Arp057C
+	db	SetInstrument,id_Arp057C
 	db	A#4,4
 	db	A#4,4
 	db	A#4,4
@@ -791,20 +745,20 @@ FlashTitle_CH2:
 	db	A#4,4
 	ret
 .block1
-	db	SetInstrument,_ins_Arp950
+	db	SetInstrument,id_Arp950
 	db	G#4,6
-	db	SetInstrument,_ins_Arp740
+	db	SetInstrument,id_Arp740
 	db	G#4,6
-	db	SetInstrument,_ins_Arp950
+	db	SetInstrument,id_Arp950
 	db	A#4,6
 	db	G#4,6
-	db	SetInstrument,_ins_Arp830
+	db	SetInstrument,id_Arp830
 	db	F_4,4
 	db	D#4,4
 	ret
 FlashTitle_CH3:
 	db	EnablePWM,$f,7
-	db	SetInstrument,_ins_PWM1
+	db	SetInstrument,id_PWM1
 	db	SetLoopPoint
 	db	CallSection
 	dw	.block0

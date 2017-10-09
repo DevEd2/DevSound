@@ -2590,7 +2590,7 @@ DoRandomizer:
 ; ================================================================
 
 ClearArpBuffer:
-	ld	hl,ArpBuffer
+	ld	hl,arp_Buffer
 	push	hl
 	inc	hl
 	ld	b,7
@@ -2605,7 +2605,7 @@ ClearArpBuffer:
 	ret
 	
 DoArp:
-	ld	de,ArpBuffer
+	ld	de,arp_Buffer
 	ld	a,[hl+]
 	and	a
 	jr	nz,.slow
