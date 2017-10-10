@@ -72,7 +72,7 @@ DevSound_Init:
 	dec	b
 	jr	nz,.initLoop
 	
-	ld	d,c		; Transfer song ID
+	ld	e,c		; Transfer song ID
 
 	; load default waveform
 	ld	hl,DefaultWave
@@ -82,13 +82,9 @@ DevSound_Init:
 	
 	; set up song pointers
 	ld	hl,SongPointerTable
-	ld	a,d
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry		; HERE BE HACKS
+	ld	d,0
+	add	hl,de
+	add	hl,de
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
@@ -129,13 +125,8 @@ DevSound_Init:
 	ld	[CH4Pan],a
 	; get tempo
 	ld	hl,SongSpeedTable
-	ld	a,d		; Retrieve song ID one last time
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry2
-	inc	h
-.nocarry2
+	add	hl,de
+	add	hl,de
 	ld	a,[hl+]
 	dec	a
 	ld	[GlobalSpeed1],a
@@ -224,10 +215,9 @@ DevSound_Play:
 	and	a				; is GlobalTimer non-zero?
 	jr	nz,.noupdate	; if yes, don't update
 	ld	a,[TickCount]	; get current tick count
-	inc	a				; add 1
+	xor	1				; toggle between 0 and 1
 	ld	[TickCount],a	; store it in RAM
-	rra					; check if A is odd
-	jr	nc,.odd			; if a is odd, jump
+	jr	nz,.odd			; if a is 1, jump
 .even
 	ld	a,[GlobalSpeed1]
 	jr	.setTimer
@@ -525,12 +515,10 @@ CH1_CommandTable:
 	
 CH1_SetInstrument:
 	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
+	ld	e,a
+	ld	d,0
+	add	hl,de
+	add	hl,de
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
@@ -856,12 +844,10 @@ CH2_CommandTable:
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
+	ld	e,a
+	ld	d,0
+	add	hl,de
+	add	hl,de
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
@@ -1250,12 +1236,10 @@ endc
 	
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
+	ld	e,a
+	ld	d,0
+	add	hl,de
+	add	hl,de
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
@@ -1554,12 +1538,10 @@ CH4_CommandTable:
 
 CH4_SetInstrument:
 	ld	hl,InstrumentTable
-	add	a
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
+	ld	e,a
+	ld	d,0
+	add	hl,de
+	add	hl,de
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
@@ -2337,16 +2319,11 @@ if def(DemoSceneMode)
 	ld	[CH3Wave],a
 	cp	$c0					; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
 	jr	z,.noreset2
-	add	a
+	ld	c,b
+	ld	b,0
 	ld	hl,WaveTable
-	add	l
-	ld	l,a
-	jr	nc,.nocarry3
-	inc	h	
-.nocarry3
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
+	add	hl,bc
+	add	hl,bc
 	call	LoadWave
 	ld	a,e
 	or	%10000000
@@ -2385,13 +2362,11 @@ if !def(DemoSceneMode)
 	ld	bc,WaveBuffer
 	jr	.multiplyvolume
 .notwavebuf
-	add	a
+	ld	c,a
+	ld	b,0
 	ld	hl,WaveTable
-	add	l
-	ld	l,a
-	jr	nc,.nocarry3
-	inc	h	
-.nocarry3
+	add	hl,bc
+	add	hl,bc
 	ld	a,[hl+]
 	ld	b,[hl]
 	ld	c,a
@@ -2441,7 +2416,7 @@ if !def(DemoSceneMode)
 	call	MultiplyVolume_
 	and	$f0
 	or	[hl]
-	ld	[hli],a
+	ld	[hl+],a
 	pop	af
 	dec	a
 	jr	nz,.multswapped
@@ -2459,7 +2434,7 @@ if !def(DemoSceneMode)
 	and	$f
 	swap	a
 	or	[hl]
-	ld	[hli],a
+	ld	[hl+],a
 	pop	af
 	dec	a
 	jr	nz,.multnormal
