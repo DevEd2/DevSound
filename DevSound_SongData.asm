@@ -27,56 +27,46 @@ SongPointerTable:
 ; Volume sequences
 ; =================================================================
 
-; Wave volume values
-w0			equ	%00000000
-w1			equ	%01100000
-w2			equ	%01000000
-w3			equ	%00100000
+; For pulse and noise instruments, volume control is software-based by default.
+; However, when the table execution ends ($FF) the value after that terminator
+; will be loaded as a hardware volume and envelope. Please be cautious that the
+; envelope speed won't be scaled along the channel volume.
 
-; For pulse instruments, volume control is software-based by default.
-; However, hardware volume envelopes may still be used by adding the
-; envelope length * $10.
-; Example: $3F = initial volume $F, env. length $3
-; Repeat that value for the desired length.
-; Note that using initial volume $F + envelope length $F will be
-; interpreted as a "table end" command, use initial volume $F +
-; envelope length $0 instead.
-; Same applies to initial volume $F + envelope length $8 which
-; is interpreted as a "loop" command, use initial volume $F +
-; envelope length $0 instead.
+; For wave instruments, volume has the same range as the above (that's right,
+; this is possible by scaling the wave data) except that it won't load the
+; value after the terminator as a final volume.
 
 vol_Gadunk: 		db	15,5,10,5,2,6,10,15,12,6,10,7,8,9,10,15,4,3,2,1,$8f,0
-vol_Arp:			db	8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff
-vol_OctArp:			db	12,11,10,9,9,8,8,8,7,7,6,6,7,7,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,0,$ff
-vol_HWEnvTest:		db	$1f,$1f,$1f,$1f,$1f,$1f,$1f,$1f,$77,$ff
-vol_Bass1:			db	w3,$ff
-vol_Bass2:			db	w3,w3,w3,w3,w1,$ff
-vol_Bass3:			db	w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w1,$ff
-vol_PulseBass:		db	15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,$ff
-vol_PulseBass2:		db	15,14,13,12,11,11,10,10,9,9,8,8,7,7,7,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff
+vol_Arp:			db	8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
+vol_OctArp:			db	12,11,10,9,9,8,8,8,7,7,6,6,7,7,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
+vol_Bass1:			db	15,$ff
+vol_Bass2:			db	15,15,15,15,3,$ff
+vol_Bass3:			db	15,14,13,12,10,9,8,7,6,5,4,3,$ff
+vol_PulseBass:		db	15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
+vol_PulseBass2:		db	15,14,13,12,11,11,10,10,9,9,8,8,7,7,7,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
 
-vol_Tom:			db	$1f,$ff
-vol_Tom2:			db	$3f,$ff
-vol_WaveLeadShort:	db	w3,w3,w3,w3,w2,$ff
-vol_WaveLeadMed:	db	w3,w3,w3,w3,w3,w3,w3,w2,$ff
-vol_WaveLeadLong:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,$ff
-vol_WaveLeadLong2:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w1,$ff
-vol_Arp2:			db	$2f,$ff
+vol_Tom:			db	$ff,$f1
+vol_Tom2:			db	$ff,$f3
+vol_WaveLeadShort:	db	15,15,15,15,7,$ff
+vol_WaveLeadMed:	db	15,15,15,15,15,15,15,7,$ff
+vol_WaveLeadLong:	db	15,15,15,15,15,15,15,15,15,15,15,7,$ff
+vol_WaveLeadLong2:	db	15,15,15,15,15,15,15,15,15,15,15,15,15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,7,7,6,6,5,5,4,3,$ff
+vol_Arp2:			db	$ff,$f2
 
-vol_Kick:			db	$18,$ff
-vol_Snare:			db	$1d,$ff
-vol_OHH:			db	$48,$ff
-vol_CymbQ:			db	$6a,$ff
-vol_CymbL:			db	$3f,$ff
+vol_Kick:			db	$ff,$81
+vol_Snare:			db	$ff,$d1
+vol_OHH:			db	$ff,$84
+vol_CymbQ:			db	$ff,$a6
+vol_CymbL:			db	$ff,$f3
 
-vol_Echo1:			db	12,$ff	
-vol_Echo2:			db	4,$ff
+vol_Echo1:			db	$ff,12	
+vol_Echo2:			db	$ff,4
 
-vol_McAlbyKick:		db	15,15,13,9,7,5,$14,$ff
-vol_McAlbyCHH:		db	8,6,4,$32,$ff
-vol_McAlbyOHH:		db	10,6,3,$32,$ff
-vol_McAlbySnare:	db	15,15,15,10,3,4,$35,$ff
-vol_McAlbyCymb:		db	12,8,6,$45,$ff
+vol_McAlbyKick:		db	15,15,13,9,7,5,$ff,$41
+vol_McAlbyCHH:		db	8,6,4,$ff,$23
+vol_McAlbyOHH:		db	10,6,3,$ff,$23
+vol_McAlbySnare:	db	15,15,15,10,3,4,$ff,$53
+vol_McAlbyCymb:		db	12,8,6,$ff,$54
 
 ; =================================================================
 ; Arpeggio sequences

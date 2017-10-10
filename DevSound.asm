@@ -299,6 +299,7 @@ CH1_CheckByte:
 	jr	z,.noreset
 	xor	a
 	ld	[CH1VolPos],a
+	ld	[CH1VolLoop],a
 .noreset
 	ld	a,[CH1NoteCount]
 	inc	a
@@ -636,6 +637,7 @@ CH2_CheckByte:
 	jr	z,.noreset
 	xor	a
 	ld	[CH2VolPos],a
+	ld	[CH2VolLoop],a
 .noreset
 	ld	a,[CH2NoteCount]
 	inc	a
@@ -968,7 +970,7 @@ CH3_CheckByte:
 	inc	a
 	ld	[CH3NoteCount],a
 	ld	b,a
-	ld	a,[CH3Vol]
+	ld	a,[CH3ComputedVol]
 	ldh	[rNR32],a	; fix for volume not updating when unpausing
 	
 	; check if instrument mode is 1 (alternating)
@@ -1306,6 +1308,7 @@ CH4_CheckByte:
 	jp	z,CH4_DoneUpdating
 	xor	a
 	ld	[CH4VolPos],a
+	ld	[CH4VolLoop],a
 	ld	[CH4NoisePos],a
 	if(UseFXHammer)
 	ld	a,[$c7d9]
@@ -1811,6 +1814,10 @@ CH1_UpdateRegisters:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
+	ld	a,[CH1VolLoop]
+	ld	c,a
+	cp	$ff	; ended
+	jr	z,.done
 	ld	a,[CH1VolPos]
 	add	l
 	ld	l,a
@@ -1819,13 +1826,36 @@ CH1_UpdateRegisters:
 .nocarry5
 	ld	a,[hl+]
 	cp	$ff
-	jr	z,.done
-	swap	a
+	jr	z,.loadlast
 	ld	b,a
-	ldh	a,[rNR12]
+	ld	a,c
+	dec	c
+	jr	z,.zombieatpos0
+	ld	a,[CH1VolPos]
+	and	a
+	jr	z,.zombinit
+.zombieatpos0
+	and	a
+	ld	a,[CH1Vol]
 	cp	b
 	jr	z,.noreset3
+	ld	c,a
 	ld	a,b
+	ld	[CH1Vol],a
+	sub	c
+	and	$f
+	ld	c,a
+	ld	a,8
+.zombloop
+	ldh	[rNR12],a
+	dec	c
+	jr	nz,.zombloop
+	jr	.noreset3
+.zombinit
+	ld	a,b
+	ld	[CH1Vol],a
+	swap	a
+	or	8
 	ldh	[rNR12],a
 	ld	a,e
 	or	$80
@@ -1839,6 +1869,17 @@ CH1_UpdateRegisters:
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH1VolPos],a
+	ld	a,1
+	ld	[CH1VolLoop],a
+	jr	.done
+.loadlast
+	ld	a,[hl]
+	ldh	[rNR12],a
+	ld	a,e
+	or	$80
+	ldh	[rNR14],a
+	ld	a,$ff
+	ld	[CH1VolLoop],a
 .done
 
 ; ================================================================
@@ -2009,6 +2050,10 @@ CH2_UpdateRegisters:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
+	ld	a,[CH2VolLoop]
+	ld	c,a
+	cp	$ff	; ended
+	jr	z,.done
 	ld	a,[CH2VolPos]
 	add	l
 	ld	l,a
@@ -2017,18 +2062,36 @@ CH2_UpdateRegisters:
 .nocarry5
 	ld	a,[hl+]
 	cp	$ff
-	jr	z,.done
-	swap	a
+	jr	z,.loadlast
 	ld	b,a
-	if(UseFXHammer)
-	ld	a,[$c7cc]
-	cp	3
-	jp	z,.noreset3
-	endc
-	ldh	a,[rNR22]
+	ld	a,c
+	dec	c
+	jr	z,.zombieatpos0
+	ld	a,[CH2VolPos]
+	and	a
+	jr	z,.zombinit
+.zombieatpos0
+	and	a
+	ld	a,[CH2Vol]
 	cp	b
 	jr	z,.noreset3
+	ld	c,a
 	ld	a,b
+	ld	[CH2Vol],a
+	sub	c
+	and	$f
+	ld	c,a
+	ld	a,8
+.zombloop
+	ldh	[rNR22],a
+	dec	c
+	jr	nz,.zombloop
+	jr	.noreset3
+.zombinit
+	ld	a,b
+	ld	[CH2Vol],a
+	swap	a
+	or	8
 	ldh	[rNR22],a
 	ld	a,e
 	or	$80
@@ -2042,6 +2105,17 @@ CH2_UpdateRegisters:
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH2VolPos],a
+	ld	a,1
+	ld	[CH2VolLoop],a
+	jr	.done
+.loadlast
+	ld	a,[hl]
+	ldh	[rNR22],a
+	ld	a,e
+	or	$80
+	ldh	[rNR24],a
+	ld	a,$ff
+	ld	[CH1VolLoop],a
 .done
 
 ; ================================================================
@@ -2057,6 +2131,7 @@ CH3_UpdateRegisters:
 	xor	a
 	ldh	[rNR32],a
 	ld	[CH3Vol],a
+	ld	[CH3ComputedVol],a
 	ldh	a,[rNR34]
 	or	%10000000
 	ldh	[rNR34],a
@@ -2165,56 +2240,6 @@ CH3_UpdateRegisters:
 	ld	a,e
 	ldh	[rNR34],a
 	
-	; update wave
-	ld	hl,CH3WavePtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH3WavePos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry2
-	inc	h
-.nocarry2
-	ld	a,[hl+]
-	cp	$ff					; table end?
-	jr	z,.updateVolume
-	ld	b,a
-	ld	a,[CH3Wave]
-	cp	b
-	jr	z,.noreset2
-	ld	a,b
-	ld	[CH3Wave],a
-	cp	$c0					; if value = $c0, use wave buffer
-	jr	nz,.notwavebuf
-	ld	hl,WaveBuffer
-	jr	.loadwave
-.notwavebuf
-	add	a
-	ld	hl,WaveTable
-	add	l
-	ld	l,a
-	jr	nc,.nocarry3
-	inc	h	
-.nocarry3
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-.loadwave
-	call	LoadWave
-	ld	a,e
-	or	%10000000
-	ldh	[rNR34],a
-.noreset2
-	ld	a,[CH3WavePos]
-	inc	a
-	ld	[CH3WavePos],a
-	ld	a,[hl+]
-	cp	$80
-	jr	nz,.updateVolume
-	ld	a,[hl]
-	ld	[CH3WavePos],a
-
 .updateVolume
 	ld	hl,CH3VolPtr
 	ld	a,[hl+]
@@ -2232,14 +2257,13 @@ CH3_UpdateRegisters:
 	ld	b,a
 	ld	a,[CH3Vol]
 	cp	b
+	ld	a,0
 	jr	z,.noreset3
 	ld	a,b
-	ldh	[rNR32],a
 	ld	[CH3Vol],a
-	ld	a,e
-	or	$80
-	ldh	[rNR34],a
+	ld	a,1
 .noreset3
+	ld	[WaveBufUpdateFlag],a
 	ld	a,[CH3VolPos]
 	inc	a
 	ld	[CH3VolPos],a
@@ -2249,16 +2273,140 @@ CH3_UpdateRegisters:
 	ld	a,[hl]
 	ld	[CH3VolPos],a
 .done
+	
+	; update wave
+	ld	hl,CH3WavePtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH3WavePos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry2
+	inc	h
+.nocarry2
+	ld	a,[hl+]
+	cp	$ff					; table end?
+	jr	z,.updatebuffer
+	ld	b,a
+	ld	a,[CH3Wave]
+	cp	b
+	ld	c,0
+	jr	z,.noreset2
+	ld	a,b
+	ld	[CH3Wave],a
+	ld	c,1
+.noreset2
+	ld	a,[WaveBufUpdateFlag]
+	or	c
+	ld	[WaveBufUpdateFlag],a
+	ld	a,[CH3WavePos]
+	inc	a
+	ld	[CH3WavePos],a
+	ld	a,[hl+]
+	cp	$80
+	jr	nz,.updatebuffer
+	ld	a,[hl]
+	ld	[CH3WavePos],a
+
+.updatebuffer
 	call	DoPWM
 	call	DoRandomizer
-	ld	a,[CH3Wave]
-	cp	$c0
-	jr	nz,.noupdate
 	ld	a,[WaveBufUpdateFlag]
 	and	a
-	jr	z,.noupdate
-	ld	hl,WaveBuffer
-	call	LoadWave
+	jp	z,.noupdate
+	ld	a,[CH3Wave]
+	cp	$c0					; if value = $c0, use wave buffer
+	jr	nz,.notwavebuf
+	ld	bc,WaveBuffer
+	jr	.multiplyvolume
+.notwavebuf
+	add	a
+	ld	hl,WaveTable
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h	
+.nocarry3
+	ld	a,[hl+]
+	ld	b,[hl]
+	ld	c,a
+.multiplyvolume
+	ld	a,[CH3Vol]
+	and	a
+	jr	z,.mute
+	cp	8
+	ld	d,%0010000
+	jr	nc,.skip
+	add	a
+	inc	a
+	cp	8
+	ld	d,%0100000
+	jr	nc,.skip
+	add	a
+	inc	a
+	ld	d,%0110000
+.skip
+	push	de
+	srl	a
+	push	af
+	ld l, a
+	ld h, 0
+	add hl, hl ; x2
+	add hl, hl ; x4
+	add hl, hl ; x8
+	add hl, hl ; x16
+	ld de, VolumeTable
+	add hl, de
+	ld	d,h
+	ld	e,l
+	pop	af
+	ld	a,16
+	ld	hl,ComputedWaveBuffer
+	jr	nc,.multnormal
+.multswapped
+	push	af
+	ld	a,[bc]
+	call	MultiplyVolume_
+	swap	a
+	and	$f
+	ld	[hl],a
+	ld	a,[bc]
+	inc	bc
+	swap	a
+	call	MultiplyVolume_
+	and	$f0
+	or	[hl]
+	ld	[hli],a
+	pop	af
+	dec	a
+	jr	nz,.multswapped
+	jr	.multdone
+.multnormal
+	push	af
+	ld	a,[bc]
+	call	MultiplyVolume_
+	and	$f
+	ld	[hl],a
+	ld	a,[bc]
+	inc	bc
+	swap	a
+	call	MultiplyVolume_
+	and	$f
+	swap	a
+	or	[hl]
+	ld	[hli],a
+	pop	af
+	dec	a
+	jr	nz,.multnormal
+.multdone
+	pop	de
+	ld	a,d
+.mute
+	ld	[CH3ComputedVol],a
+	ld	[rNR32],a
+	and	a
+	call	nz,LoadWave
 	xor	a
 	ld	[WaveBufUpdateFlag],a
 	ld	a,e
@@ -2345,28 +2493,50 @@ CH4_UpdateRegisters:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
+	ld	a,[CH4VolLoop]
+	ld	c,a
+	cp	$ff	; ended
+	jr	z,.done
 	ld	a,[CH4VolPos]
 	add	l
 	ld	l,a
-	jr	nc,.nocarry3
+	jr	nc,.nocarry5
 	inc	h
-.nocarry3
+.nocarry5
 	ld	a,[hl+]
 	cp	$ff
-	jr	z,.done
-	swap	a
+	jr	z,.loadlast
 	ld	b,a
-	if(UseFXHammer)
-	ld	a,[$c7d9]
-	cp	3
-	jr	z,.noreset3
-	endc
-	ldh	a,[rNR42]
+	ld	a,c
+	dec	c
+	jr	z,.zombieatpos0
+	ld	a,[CH4VolPos]
+	and	a
+	jr	z,.zombinit
+.zombieatpos0
+	and	a
+	ld	a,[CH4Vol]
 	cp	b
 	jr	z,.noreset3
+	ld	c,a
 	ld	a,b
+	ld	[CH4Vol],a
+	sub	c
+	and	$f
+	ld	c,a
+	ld	a,8
+.zombloop
 	ldh	[rNR42],a
-	ld	a,%10000000
+	dec	c
+	jr	nz,.zombloop
+	jr	.noreset3
+.zombinit
+	ld	a,b
+	ld	[CH4Vol],a
+	swap	a
+	or	8
+	ldh	[rNR42],a
+	ld	a,$80
 	ldh	[rNR44],a
 .noreset3
 	ld	a,[CH4VolPos]
@@ -2377,6 +2547,16 @@ CH4_UpdateRegisters:
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH4VolPos],a
+	ld	a,1
+	ld	[CH4VolLoop],a
+	jr	.done
+.loadlast
+	ld	a,[hl]
+	ldh	[rNR42],a
+	ld	a,$80
+	ldh	[rNR44],a
+	ld	a,$ff
+	ld	[CH4VolLoop],a
 .done
 	
 DoneUpdatingRegisters:
@@ -2391,23 +2571,29 @@ DoneUpdatingRegisters:
 ; ================================================================
 
 LoadWave:
+	ld	hl,ComputedWaveBuffer
+	ldh	a,[rNR51]
+	ld	c,a
+	and	%10111011
+	ldh	[rNR51],a		; prevents spike
 	xor	a
-	ldh	[rNR30],a	; disable CH3
-	ld	bc,$1030	; b = counter, c = HRAM address
-.loop
-	ld	a,[hl+]		; get byte from hl
-	ld	[c],a		; copy to wave ram
-	inc	c
-	dec	b
-	jr	nz,.loop	; loop until done
+	ldh	[rNR30],a		; disable CH3
+CUR_WAVE = waveBuffer
+rept 16
+	ld a, [hl+]			; get byte from hl
+	ldh [CUR_WAVE], a	; copy to wave ram
+CUR_WAVE = CUR_WAVE + 1
+endr
 	ld	a,%10000000
-	ldh	[rNR30],a	; enable CH3
+	ldh	[rNR30],a		; enable CH3
+	ld	a,c
+	ldh	[rNR51],a
 	ret
 	
 ClearWaveBuffer:
-	ld	b,$10
+	ld	b,$20 ; spill to WaveBuffer too
 	xor	a
-	ld	hl,WaveBuffer
+	ld	hl,ComputedWaveBuffer
 .loop
 	ld	[hl+],a		; copy to wave ram
 	dec	b
@@ -2448,7 +2634,8 @@ _CombineWaves:
 	pop	af
 	dec	a
 	jr	nz, .loop
-	ld	a,1
+	ld	a,[WaveBufUpdateFlag]
+	or	1
 	ld	[WaveBufUpdateFlag],a
 	ret
 	
@@ -2479,7 +2666,8 @@ _RandomizeWave:
 	inc	de
 	dec	b
 	jr	nz,.loop
-	ld	a,1
+	ld	a,[WaveBufUpdateFlag]
+	or	1
 	ld	[WaveBufUpdateFlag],a
 	pop	de
 	ret
@@ -2568,7 +2756,8 @@ DoPWM:
 	xor	a
 	ld	[hl],a
 .done
-	ld	a,1
+	ld	a,[WaveBufUpdateFlag]
+	or	1
 	ld	[WaveBufUpdateFlag],a
 	ret
 	
@@ -2653,6 +2842,19 @@ DoArp:
 	xor	a
 	ld	[de],a
 	ret
+	
+MultiplyVolume_:
+; short version of MultiplyVolume for ch3 wave update
+	push	de
+	and	$f
+	add	e
+	ld	e,a
+	jr	nc,.nocarry
+	inc	d
+.nocarry
+	ld a,[de]
+	pop	de
+	ret
 
 ; ================================================================
 ; Frequency table
@@ -2677,6 +2879,24 @@ NoiseTable:	; taken from deflemask
 	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$6c
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$2c
 	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$0b,$0a,$09,$08
+	
+VolumeTable: ; used for volume multiplication
+	db $00, $00, $00, $00, $00, $00, $00, $00 ; 10
+	db $10, $10, $10, $10, $10, $10, $10, $10
+	db $00, $00, $00, $00, $10, $11, $11, $11 ; 32
+	db $21, $21, $21, $22, $32, $32, $32, $32
+	db $00, $00, $10, $11, $11, $21, $22, $22 ; 54
+	db $32, $32, $33, $43, $43, $44, $54, $54
+	db $00, $00, $11, $11, $22, $22, $32, $33 ; 76
+	db $43, $44, $54, $54, $65, $65, $76, $76
+	db $00, $00, $11, $21, $22, $33, $43, $44 ; 98
+	db $54, $55, $65, $76, $77, $87, $98, $98
+	db $00, $11, $11, $22, $33, $43, $44, $55 ; ba
+	db $65, $76, $77, $87, $98, $a9, $a9, $ba
+	db $00, $11, $22, $33, $43, $44, $55, $66 ; dc
+	db $76, $87, $98, $99, $a9, $ba, $cb, $dc
+	db $00, $11, $22, $33, $44, $55, $66, $77 ; fe
+	db $87, $98, $a9, $ba, $cb, $dc, $ed, $fe
 
 ; ================================================================
 ; misc stuff
@@ -2687,16 +2907,16 @@ DefaultRegTable:
 	db	7,0,0,0,0,0,0,1,1,1,1,1
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch2
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch3
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,$ff,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
 	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
