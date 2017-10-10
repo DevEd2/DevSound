@@ -35,13 +35,16 @@ SongPointerTable:
 ; For wave instruments, volume has the same range as the above (that's right,
 ; this is possible by scaling the wave data) except that it won't load the
 ; value after the terminator as a final volume.
+; WARNING: since there's no way to rewrite the wave data without restarting
+; the wave so make sure that the volume doesn't change too fast that it
+; unintentionally produces sync effect
 
 vol_Gadunk: 		db	15,5,10,5,2,6,10,15,12,6,10,7,8,9,10,15,4,3,2,1,$8f,0
 vol_Arp:			db	8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
 vol_OctArp:			db	12,11,10,9,9,8,8,8,7,7,6,6,7,7,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
 vol_Bass1:			db	15,$ff
 vol_Bass2:			db	15,15,15,15,3,$ff
-vol_Bass3:			db	15,14,13,12,10,9,8,7,6,5,4,3,$ff
+vol_Bass3:			db	15,15,15,15,15,15,15,7,7,7,7,3,$ff
 vol_PulseBass:		db	15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
 vol_PulseBass2:		db	15,14,13,12,11,11,10,10,9,9,8,8,7,7,7,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
 
@@ -59,8 +62,8 @@ vol_OHH:			db	$ff,$84
 vol_CymbQ:			db	$ff,$a6
 vol_CymbL:			db	$ff,$f3
 
-vol_Echo1:			db	$ff,12	
-vol_Echo2:			db	$ff,4
+vol_Echo1:			db	$ff,$c0
+vol_Echo2:			db	$ff,$40
 
 vol_McAlbyKick:		db	15,15,13,9,7,5,$ff,$41
 vol_McAlbyCHH:		db	8,6,4,$ff,$23

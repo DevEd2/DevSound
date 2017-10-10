@@ -24,6 +24,10 @@
 ; ================================================================
 
 UseFXHammer	set	1
+; Uncomment this to disable all time-consuming features
+; This includes: wave buffer, PWM, random wave, zombie mode,
+; wave volume scaling, pan masking
+; DemoSceneMode = 1
 
 DevSound:
 
@@ -480,6 +484,7 @@ CH1_CommandTable:
 	jp	CH1_CheckByte
 	
 .randomizeWave
+.disableAutoWave
 	pop	hl
 	jp	CH1_CheckByte
 	
@@ -498,25 +503,16 @@ CH1_CommandTable:
 	
 .enablePWM
 	pop	hl
-	ld	a,l
-	add	2
-	ld	l,a
-	jr	nc,.nc2
-	inc	h
-.nc2
-	ld	a,c
-	add	2
-	ld	c,a
+	inc	hl
+	inc	hl
+	inc	c
+	inc	c
 	jp	CH1_CheckByte
 	
 .enableRandomizer
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH1_CheckByte
-
-.disableAutoWave
-	pop	hl
 	jp	CH1_CheckByte
 	
 .arp
@@ -819,6 +815,7 @@ CH2_CommandTable:
 	jp	CH2_CheckByte
 
 .randomizeWave
+.disableAutoWave
 	pop	hl
 	jp	CH2_CheckByte
 	
@@ -837,26 +834,17 @@ CH2_CommandTable:
 	
 .enablePWM
 	pop	hl
-	ld	a,l
-	add	2
-	ld	l,a
-	jr	nc,.nc2
-	inc	h
-.nc2
-	ld	a,c
-	add	2
-	ld	c,a
+	inc	hl
+	inc	hl
+	inc	c
+	inc	c
 	jp	CH2_CheckByte
 	
 .enableRandomizer
 	pop	hl
 	inc	hl
 	inc	c
-	jp	CH1_CheckByte
-
-.disableAutoWave
-	pop	hl
-	jp	CH1_CheckByte
+	jp	CH2_CheckByte
 	
 .arp
 	pop	hl
@@ -1148,6 +1136,42 @@ CH3_CommandTable:
 	ld	[CH3InsMode],a
 	jp	CH3_CheckByte
 	
+if def(DemoSceneMode)
+	
+.randomizeWave
+.disableAutoWave
+	pop	hl
+	jp	CH3_CheckByte
+	
+.combineWaves
+	pop	hl
+	ld	a,l
+	add	4
+	ld	l,a
+	jr	nc,.nc
+	inc	h
+.nc
+	ld	a,c
+	add	4
+	ld	c,a
+	jp	CH3_CheckByte	
+	
+.enablePWM
+	pop	hl
+	inc	hl
+	inc	hl
+	inc	c
+	inc	c
+	jp	CH3_CheckByte
+	
+.enableRandomizer
+	pop	hl
+	inc	hl
+	inc	c
+	jp	CH3_CheckByte
+	
+else
+	
 .randomizeWave
 	call	_RandomizeWave
 	pop	hl
@@ -1213,7 +1237,9 @@ CH3_CommandTable:
 	ld	[PWMEnabled],a
 	ld	[RandomizerEnabled],a
 	jp	CH3_CheckByte
-
+	
+endc
+	
 .arp
 	pop	hl
 	call	DoArp
@@ -1448,18 +1474,9 @@ CH4_CommandTable:
 	jp	UpdateCH4
 
 .pitchBendUp	; unused for ch4
-	pop	hl
-	inc	hl
-	inc	c
-	jp	CH4_CheckByte
-	
 .pitchBendDown	; unused for ch4
-	pop	hl
-	inc	hl
-	inc	c
-	jp	CH4_CheckByte
-
 .setSweep		; unused for ch4
+.enableRandomizer
 	pop	hl
 	inc	hl
 	inc	c
@@ -1497,6 +1514,7 @@ CH4_CommandTable:
 	jp	CH4_CheckByte
 	
 .randomizeWave
+.disableAutoWave
 	pop	hl
 	jp	CH4_CheckByte
 	
@@ -1515,25 +1533,10 @@ CH4_CommandTable:
 	
 .enablePWM
 	pop	hl
-	ld	a,l
-	add	2
-	ld	l,a
-	jr	nc,.nc2
-	inc	h
-.nc2
-	ld	a,c
-	add	2
-	ld	c,a
-	jp	CH4_CheckByte
-	
-.enableRandomizer
-	pop	hl
+	inc	hl
 	inc	hl
 	inc	c
-	jp	CH4_CheckByte
-
-.disableAutoWave
-	pop	hl
+	inc	c
 	jp	CH4_CheckByte
 
 .arp
@@ -1828,17 +1831,18 @@ CH1_UpdateRegisters:
 	cp	$ff
 	jr	z,.loadlast
 	ld	b,a
-	ld	a,c
+if !def(DemoSceneMode)
 	dec	c
 	jr	z,.zombieatpos0
 	ld	a,[CH1VolPos]
 	and	a
 	jr	z,.zombinit
 .zombieatpos0
-	and	a
+endc
 	ld	a,[CH1Vol]
 	cp	b
 	jr	z,.noreset3
+if !def(DemoSceneMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH1Vol],a
@@ -1852,6 +1856,7 @@ CH1_UpdateRegisters:
 	jr	nz,.zombloop
 	jr	.noreset3
 .zombinit
+endc
 	ld	a,b
 	ld	[CH1Vol],a
 	swap	a
@@ -1869,8 +1874,10 @@ CH1_UpdateRegisters:
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH1VolPos],a
+if !def(DemoSceneMode)
 	ld	a,1
 	ld	[CH1VolLoop],a
+endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
@@ -2050,10 +2057,12 @@ CH2_UpdateRegisters:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
+if !def(DemoSceneMode)
 	ld	a,[CH2VolLoop]
 	ld	c,a
 	cp	$ff	; ended
 	jr	z,.done
+endc
 	ld	a,[CH2VolPos]
 	add	l
 	ld	l,a
@@ -2064,6 +2073,7 @@ CH2_UpdateRegisters:
 	cp	$ff
 	jr	z,.loadlast
 	ld	b,a
+if !def(DemoSceneMode)
 	ld	a,c
 	dec	c
 	jr	z,.zombieatpos0
@@ -2071,10 +2081,11 @@ CH2_UpdateRegisters:
 	and	a
 	jr	z,.zombinit
 .zombieatpos0
-	and	a
+endc
 	ld	a,[CH2Vol]
 	cp	b
 	jr	z,.noreset3
+if !def(DemoSceneMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH2Vol],a
@@ -2088,6 +2099,7 @@ CH2_UpdateRegisters:
 	jr	nz,.zombloop
 	jr	.noreset3
 .zombinit
+endc
 	ld	a,b
 	ld	[CH2Vol],a
 	swap	a
@@ -2105,8 +2117,10 @@ CH2_UpdateRegisters:
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH2VolPos],a
+if !def(DemoSceneMode)
 	ld	a,1
 	ld	[CH2VolLoop],a
+endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
@@ -2115,7 +2129,7 @@ CH2_UpdateRegisters:
 	or	$80
 	ldh	[rNR24],a
 	ld	a,$ff
-	ld	[CH1VolLoop],a
+	ld	[CH2VolLoop],a
 .done
 
 ; ================================================================
@@ -2257,13 +2271,39 @@ CH3_UpdateRegisters:
 	ld	b,a
 	ld	a,[CH3Vol]
 	cp	b
+if !def(DemoSceneMode)
 	ld	a,0
+endc
 	jr	z,.noreset3
 	ld	a,b
 	ld	[CH3Vol],a
+if def(DemoSceneMode)
+	and	a
+	ld	b,a
+	jr	z,.skip
+	cp	8
+	ld	b,%00100000
+	jr	nc,.skip
+	cp	4
+	ld	b,%01000000
+	jr	nc,.skip
+	ld	b,%01100000
+.skip
+	ld	a,[CH3ComputedVol]
+	cp	b
+	jr	z,.noreset3
+	ld	a,b
+	ld	[CH3ComputedVol],a
+	ld	[rNR32],a
+	ld	a,e
+	or	$80
+	ldh	[rNR34],a
+.noreset3
+else
 	ld	a,1
 .noreset3
 	ld	[WaveBufUpdateFlag],a
+endc
 	ld	a,[CH3VolPos]
 	inc	a
 	ld	[CH3VolPos],a
@@ -2291,6 +2331,28 @@ CH3_UpdateRegisters:
 	ld	b,a
 	ld	a,[CH3Wave]
 	cp	b
+if def(DemoSceneMode)
+	jr	z,.noreset2
+	ld	a,b
+	ld	[CH3Wave],a
+	cp	$c0					; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
+	jr	z,.noreset2
+	add	a
+	ld	hl,WaveTable
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h	
+.nocarry3
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	call	LoadWave
+	ld	a,e
+	or	%10000000
+	ldh	[rNR34],a
+.noreset2
+else
 	ld	c,0
 	jr	z,.noreset2
 	ld	a,b
@@ -2300,6 +2362,7 @@ CH3_UpdateRegisters:
 	ld	a,[WaveBufUpdateFlag]
 	or	c
 	ld	[WaveBufUpdateFlag],a
+endc
 	ld	a,[CH3WavePos]
 	inc	a
 	ld	[CH3WavePos],a
@@ -2310,6 +2373,7 @@ CH3_UpdateRegisters:
 	ld	[CH3WavePos],a
 
 .updatebuffer
+if !def(DemoSceneMode)
 	call	DoPWM
 	call	DoRandomizer
 	ld	a,[WaveBufUpdateFlag]
@@ -2336,16 +2400,16 @@ CH3_UpdateRegisters:
 	and	a
 	jr	z,.mute
 	cp	8
-	ld	d,%0010000
+	ld	d,%00100000
 	jr	nc,.skip
 	add	a
 	inc	a
 	cp	8
-	ld	d,%0100000
+	ld	d,%01000000
 	jr	nc,.skip
 	add	a
 	inc	a
-	ld	d,%0110000
+	ld	d,%01100000
 .skip
 	push	de
 	srl	a
@@ -2413,6 +2477,7 @@ CH3_UpdateRegisters:
 	or	$80
 	ldh	[rNR34],a
 .noupdate
+endc
 
 ; ================================================================
 
@@ -2507,17 +2572,18 @@ CH4_UpdateRegisters:
 	cp	$ff
 	jr	z,.loadlast
 	ld	b,a
-	ld	a,c
+if !def(DemoSceneMode)
 	dec	c
 	jr	z,.zombieatpos0
 	ld	a,[CH4VolPos]
 	and	a
 	jr	z,.zombinit
 .zombieatpos0
-	and	a
+endc
 	ld	a,[CH4Vol]
 	cp	b
 	jr	z,.noreset3
+if !def(DemoSceneMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH4Vol],a
@@ -2531,6 +2597,7 @@ CH4_UpdateRegisters:
 	jr	nz,.zombloop
 	jr	.noreset3
 .zombinit
+endc
 	ld	a,b
 	ld	[CH4Vol],a
 	swap	a
@@ -2547,8 +2614,10 @@ CH4_UpdateRegisters:
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH4VolPos],a
+if !def(DemoSceneMode)
 	ld	a,1
 	ld	[CH4VolLoop],a
+endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
@@ -2571,7 +2640,9 @@ DoneUpdatingRegisters:
 ; ================================================================
 
 LoadWave:
+if !def(DemoSceneMode)
 	ld	hl,ComputedWaveBuffer
+endc
 	ldh	a,[rNR51]
 	ld	c,a
 	and	%10111011
@@ -2599,6 +2670,8 @@ ClearWaveBuffer:
 	dec	b
 	jr	nz,.loop	; loop until done
 	ret
+	
+if !def(DemoSceneMode)
 
 ; Combine two waves. Optimized by Pigu
 ; INPUT: bc = first wave addr
@@ -2774,6 +2847,8 @@ DoRandomizer:
 	call	_RandomizeWave
 	ret
 	
+endc
+	
 ; ================================================================
 ; Misc routines
 ; ================================================================
@@ -2843,6 +2918,8 @@ DoArp:
 	ld	[de],a
 	ret
 	
+if !def(DemoSceneMode)
+	
 MultiplyVolume_:
 ; short version of MultiplyVolume for ch3 wave update
 	push	de
@@ -2855,7 +2932,9 @@ MultiplyVolume_:
 	ld a,[de]
 	pop	de
 	ret
-
+	
+endc
+	
 ; ================================================================
 ; Frequency table
 ; ================================================================
@@ -2880,6 +2959,8 @@ NoiseTable:	; taken from deflemask
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$2c
 	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$0b,$0a,$09,$08
 	
+if !def(DemoSceneMode)
+	
 VolumeTable: ; used for volume multiplication
 	db $00, $00, $00, $00, $00, $00, $00, $00 ; 10
 	db $10, $10, $10, $10, $10, $10, $10, $10
@@ -2897,6 +2978,8 @@ VolumeTable: ; used for volume multiplication
 	db $76, $87, $98, $99, $a9, $ba, $cb, $dc
 	db $00, $11, $22, $33, $44, $55, $66, $77 ; fe
 	db $87, $98, $a9, $ba, $cb, $dc, $ed, $fe
+	
+endc
 
 ; ================================================================
 ; misc stuff
