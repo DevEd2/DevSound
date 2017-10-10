@@ -249,15 +249,8 @@ UpdateCH1:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH1Pos]		; get current offset
-	ld	c,a				; store offset for later use
-	add	l
-	ld	l,a
-	jr	nc,CH1_CheckByte
-	inc	h
 CH1_CheckByte:
 	ld	a,[hl+]			; get byte
-	inc	c				; add 1 to offset
 	cp	$ff				; if $ff...
 	jr	z,.endChannel
 	cp	$c9				; if $c9...
@@ -268,9 +261,12 @@ CH1_CheckByte:
 .getNote
 	ld	[CH1Note],a		; set note
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[CH1Tick],a		; set tick
+	ld	a,l				; store back current pos
+	ld	[CH1Ptr],a
+	ld	a,h
+	ld	[CH1Ptr+1],a
 	xor	a
 	ld	[CH1ArpPos],a
 	ldh	[rNR12],a
@@ -313,25 +309,7 @@ CH1_CheckByte:
 .odd
 	call	CH1_SetInstrument
 .noInstrumentChange	
-	jp	CH1_DoneUpdating
-.getCommand
-	push	hl
-	sub	$80				; subtract 128 from command value
-	cp	DummyCommand-$80
-	jr	c,.nodummy
-	pop	hl
-	jp	CH1_CheckByte
-.nodummy
-	add	a				; multiply by 2
-	add	a,CH1_CommandTable%256
-	ld	l,a
-	adc	a,CH1_CommandTable/256
-	sub	l
-	ld	h,a
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	jp	hl
+	jp	UpdateCH2
 	
 .endChannel
 	xor	a
@@ -339,20 +317,21 @@ CH1_CheckByte:
 	jp	UpdateCH2
 
 .retSection
-	ld	a,[CH1RetPtr]
+	ld	hl,CH1RetPtr
+	ld	a,[hl+]
 	ld	[CH1Ptr],a
-	ld	a,[CH1RetPtr+1]
+	ld	a,[hl]
 	ld	[CH1Ptr+1],a
-	ld	a,[CH1RetPos]
-	ld	[CH1Pos],a
 	jp	UpdateCH1
 	
-CH1_DoneUpdating:
-	ld	a,c
-	ld	[CH1Pos],a
-	jp	UpdateCH2
-		
-CH1_CommandTable:
+.getCommand
+	sub	$80				; subtract 128 from command value
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	jp	CH1_CheckByte
+.nodummy
+	call	JumpTableBelow
+	
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -364,17 +343,15 @@ CH1_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
-	dw	.randomizeWave
+	dw	CH1_CheckByte	;.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
 	dw	.enableRandomizer
-	dw	.disableAutoWave
+	dw	CH1_CheckByte	;.disableAutoWave
 	dw	.arp
 
 .setInstrument
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	push	hl
 	call	CH1_SetInstrument
 	xor	a
@@ -383,134 +360,92 @@ CH1_CommandTable:
 	jp	CH1_CheckByte
 	
 .setLoopPoint
-	pop	hl
-	ld	a,c
-	ld	[CH1LoopPos],a
+	ld	a,l
+	ld	[CH1LoopPtr],a
+	ld	a,h
+	ld	[CH1LoopPtr+1],a
 	jp	CH1_CheckByte
 	
 .gotoLoopPoint
-	pop	hl
-	ld	a,[CH1LoopPos]
-	ld	[CH1Pos],a
+	ld	hl,CH1LoopPtr
+	ld	a,[hl+]
+	ld	[CH1Ptr],a
+	ld	a,[hl]
+	ld	[CH1Ptr+1],a
 	jp	UpdateCH1
 
 .callSection
-	pop	hl
-	ld	a,[CH1Ptr]
-	ld	[CH1RetPtr],a
-	ld	a,[CH1Ptr+1]
-	ld	[CH1RetPtr+1],a
 	ld	a,[hl+]
 	ld	[CH1Ptr],a
-	ld	a,[hl]
+	ld	a,[hl+]
 	ld	[CH1Ptr+1],a
-	inc	c
-	inc	c
-	ld	a,c
-	ld	[CH1RetPos],a
-	xor	a
-	ld	[CH1Pos],a
-	ld	c,a
+	ld	a,l
+	ld	[CH1RetPtr],a
+	ld	a,h
+	ld	[CH1RetPtr+1],a
 	jp	UpdateCH1
 	
 .setChannelPtr
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH1Ptr],a
 	ld	a,[hl]
 	ld	[CH1Ptr+1],a
-	xor	a
-	ld	c,a
-	ld	[CH1Pos],a
 	jp	UpdateCH1
 
 .pitchBendUp	; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH1_CheckByte
 	
 .pitchBendDown	; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH1_CheckByte
 
 .setSweep		; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH1_CheckByte
 
 .setPan
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH1Pan],a
-	inc	c
 	jp	CH1_CheckByte
 
 .setSpeed
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed1],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH1_CheckByte
 	
 .setInsAlternate
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	ld	[CH1Ins1],a
 	ld	a,[hl+]
-	inc	c
 	ld	[CH1Ins2],a
 	ld	a,1
 	ld	[CH1InsMode],a
 	jp	CH1_CheckByte
 	
-.randomizeWave
-.disableAutoWave
-	pop	hl
-	jp	CH1_CheckByte
-	
 .combineWaves
-	pop	hl
 	ld	a,l
 	add	4
 	ld	l,a
-	jr	nc,.nc
+	jp	nc,CH1_CheckByte
 	inc	h
-.nc
-	ld	a,c
-	add	4
-	ld	c,a
 	jp	CH1_CheckByte	
 	
 .enablePWM
-	pop	hl
 	inc	hl
 	inc	hl
-	inc	c
-	inc	c
 	jp	CH1_CheckByte
 	
 .enableRandomizer
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH1_CheckByte
 	
 .arp
-	pop	hl
 	call	DoArp
-	ld	a,c
-	add	2
-	ld	c,a
 	jp	CH1_CheckByte
 	
 CH1_SetInstrument:
@@ -571,15 +506,8 @@ UpdateCH2:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH2Pos]	; get current offset
-	ld	c,a			; store offset for later use
-	add	l			; hl = hl + a (four lines)
-	ld	l,a
-	jr	nc,CH2_CheckByte
-	inc	h
 CH2_CheckByte:
 	ld	a,[hl+]		; get byte
-	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
 	cp	$c9
@@ -590,9 +518,12 @@ CH2_CheckByte:
 .getNote
 	ld	[CH2Note],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[CH2Tick],a
+	ld	a,l				; store back current pos
+	ld	[CH2Ptr],a
+	ld	a,h
+	ld	[CH2Ptr+1],a
 	xor	a
 	ld	[CH2ArpPos],a
 	if(UseFXHammer)
@@ -641,25 +572,7 @@ CH2_CheckByte:
 .odd
 	call	CH2_SetInstrument
 .noInstrumentChange
-	jp	CH2_DoneUpdating
-.getCommand
-	push	hl
-	sub	$80
-	cp	DummyCommand-$80
-	jr	c,.nodummy
-	pop	hl
-	jp	CH2_CheckByte
-.nodummy
-	add	a
-	add	a,CH2_CommandTable%256
-	ld	l,a
-	adc	a,CH2_CommandTable/256
-	sub	l
-	ld	h,a
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	jp	hl
+	jp	UpdateCH3
 	
 .endChannel
 	xor	a
@@ -672,16 +585,16 @@ CH2_CheckByte:
 	ld	[CH2Ptr],a
 	ld	a,[hl]
 	ld	[CH2Ptr+1],a
-	ld	a,[CH2RetPos]
-	ld	[CH2Pos],a
 	jp	UpdateCH2
 	
-CH2_DoneUpdating:
-	ld	a,c
-	ld	[CH2Pos],a
-	jp	UpdateCH3
-		
-CH2_CommandTable:
+.getCommand
+	sub	$80
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	jp	CH2_CheckByte
+.nodummy
+	call	JumpTableBelow
+	
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -693,17 +606,15 @@ CH2_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
-	dw	.randomizeWave
+	dw	CH2_CheckByte	;.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
 	dw	.enableRandomizer
-	dw	.disableAutoWave
+	dw	CH2_CheckByte	;.disableAutoWave
 	dw	.arp
 
 .setInstrument
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	push	hl
 	call	CH2_SetInstrument
 	pop	hl
@@ -712,134 +623,89 @@ CH2_CommandTable:
 	jp	CH2_CheckByte
 	
 .setLoopPoint
-	pop	hl
-	ld	a,c
-	ld	[CH2LoopPos],a
+	ld	a,l
+	ld	[CH2LoopPtr],a
+	ld	a,h
+	ld	[CH2LoopPtr+1],a
 	jp	CH2_CheckByte
 	
 .gotoLoopPoint
-	pop	hl
-	ld	a,[CH2LoopPos]
-	ld	[CH2Pos],a
+	ld	hl,CH2LoopPtr
+	ld	a,[hl+]
+	ld	[CH2Ptr],a
+	ld	a,[hl]
+	ld	[CH2Ptr+1],a
 	jp	UpdateCH2
 	
 .callSection
-	pop	hl
-	ld	a,[CH2Ptr]
-	ld	[CH2RetPtr],a
-	ld	a,[CH2Ptr+1]
-	ld	[CH2RetPtr+1],a
 	ld	a,[hl+]
 	ld	[CH2Ptr],a
-	ld	a,[hl]
+	ld	a,[hl+]
 	ld	[CH2Ptr+1],a
-	inc	c
-	inc c
-	ld	a,c
-	ld	[CH2RetPos],a
-	xor	a
-	ld	[CH2Pos],a
-	ld	c,a
+	ld	a,l
+	ld	[CH2RetPtr],a
+	ld	a,h
+	ld	[CH2RetPtr+1],a
 	jp	UpdateCH2
 	
 .setChannelPtr
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH2Ptr],a
 	ld	a,[hl]
 	ld	[CH2Ptr+1],a
-	xor	a
-	ld	c,a
-	ld	[CH2Pos],a
 	jp	UpdateCH2
 
 .pitchBendUp	; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH2_CheckByte
 	
 .pitchBendDown	; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH2_CheckByte
 
-.setSweep		; TODO
-	pop	hl
+.setSweep
+.enableRandomizer
 	inc	hl
-	inc	c
 	jp	CH2_CheckByte
 
 .setPan
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH2Pan],a
-	inc	c
 	jp	CH2_CheckByte
 
 .setSpeed
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed1],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH2_CheckByte
 
 .setInsAlternate
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	ld	[CH2Ins1],a
 	ld	a,[hl+]
-	inc	c
 	ld	[CH2Ins2],a
 	ld	a,1
 	ld	[CH2InsMode],a
 	jp	CH2_CheckByte
-
-.randomizeWave
-.disableAutoWave
-	pop	hl
-	jp	CH2_CheckByte
 	
 .combineWaves
-	pop	hl
 	ld	a,l
 	add	4
 	ld	l,a
-	jr	nc,.nc
+	jp	nc,CH2_CheckByte
 	inc	h
-.nc
-	ld	a,c
-	add	4
-	ld	c,a
 	jp	CH2_CheckByte	
 	
 .enablePWM
-	pop	hl
 	inc	hl
 	inc	hl
-	inc	c
-	inc	c
-	jp	CH2_CheckByte
-	
-.enableRandomizer
-	pop	hl
-	inc	hl
-	inc	c
 	jp	CH2_CheckByte
 	
 .arp
-	pop	hl
 	call	DoArp
-	ld	a,c
-	add	2
-	ld	c,a
 	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
@@ -900,15 +766,8 @@ UpdateCH3:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH3Pos]	; get current offset
-	ld	c,a			; store offset for later use
-	add	l			; hl = hl + a (four lines)
-	ld	l,a
-	jr	nc,CH3_CheckByte
-	inc	h
 CH3_CheckByte:
 	ld	a,[hl+]		; get byte
-	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
 	cp	$c9
@@ -919,9 +778,12 @@ CH3_CheckByte:
 .getNote
 	ld	[CH3Note],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[CH3Tick],a
+	ld	a,l				; store back current pos
+	ld	[CH3Ptr],a
+	ld	a,h
+	ld	[CH3Ptr+1],a
 	xor	a
 	ld	[CH3VolPos],a
 	ld	[CH3ArpPos],a
@@ -937,7 +799,7 @@ CH3_CheckByte:
 	ld	[CH3VibDelay],a
 	ld	a,[CH3Reset]
 	and	a
-	jp	nz,CH3_DoneUpdating
+	jp	nz,UpdateCH4
 	xor	a
 	ld	[CH3WavePos],a
 	ld	a,[CH3NoteCount]
@@ -961,25 +823,7 @@ CH3_CheckByte:
 .odd
 	call	CH3_SetInstrument
 .noInstrumentChange
-	jp	CH3_DoneUpdating
-.getCommand
-	push	hl
-	sub	$80
-	cp	DummyCommand-$80
-	jr	c,.nodummy
-	pop	hl
-	jp	CH3_CheckByte
-.nodummy
-	add	a
-	add	a,CH3_CommandTable%256
-	ld	l,a
-	adc	a,CH3_CommandTable/256
-	sub	l
-	ld	h,a
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	jp	hl
+	jp	UpdateCH4
 	
 .endChannel
 	xor	a
@@ -992,16 +836,16 @@ CH3_CheckByte:
 	ld	[CH3Ptr],a
 	ld	a,[hl]
 	ld	[CH3Ptr+1],a
-	ld	a,[CH3RetPos]
-	ld	[CH3Pos],a
 	jp	UpdateCH3
 	
-CH3_DoneUpdating:
-	ld	a,c
-	ld	[CH3Pos],a
-	jp	UpdateCH4
-		
-CH3_CommandTable:
+.getCommand
+	sub	$80
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	jp	CH3_CheckByte
+.nodummy
+	call	JumpTableBelow
+	
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -1021,9 +865,7 @@ CH3_CommandTable:
 	dw	.arp
 
 .setInstrument
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	push	hl
 	call	CH3_SetInstrument
 	pop	hl
@@ -1032,91 +874,68 @@ CH3_CommandTable:
 	jp	CH3_CheckByte
 	
 .setLoopPoint
-	pop	hl
-	ld	a,c
-	ld	[CH3LoopPos],a
+	ld	a,l
+	ld	[CH3LoopPtr],a
+	ld	a,h
+	ld	[CH3LoopPtr+1],a
 	jp	CH3_CheckByte
 	
 .gotoLoopPoint
-	pop	hl
-	ld	a,[CH3LoopPos]
-	ld	[CH3Pos],a
+	ld	hl,CH3LoopPtr
+	ld	a,[hl+]
+	ld	[CH3Ptr],a
+	ld	a,[hl]
+	ld	[CH3Ptr+1],a
 	jp	UpdateCH3
 	
 .callSection
-	pop	hl
-	ld	a,[CH3Ptr]
-	ld	[CH3RetPtr],a
-	ld	a,[CH3Ptr+1]
-	ld	[CH3RetPtr+1],a
 	ld	a,[hl+]
 	ld	[CH3Ptr],a
-	ld	a,[hl]
+	ld	a,[hl+]
 	ld	[CH3Ptr+1],a
-	inc	c
-	inc c
-	ld	a,c
-	ld	[CH3RetPos],a
-	xor	a
-	ld	[CH3Pos],a
-	ld	c,a
+	ld	a,l
+	ld	[CH3RetPtr],a
+	ld	a,h
+	ld	[CH3RetPtr+1],a
 	jp	UpdateCH3
 	
 .setChannelPtr
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH3Ptr],a
 	ld	a,[hl]
 	ld	[CH3Ptr+1],a
-	xor	a
-	ld	c,a
-	ld	[CH3Pos],a
 	jp	UpdateCH3
 
 .pitchBendUp	; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH3_CheckByte
 	
 .pitchBendDown	; TODO
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH3_CheckByte
 
-.setSweep		; TODO
-	pop	hl
+.setSweep
 	inc	hl
-	inc	c
 	jp	CH3_CheckByte
 
 .setPan
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH3Pan],a
-	inc	c
 	jp	CH3_CheckByte
 
 .setSpeed
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed1],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH3_CheckByte
 	
 .setInsAlternate
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	ld	[CH3Ins1],a
 	ld	a,[hl+]
-	inc	c
 	ld	[CH3Ins2],a
 	ld	a,1
 	ld	[CH3InsMode],a
@@ -1126,45 +945,34 @@ if def(DemoSceneMode)
 	
 .randomizeWave
 .disableAutoWave
-	pop	hl
 	jp	CH3_CheckByte
 	
 .combineWaves
-	pop	hl
 	ld	a,l
 	add	4
 	ld	l,a
-	jr	nc,.nc
+	jp	nc,CH3_CheckByte
 	inc	h
-.nc
-	ld	a,c
-	add	4
-	ld	c,a
 	jp	CH3_CheckByte	
 	
 .enablePWM
-	pop	hl
 	inc	hl
 	inc	hl
-	inc	c
-	inc	c
 	jp	CH3_CheckByte
 	
 .enableRandomizer
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH3_CheckByte
 	
 else
 	
 .randomizeWave
+	push	hl
 	call	_RandomizeWave
 	pop	hl
 	jp	CH3_CheckByte
 
 .combineWaves
-	pop	hl
 	push	bc
 	ld	a,[hl+]
 	ld	c,a
@@ -1178,12 +986,10 @@ else
 	call	_CombineWaves
 	pop	hl
 	pop	bc
-	ld	a,c
-	add	4
-	ld	c,a
 	jp	CH3_CheckByte
 	
 .enablePWM
+	push	hl
 	call	ClearWaveBuffer
 	pop	hl
 	ld	a,[hl+]
@@ -1194,20 +1000,16 @@ else
 	ld	[WavePos],a
 	xor	a
 	ld	[PWMDir],a
+	ld	[RandomizerEnabled],a
 	inc	a
 	ld	[PWMEnabled],a
 	ld	[PWMTimer],a
-	ld	a,c
-	add	2
-	ld	c,a
-	xor	a
-	ld	[RandomizerEnabled],a
 	jp	CH3_CheckByte
 	
 .enableRandomizer
+	push	hl
 	call	ClearWaveBuffer
 	pop	hl
-	inc	c
 	ld	a,[hl+]
 	ld	[RandomizerSpeed],a
 	ld	a,1
@@ -1218,7 +1020,6 @@ else
 	jp	CH3_CheckByte
 	
 .disableAutoWave
-	pop	hl
 	xor	a
 	ld	[PWMEnabled],a
 	ld	[RandomizerEnabled],a
@@ -1227,11 +1028,7 @@ else
 endc
 	
 .arp
-	pop	hl
 	call	DoArp
-	ld	a,c
-	add	2
-	ld	c,a
 	jp	CH3_CheckByte
 	
 CH3_SetInstrument:
@@ -1292,15 +1089,8 @@ UpdateCH4:
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH4Pos]	; get current offset
-	ld	c,a			; store offset for later use
-	add	l			; hl = hl + a (four lines)
-	ld	l,a
-	jr	nc,CH4_CheckByte
-	inc	h
 CH4_CheckByte:
 	ld	a,[hl+]		; get byte
-	inc	c			; add 1 to offset
 	cp	$ff
 	jr	z,.endChannel
 	cp	$c9
@@ -1311,11 +1101,12 @@ CH4_CheckByte:
 .getNote
 	ld	[CH4Mode],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[CH4Tick],a
-	ld	a,[CH4Reset]
-	jp	z,CH4_DoneUpdating
+	ld	a,l				; store back current pos
+	ld	[CH4Ptr],a
+	ld	a,h
+	ld	[CH4Ptr+1],a
 	xor	a
 	ld	[CH4VolPos],a
 	ld	[CH4VolLoop],a
@@ -1345,25 +1136,7 @@ CH4_CheckByte:
 .odd
 	call	CH4_SetInstrument
 .noInstrumentChange
-	jp	CH4_DoneUpdating
-.getCommand
-	push	hl
-	sub	$80
-	cp	DummyCommand-$80
-	jr	c,.nodummy
-	pop	hl
-	jp	CH4_CheckByte
-.nodummy
-	add	a
-	add	a,CH4_CommandTable%256
-	ld	l,a
-	adc	a,CH4_CommandTable/256
-	sub	l
-	ld	h,a
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	jp	hl
+	jp	DoneUpdating
 	
 .endChannel
 	xor	a
@@ -1376,16 +1149,16 @@ CH4_CheckByte:
 	ld	[CH4Ptr],a
 	ld	a,[hl]
 	ld	[CH4Ptr+1],a
-	ld	a,[CH4RetPos]
-	ld	[CH4Pos],a
 	jp	UpdateCH4
 	
-CH4_DoneUpdating:
-	ld	a,c
-	ld	[CH4Pos],a
-	jp	DoneUpdating
-		
-CH4_CommandTable:
+.getCommand
+	sub	$80
+	cp	DummyCommand-$80
+	jr	c,.nodummy
+	jp	CH4_CheckByte
+.nodummy
+	call	JumpTableBelow
+	
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -1397,17 +1170,15 @@ CH4_CommandTable:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
-	dw	.randomizeWave
+	dw	CH4_CheckByte	;.randomizeWave
 	dw	.combineWaves
 	dw	.enablePWM
 	dw	.enableRandomizer
-	dw	.disableAutoWave
+	dw	CH4_CheckByte	;.disableAutoWave
 	dw	.arp
-
+		
 .setInstrument
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	push	hl
 	call	CH4_SetInstrument
 	pop	hl
@@ -1416,124 +1187,81 @@ CH4_CommandTable:
 	jp	CH4_CheckByte
 	
 .setLoopPoint
-	pop	hl
-	ld	a,c
-	ld	[CH4LoopPos],a
+	ld	a,l
+	ld	[CH4LoopPtr],a
+	ld	a,h
+	ld	[CH4LoopPtr+1],a
 	jp	CH4_CheckByte
 	
 .gotoLoopPoint
-	pop	hl
-	ld	a,[CH4LoopPos]
-	ld	[CH4Pos],a
+	ld	hl,CH4LoopPtr
+	ld	a,[hl+]
+	ld	[CH4Ptr],a
+	ld	a,[hl]
+	ld	[CH4Ptr+1],a
 	jp	UpdateCH4
 	
 .callSection
-	pop	hl
-	ld	a,[CH4Ptr]
-	ld	[CH4RetPtr],a
-	ld	a,[CH4Ptr+1]
-	ld	[CH4RetPtr+1],a
 	ld	a,[hl+]
 	ld	[CH4Ptr],a
-	ld	a,[hl]
+	ld	a,[hl+]
 	ld	[CH4Ptr+1],a
-	inc	c
-	inc c
-	ld	a,c
-	ld	[CH4RetPos],a
-	xor	a
-	ld	[CH4Pos],a
-	ld	c,a
+	ld	a,l
+	ld	[CH4RetPtr],a
+	ld	a,h
+	ld	[CH4RetPtr+1],a
 	jp	UpdateCH4
 	
 .setChannelPtr
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH4Ptr],a
 	ld	a,[hl]
 	ld	[CH4Ptr+1],a
-	xor	a
-	ld	c,a
-	ld	[CH4Pos],a
 	jp	UpdateCH4
 
 .pitchBendUp	; unused for ch4
 .pitchBendDown	; unused for ch4
 .setSweep		; unused for ch4
 .enableRandomizer
-	pop	hl
 	inc	hl
-	inc	c
 	jp	CH4_CheckByte
 
 .setPan
-	pop	hl
 	ld	a,[hl+]
 	ld	[CH4Pan],a
-	inc	c
 	jp	CH4_CheckByte
 
 .setSpeed
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed1],a
 	ld	a,[hl+]
-	inc	c
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH4_CheckByte
 	
 .setInsAlternate
-	pop	hl
 	ld	a,[hl+]
-	inc	c
 	ld	[CH4Ins1],a
 	ld	a,[hl+]
-	inc	c
 	ld	[CH4Ins2],a
 	ld	a,1
 	ld	[CH4InsMode],a
 	jp	CH4_CheckByte
 	
-.randomizeWave
-.disableAutoWave
-	pop	hl
-	jp	CH4_CheckByte
-	
 .combineWaves
-	pop	hl
 	ld	a,l
 	add	4
 	ld	l,a
-	jr	nc,.nc
+	jp	nc,CH4_CheckByte
 	inc	h
-.nc
-	ld	a,c
-	add	4
-	ld	c,a
 	jp	CH4_CheckByte	
 	
 .enablePWM
-	pop	hl
-	inc	hl
-	inc	hl
-	inc	c
-	inc	c
-	jp	CH4_CheckByte
-
 .arp
 	pop	hl
-	ld	a,l
-	add	2
-	ld	l,a
-	jr	nc,.nc3
-	inc	h
-.nc3
-	ld	a,c
-	add	2
-	ld	c,a
+	inc	hl
+	inc	hl
 	jp	CH4_CheckByte
 
 CH4_SetInstrument:
@@ -2828,6 +2556,25 @@ endc
 ; Misc routines
 ; ================================================================
 
+JumpTableBelow:
+; since the return pointer is now at the start of table,
+; we can manipulate it to return to the address in the table instead
+	pop	bc
+	push	hl
+	add	a
+	add	c
+	ld	l,a
+	jr	nc,.nocarry
+	inc	b
+.nocarry
+	ld	h,b
+	ld	a,[hl+]
+	ld	b,[hl]
+	ld	c,a
+	pop	hl
+	push	bc
+	ret
+
 ClearArpBuffer:
 	ld	hl,arp_Buffer
 	push	hl
@@ -2965,16 +2712,16 @@ DefaultRegTable:
 	db	7,0,0,0,0,0,0,1,1,1,1,1
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch2
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch3
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
 	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
