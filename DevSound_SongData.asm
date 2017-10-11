@@ -13,6 +13,7 @@ SongSpeedTable:
 	db	6,6			; gadunk
 	db	2,2			; McAlbyDrumTest
 	db	4,4			; flash title
+	db	6,6			; RainbowDevs logo (porta test)
 	
 	
 SongPointerTable:
@@ -22,6 +23,7 @@ SongPointerTable:
 	dw	PT_Gadunk
 	dw	PT_McAlbyDrumTest
 	dw	PT_FlashTitle
+	dw	PT_RDLogo
 	
 ; =================================================================
 ; Volume sequences
@@ -64,6 +66,7 @@ vol_CymbL:			db	$ff,$f3
 
 vol_Echo1:			db	$ff,$c0
 vol_Echo2:			db	$ff,$40
+vol_c7:				db	$ff,$c7
 
 vol_McAlbyKick:		db	15,15,13,9,7,5,$ff,$41
 vol_McAlbyCHH:		db	8,6,4,$ff,$23
@@ -111,6 +114,9 @@ arp_McAlbySnare:	db	28,24,28,32,36,40,40,$80,6
 arp_McAlbyHat:		db	40,42,44,$80,2
 arp_McAlbyCymb:	db	40,42,36,$80,2
 
+arp_RDLNoise:	db	44,44,44,44,44,43,43,43,43,42,42,42,42,42,40,40,40,40,36,36,36,36,36,32,32,32,32
+				db	24,24,24,24,24,20,20,20,20,16,16,16,16,16,12,12,12,12,8,8,8,8,8,4,4,4,4,0,$80,54
+
 ; =================================================================
 ; Pulse sequences
 ; =================================================================
@@ -147,6 +153,7 @@ WaveTable:
 	dw	wave_PWMD,wave_PWME,wave_PWMF,wave_PWM10
 	
 	dw	wave_PseudoSquare
+	dw	wave_GSCWave3
 	
 wave_Bass:		db	$00,$01,$11,$11,$22,$11,$00,$02,$57,$76,$7a,$cc,$ee,$fc,$b1,$23
 
@@ -169,12 +176,15 @@ wave_PWM10:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00
 
 wave_PseudoSquare:
 			db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
+wave_GSCWave3:
+			db	$02,$46,$8a,$cd,$ef,$fe,$de,$ff,$ee,$dc,$ba,$98,$76,$54,$32,$10
 
 ; use $c0 to use the wave buffer
 waveseq_Bass_:		db	0,$ff
 waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
 waveseq_Square_:		db	$c0,$ff
+waveseq_GSCWave3:	db	20,$ff
 
 ; =================================================================
 ; Instruments
@@ -223,6 +233,11 @@ InstrumentTable:
 	dins	Arp950
 	dins	Arp740
 	dins	Arp830
+	
+	dins	RDLPulse1
+	dins	RDLPulse2
+	dins	RDLWave
+	dins	RDLNoise
 
 ; Instrument format: [no reset flag],[voltable id],[arptable id],[wavetable id],[vibtable id]
 ; _ for no table
@@ -268,6 +283,11 @@ ins_PulseBass2:		Instrument	0,PulseBass2,Pluck,Bass,_
 ins_Arp950:			Instrument	0,PulseBass2,_950,OctArp,_
 ins_Arp740:			Instrument	0,PulseBass2,_740,OctArp,_
 ins_Arp830:			Instrument	0,PulseBass2,_830,OctArp,_
+
+ins_RDLPulse1:		Instrument	0,Echo1,_,_,_
+ins_RDLPulse2:		Instrument	0,c7,_,_,_
+ins_RDLWave:		Instrument	0,Bass1,_,GSCWave3,_
+ins_RDLNoise:		Instrument	0,Echo1,RDLNoise,_,_
 
 ; =================================================================
 
@@ -862,3 +882,47 @@ FlashTitle_CH4:
 	Drum	Snare,2
 	Drum	Snare,2
 	ret
+
+; =================================================================
+
+PT_RDLogo:	dw	RDLogo_CH1,RDLogo_CH2,RDLogo_CH3,RDLogo_CH4
+
+RDLogo_CH1:
+	db	SetInstrument,id_RDLPulse1
+	db	PitchBendDown,15
+	db	D_4,16
+	db	TonePorta,15
+	db	A_3,16
+	db	TonePorta,0
+	db	SetInstrument,id_RDLPulse2
+	db	A_3,16
+	db	rest,1
+	db	EndChannel
+	
+RDLogo_CH2:
+	db	SetInstrument,id_RDLPulse1
+	db	PitchBendDown,15
+	db	A_3,16
+	db	TonePorta,15
+	db	D_3,16
+	db	TonePorta,0
+	db	SetInstrument,id_RDLPulse2
+	db	D_3,16
+	db	rest,1
+	db	EndChannel
+	
+RDLogo_CH3:
+	db	SetInstrument,id_RDLWave
+	db	PitchBendDown,15
+	db	D_4,16
+	db	TonePorta,15
+	db	D_3,32
+	db	rest,1
+	db	EndChannel
+	
+RDLogo_CH4:
+	db	SetInstrument,id_RDLNoise
+	db	fix,10,rest,1
+	db	EndChannel
+	
+	

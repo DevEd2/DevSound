@@ -41,7 +41,11 @@ CH1Reset		ds	1
 CH1Note			ds	1
 CH1Transpose	ds	1
 CH1FreqOffset	ds	1
+CH1TempFreq		ds	2
+CH1PortaType	ds	1
+CH1PortaSpeed	ds	1
 CH1Vol			ds	1
+CH1ChanVol		ds	1
 CH1Pan			ds	1
 CH1Sweep		ds	1
 CH1NoteCount	ds	1
@@ -67,7 +71,11 @@ CH2Reset		ds	1
 CH2Note			ds	1
 CH2Transpose	ds	1
 CH2FreqOffset	ds	1
+CH2TempFreq		ds	2
+CH2PortaType	ds	1
+CH2PortaSpeed	ds	1
 CH2Vol			ds	1
+CH2ChanVol		ds	1
 CH2Pan			ds	1
 CH2NoteCount	ds	1
 CH2InsMode		ds	1
@@ -91,7 +99,11 @@ CH3Reset		ds	1
 CH3Note			ds	1
 CH3Transpose	ds	1
 CH3FreqOffset	ds	1
+CH3TempFreq		ds	2
+CH3PortaType	ds	1
+CH3PortaSpeed	ds	1
 CH3Vol			ds	1
+CH3ChanVol		ds	1
 CH3ComputedVol	ds	1
 CH3Wave			ds	1
 CH3Pan			ds	1
@@ -113,6 +125,7 @@ CH4Tick			ds	1
 CH4Reset		ds	1
 CH4Transpose	ds	1
 CH4Vol			ds	1
+CH4ChanVol		ds	1
 CH4Pan			ds	1
 CH4NoteCount	ds	1
 CH4InsMode		ds	1
