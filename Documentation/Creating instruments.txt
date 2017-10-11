@@ -6,24 +6,21 @@ CREATING INSTRUMENTS
 2. Scroll down to InstrumentTable: (or use Ctrl-F* to search for "InstrumentTable:")
 
 3. Add an entry at the bottom of the table for your instrument, like so:
-	dw ins_Bepis
+	dins Bepis
 NOTE: The instrument name given here is simply an example, you can replace it with whatever you want.
 The pointer should now be set up. Now let's define the instrument!
 
 4. Scroll down below, you should see a list with many entries that look something like this:
-	ins_Foo:	Instrument	0,vol_Foo,arp_Foo,pulse_Foo,vib_Dummy
+	ins_Foo:	Instrument	0,vol_Foo,arp_Foo,pulse_Foo,_
 	ins_Bar:	Instrument	1,vol_Bar,arp_Bar,pulse_Bar,vib_Bar
-	ins_Baz:	Instrument	0,vol_Baz,arp_Baz,waveseq_Baz,vib_Dummy
-	ins_Boom:	Instrument	0,vol_Boom,noiseseq_Boom,DummyTable,DummyTable
+	ins_Baz:	Instrument	0,vol_Baz,arp_Baz,waveseq_Baz,_
+	ins_Boom:	Instrument	0,vol_Boom,noiseseq_Boom,_,_
 
 5. At the bottom of this list, add a new entry for your instrument. If you are creating a pulse instrument, it should look something like this:
-	ins_Bepis:	Instrument,0,vol_Bepis,arp_Bepis,pulse_Bepis,vib_Bepis
-
-If you are creating a wave instrument, it should look something like this:
-	ins_Bepis:	Instrument,0,vol_Bepis,arp_Bepis,waveseq_Bepis,vib_Bepis
+	ins_Bepis:	Instrument,0,Bepis,Bepis,Bepis,Bepis
 	
 If you are creating a noise instrument, it should look something like this:
-	ins_Bepis:	Instrument,0,vol_Bepis,noiseseq_Bepis,DummyTable,DummyTable
+	ins_Bepis:	Instrument,0,vol_Bepis,noiseseq_Bepis,_,_
 
 NOTE: The names given here are simply examples, you can replace them with whatever you want.
 (See Appendix 1 for the instrument format in detail.)
@@ -31,44 +28,33 @@ NOTE: The names given here are simply examples, you can replace them with whatev
 Our instrument is now defined, but there's something we're missing: the volume/arp/pulse/vibrato sequences. Let's take care of that.
 
 6. Use Ctrl-F* to search for "Volume sequences", and add a new entry for vol_Bepis (or whatever you named it). If you are creating a pulse or noise instrument, it should look something like this:
-	vol_Bepis:		db	15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,$ff
-
-If you are creating a wave instrument, it should look something like this:
-	vol_Bepis:		db	w3,w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w2,w2,w2,w2,w1,$ff
+	vol_Bepis:		db	15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,$ff,0
 
 NOTE: The data given here is an example, you can replace it with whatever you want.
 (See Appendix 2 for the volume sequence format in detail.)
 
 7. If you are creating a pulse instrument, scroll down to the arpeggio sequences (directly below the volume sequences) and add a new entry for arp_Bepis (or whatever you named it). It should look something like this::
-	arp_Bepis:		db	0,4,7,12,$80,0
+	arp_Bepis:		db	0,4,7,12,$fe,0
 	
-If you are creating a noise instrument, scroll down to the noise sequences (above the pulse sequences) and add a new entry for noiseseq_Bepis (or whatever you named it). It should look something like this:
-	noiseseq_Bepis:	db	24,12,10,18,s7+29,$80,5
+If you are creating a noise instrument, It should look something like this:
+	arp_Bepis:	db	24,12,10,18,s7+29,$fe,5
 
 NOTE: The data given here is an example, you can replace it with whatever you want.
 (See Appendix 3 for the arpeggio sequence format in detail.)
 
-8. If you are creating a noise instrument, you're done! Otherwise, if you are creating a pulse instrument, scroll down to the pulse sequences, and create a new entry for pulse_Bepis. It should look something like this:
-	pulse_Bepis:	db,	0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,$80,0
-	
-If you are creating a wave instrument, scroll down to the wave sequences (just above the start of the instrument table) and creat a new entry for waveseq_Bepis. It should look something like this:
-	waveseq_Bepis:	db	0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,$ff
+8. If you are creating a noise instrument, you're done! Otherwise, if you are creating a pulse instrument, scroll down to the pulse or wave sequences, and create a new entry for waveseq_Bepis. It should look something like this:
+	waveseq_Bepis:	db,	0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,$fe,0
 
 NOTE: The data given here is an example, you can replace it with whatever you want.
 (See Appendix 4 for the pulse sequence and wave sequence formats in detail.)
 
-9. Scroll down to the vibrato sequences (under the pulse sequences) and add a new entry for vib_Bepis (or whatever you named it). It should look something like this:
-	vib_Bepis:	db	16,1,2,3,2,1,0,-1,-2,-3,-2,-1,0,$80,1
+9. Scroll down to the vibrato sequences and add a new entry for vib_Bepis (or whatever you named it). It should look something like this:
+	vib_Bepis:	db	16,1,2,3,2,1,0,-1,-2,-3,-2,-1,0,$fe,1
 	
 Note: The data given here is an example, you can replace it with whatever you want.
 (See Appendix 5 for the vibrato sequence format in detail.)
-
-10. This step is optional, but it will make using your instrument a lot easier, otherwise you'll have to memorize the ID of your instrument. Go back to the instrument list, and at the very bottom (just before the start of the actual song data), add a new entry to the bottom of the list for your instrument (whatever you named it), like so:
-	_ins_Bepis	equ	[id]
-
-NOTE: Replace [id] with the ID of the last instrument in the list (before the one you just added) plus 1.
 	
-11. You're done!
+10. You're done!
 
 APPENDIX 1: INSTRUMENT FORMAT
 =============================
@@ -76,40 +62,46 @@ APPENDIX 1: INSTRUMENT FORMAT
 Instrument definitions follow the following format:
 [reset flag],[volume pointer],[arp/noise pointer],[pulse/wave pointer],[vibrato pointer]
 
-The reset flag is one byte, and is either 0 (off) or 1 (on). If it is 1, the pulse/wave pointer position will not be reset on a new note.
+The reset flag is one byte. If bit 0 is set (+1), the pulse/wave pointer position will not be reset on a new note. If bit 1 is set (+2), the volume pointer position will not be reset on a new note.
 
-The pulse/wave pointer and vibrato pointers are not used for noise instruments. It is recommended that you set these to DummyTable for noise instruments.
+The pulse/wave pointer and vibrato pointers are not used for noise instruments. It is recommended that you set these to _ for noise instruments.
 
-If you do not want to use an arpeggio sequence, replace the arp/noise pointer field with DummyTable.
+If you do not want to use an arpeggio sequence, replace the arp/noise pointer field with _.
 
-If you do not want to use a vibrato sequence, replace the vibrato pointer with vib_Dummy.
+If you do not want to use a vibrato sequence, replace the vibrato pointer with _.
+
+Note:
+	vol_, arp_, waveseq_ and vib_ prefixes are automatically prepended to each respective pointer entry. So you don't have to include them when defining the instrument.
+	id_<insname> constant is also generated from dins command in the instrument table. This is useful when you want to use this instrument's ID.
 
 APPENDIX 2: VOLUME TABLE FORMAT
 ===============================
 
 Each volume table is a sequence of bytes specifying volume values, followed by either a stop or loop command.
 
-For volume values, the upper nybble controls envelope length, and the lower nybble controls the initial volume. Example: $3f = initial volume F, length 3
-WARNING: A volume value of $FF or $8F will be interpreted as stop and loop commands respectively. You should use $F0 instead of these values.
+Volume values can be from 0 to 15, including wave channel (they will be automatically scaled)
 
-To loop a volume sequence, use command $8f, followed by the loop point offset. Example: $8f,3 will jump to position 3.
+To loop a volume sequence, use command $fe, followed by the loop point offset. Example: $fe,3 will jump to position 3.
 
-To terminate a volume sequence, use command $FF.
+To terminate a volume sequence, use command $ff.
 NOTE: This will not cut the note. If you want the note to be cut when the volume sequence ends, you should add 0 to the end of the volume sequence, followed by the stop command.
+
+For pulse/noise channel, you must specify the final envelope after volume sequence termination command, this value corresponds directly to NRx2 value. Example: $ff,$37 will load volume 3 with envelope 7 after the table ends.
 
 APPENDIX 3: ARP/NOISE SEQUENCE FORMAT
 =====================================
 
 Each arp/noise table is a sequence of bytes specifying transpose values, followed by either a stop or loop command.
 
-Each transpose value will transpose the base note up by x semitones, where x is the transpose value. Example: $C will transpose the note up by $C (or 12) notes.
-NOTE: A transpose value of $ff will be interpreted as a stop command!
+Each transpose value between $00 - $3f will transpose the base note up by x semitones. Example: $c will transpose the note up by $c (or 12) notes.
+Each transpose value between $40 - $7f will transpose the base note down by 128-x semitones. Example: $74 will transpose the note down by $c (or 12) notes.
+Each transpose value between $80 - $da will use note x regardless of the base note. Example: $a9 will use note $29 (F-5).
 
 For noise sequences, add s7 to the transpose value to get periodic noise (sounds more like a tone). Example: s7+29 = transpose up 29 semitones w/ periodic noise
 
-To loop an arp/noise sequence, use command $80, followed by the loop point offset. Example: $80,3 will jump to position 3.
+To loop an arp/noise sequence, use command $fe, followed by the loop point offset. Example: $fe,3 will jump to position 3.
 
-To terminate an arp/noise sequence, use command $FF.
+To terminate an arp/noise sequence, use command $ff.
 NOTE: The transpose value will remain as whatever it was before the stop command. If this is not desirable, you should add 0 to the end of the arp/noise sequence, followed by the stop command.
 
 APPENDIX 4: PULSE/WAVE SEQUENCE FORMAT
@@ -119,12 +111,12 @@ Each pulse/wave table is a sequence of bytes specifying pulse/wave values, follo
 
 Pulse values can be 0 (12.5% pulse), 1 (25% pulse), 2 (50% pulse), or 3 (75% pulse). Anything else is not recommended.
 
-Wave values can be anywhere from 0 to 128.
+Wave values can be anywhere from 0 to 254.
 SPECIAL CASE FOR WAVE VALUES: Using $c0 as the wave value will enable the usage of the wave buffer, for use in conjunction with wave buffer commands (see Command reference.txt for a list of wave buffer commands). If there is nothing in the wave buffer, this will result in a blank wave!
 
-To loop a pulse/wave sequence, use command $80, followed by the loop point offset. Example: $80,3 will jump to position 3.
+To loop a pulse/wave sequence, use command $fe, followed by the loop point offset. Example: $fe,3 will jump to position 3.
 
-To terminate a pulse/wave sequence, use command $FF.
+To terminate a pulse/wave sequence, use command $ff.
 NOTE: The pulse/wave value will remain as whatever it was before the stop command.
 
 APPENDIX 5: VIBRATO SEQUENCE FORMAT

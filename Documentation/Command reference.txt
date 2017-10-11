@@ -14,7 +14,13 @@ $00 - $47 - [note]
 $48 - rest
   Silences a channel for the specified length.
   Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
-
+  
+$49 - null
+  Do nothing for the specified length.
+  This is useful for when you want to put some effects in the middle of the note.
+    - Example: $0c,$04,$86,$10,$49,$04 will play C-3 for 8 rows with pitch bend down starting in the middle
+  Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
+  
 $80 - SetInstrument
   Sets the instrument for the current channel.
   Parameter 1: Instrument ID (1 byte)
@@ -36,24 +42,24 @@ $84 - SetChannelPointer
   Jumps to a section of song data.
   Parameter 1: Section pointer (2 bytes)
   
-$85 - PitchBendUp (NYI)
+$85 - PitchBendUp (CH1, CH2, CH3)
   Start an upwards pitch bend. Lasts until a new note is triggered.
   Parameter 1: Speed (1 byte)
   
-$86 - PitchBendDown (NYI)
+$86 - PitchBendDown (CH1, CH2, CH3)
   Start a downwards pitch bend. Lasts until a new note is triggered.
   Parameter 1: Speed (1 byte)
   
-$87 - SetSweep (CH1 only) (NYI)
+$87 - SetSweep (CH1 only)
   Enables hardware sweep for CH1.
   Parameter 1: Raw value to write to NR10 (1 byte)
-
+  
 $88 - SetPan
   Set panning for the current channel.
   Parameter 1: Panning flags (1 byte)
     - Upper nybble controls left speaker output (must be 1). Ditto for lower nybble which controls right speaker output.
-	- Example: $10 to pan to the left speaker, $01 to pan to the right speaker, $11 for both speakers, $00 to mute channel
-	
+    - Example: $10 to pan to the left speaker, $01 to pan to the right speaker, $11 for both speakers, $00 to mute channel
+  
 $89 - SetSpeed
   Set global song speed (affects all channels!)
   Parameter 1: First speed (1 byte)
@@ -97,6 +103,15 @@ $90 - Arp (CH1, CH2, CH3)
   Parameter 2: Arp value (upper nybble = value 1, lower nybble = value 2) (1 byte)
   Example usage: $00,$47 will result in [0 4 7], $01,$59 will result in [0 0 5 5 9 9]
   NOTE: This will not affect the current instrument unless it is set to use the arpeggio buffer!
+  
+$91 - TonePorta (CH1, CH2, CH3)
+  Start a pitch bend towards a target note. Lasts until the target pitch is reached or turned off
+  Parameter 1: Speed (0 to turn off) (1 byte)
+  
+$92 - ChannelVolume
+  Set the volume for the current channel, this will scale every instruments' volume
+  NOTE: This will not affect end-of-table hardware envelope!
+  Parameter 1: Volume (anywhere from 0 to 15) (1 byte)
   
 $C9 - ret
   Return from a section. (The ret instruction can be used, as long as it is not preceded with a db or dw instruction)
