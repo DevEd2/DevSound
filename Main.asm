@@ -312,7 +312,7 @@ endc
 MainText:
 ;		 ####################
 	db	"                    "
-	db	"    DevSound v1.0   "
+	db	"    DevSound v2.0   "
 	db	"      by DevEd      "
 	db	"  deved8@gmail.com  "
 	db	"                    "
