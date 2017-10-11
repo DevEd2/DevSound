@@ -79,8 +79,9 @@ G#7		equ	$44
 A_7		equ	$45
 A#7		equ	$46
 B_7		equ	$47
-rest	equ	$48
-___		equ	$49
+; noise has 45 notes and 2 modes, which make 90 ($5a) notes total
+rest	equ	$5b
+___		equ	$5c
 
 fix		equ	C_2
 

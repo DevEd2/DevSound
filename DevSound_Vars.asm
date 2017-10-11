@@ -39,6 +39,7 @@ CH1RetPtr		ds	2
 CH1Tick			ds	1
 CH1Reset		ds	1
 CH1Note			ds	1
+CH1NoteBackup	ds	1
 CH1Transpose	ds	1
 CH1FreqOffset	ds	1
 CH1TempFreq		ds	2
@@ -69,6 +70,7 @@ CH2RetPtr		ds	2
 CH2Tick			ds	1
 CH2Reset		ds	1
 CH2Note			ds	1
+CH2NoteBackup	ds	1
 CH2Transpose	ds	1
 CH2FreqOffset	ds	1
 CH2TempFreq		ds	2
@@ -97,6 +99,7 @@ CH3RetPtr		ds	2
 CH3Tick			ds	1
 CH3Reset		ds	1
 CH3Note			ds	1
+CH3NoteBackup	ds	1
 CH3Transpose	ds	1
 CH3FreqOffset	ds	1
 CH3TempFreq		ds	2
@@ -121,6 +124,7 @@ CH4NoisePos		ds	1
 CH4LoopPtr		ds	2
 CH4RetPtr		ds	2
 CH4Mode			ds	1
+CH4ModeBackup	ds	1
 CH4Tick			ds	1
 CH4Reset		ds	1
 CH4Transpose	ds	1

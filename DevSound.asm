@@ -266,7 +266,7 @@ CH1_CheckByte:
 	jp	nz,.getCommand
 	; if we have a note...
 .getNote
-	ld	[CH1Note],a		; set note
+	ld	[CH1NoteBackup],a	; set note
 	ld	a,[hl+]
 	dec	a
 	ld	[CH1Tick],a		; set tick
@@ -564,7 +564,7 @@ CH2_CheckByte:
 	jp	nz,.getCommand	
 	; if we have a note...
 .getNote
-	ld	[CH2Note],a
+	ld	[CH2NoteBackup],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH2Tick],a
@@ -865,7 +865,7 @@ CH3_CheckByte:
 	jp	nz,.getCommand
 	; if we have a note...
 .getNote
-	ld	[CH3Note],a
+	ld	[CH3NoteBackup],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH3Tick],a
@@ -1235,7 +1235,7 @@ CH4_CheckByte:
 	jr	nz,.getCommand	
 	; if we have a note...
 .getNote
-	ld	[CH4Mode],a
+	ld	[CH4ModeBackup],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH4Tick],a
@@ -1540,7 +1540,8 @@ CH1_UpdateRegisters:
 	and	a
 	jp	z,CH2_UpdateRegisters
 
-	ld	a,[CH1Note]
+	ld	a,[CH1NoteBackup]
+	ld	[CH1Note],a
 	cp	rest
 	jr	nz,.norest
 	xor	a
@@ -1564,7 +1565,7 @@ CH1_UpdateRegisters:
 	inc	h
 .nocarry
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH1ArpPos],a
@@ -1572,6 +1573,16 @@ CH1_UpdateRegisters:
 .noloop
 	cp	$ff
 	jr	z,.continue
+	cp	$80
+	jr	nc,.absolute
+	sla	a
+	sra	a
+	jr	.donearp
+.absolute
+	and	$7f
+	ld	[CH1Note],a
+	xor	a
+.donearp
 	ld	[CH1Transpose],a
 .noreset
 	ld	a,[CH1ArpPos]
@@ -1608,7 +1619,7 @@ CH1_UpdateRegisters:
 	inc	a
 	ld	[CH1PulsePos],a
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.updateNote
 	ld	a,[hl]
 	ld	[CH1PulsePos],a
@@ -1820,7 +1831,9 @@ CH1_UpdateRegisters:
 	ld	b,a
 if !def(DemoSceneMode)
 	ld	a,[CH1ChanVol]
+	push	hl
 	call	MultiplyVolume
+	pop	hl
 	ld	a,[CH1VolLoop]
 	dec	a
 	jr	z,.zombieatpos0
@@ -1860,7 +1873,7 @@ endc
 	inc	a
 	ld	[CH1VolPos],a
 	ld	a,[hl+]
-	cp	$8f
+	cp	$fe
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH1VolPos],a
@@ -1903,7 +1916,8 @@ CH2_UpdateRegisters:
 	cp	3
 	jr	z,.norest
 	endc
-	ld	a,[CH2Note]
+	ld	a,[CH2NoteBackup]
+	ld	[CH2Note],a
 	cp	rest
 	jr	nz,.norest
 	xor	a
@@ -1927,7 +1941,7 @@ CH2_UpdateRegisters:
 	inc	h
 .nocarry
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH2ArpPos],a
@@ -1935,6 +1949,16 @@ CH2_UpdateRegisters:
 .noloop
 	cp	$ff
 	jr	z,.continue
+	cp	$80
+	jr	nc,.absolute
+	sla	a
+	sra	a
+	jr	.donearp
+.absolute
+	and	$7f
+	ld	[CH2Note],a
+	xor	a
+.donearp
 	ld	[CH2Transpose],a
 .noreset
 	ld	a,[CH2ArpPos]
@@ -1974,7 +1998,7 @@ CH2_UpdateRegisters:
 	inc	a
 	ld	[CH2PulsePos],a
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.updateNote
 	ld	a,[hl]
 	ld	[CH2PulsePos],a
@@ -2210,7 +2234,9 @@ endc
 	ld	b,a
 if !def(DemoSceneMode)
 	ld	a,[CH2ChanVol]
+	push	hl
 	call	MultiplyVolume
+	pop	hl
 	ld	a,[CH2VolLoop]
 	dec	a
 	jr	z,.zombieatpos0
@@ -2250,7 +2276,7 @@ endc
 	inc	a
 	ld	[CH2VolPos],a
 	ld	a,[hl+]
-	cp	$8f
+	cp	$fe
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH2VolPos],a
@@ -2288,7 +2314,8 @@ CH3_UpdateRegisters:
 	and	a
 	jp	z,CH4_UpdateRegisters
 
-	ld	a,[CH3Note]
+	ld	a,[CH3NoteBackup]
+	ld	[CH3Note],a
 	cp	rest
 	jr	nz,.norest
 	xor	a
@@ -2314,7 +2341,7 @@ CH3_UpdateRegisters:
 	inc	h
 .nocarry
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH3ArpPos],a
@@ -2322,6 +2349,16 @@ CH3_UpdateRegisters:
 .noloop
 	cp	$ff
 	jr	z,.continue
+	cp	$80
+	jr	nc,.absolute
+	sla	a
+	sra	a
+	jr	.donearp
+.absolute
+	and	$7f
+	ld	[CH3Note],a
+	xor	a
+.donearp
 	ld	[CH3Transpose],a
 .noreset
 	ld	a,[CH3ArpPos]
@@ -2537,7 +2574,9 @@ CH3_UpdateRegisters:
 	ld	b,a
 if !def(DemoSceneMode)
 	ld	a,[CH3ChanVol]
+	push	hl
 	call	MultiplyVolume
+	pop	hl
 endc
 	ld	a,[CH3Vol]
 	cp	b
@@ -2578,7 +2617,7 @@ endc
 	inc	a
 	ld	[CH3VolPos],a
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH3VolPos],a
@@ -2632,7 +2671,7 @@ endc
 	inc	a
 	ld	[CH3WavePos],a
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.updatebuffer
 	ld	a,[hl]
 	ld	[CH3WavePos],a
@@ -2754,7 +2793,8 @@ CH4_UpdateRegisters:
 	cp	3
 	jr	z,.norest
 	endc
-	ld	a,[CH4Mode]
+	ld	a,[CH4ModeBackup]
+	ld	[CH4Mode],a
 	cp	rest
 	jr	nz,.norest
 	xor	a
@@ -2778,14 +2818,24 @@ CH4_UpdateRegisters:
 	inc	h
 .nocarry
 	ld	a,[hl+]
-	cp	$80
+	cp	$fe
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH4NoisePos],a
-	jr	.updateNote
+	jr	.updatearp
 .noloop
 	cp	$ff
 	jr	z,.continue
+	cp	$80
+	jr	nc,.absolute
+	sla	a
+	sra	a
+	jr	.donearp
+.absolute
+	and	$7f
+	ld	[CH4Mode],a
+	xor	a
+.donearp
 	ld	[CH4Transpose],a
 .noreset
 	ld	a,[CH4NoisePos]
@@ -2837,7 +2887,9 @@ CH4_UpdateRegisters:
 	ld	b,a
 if !def(DemoSceneMode)
 	ld	a,[CH4ChanVol]
+	push	hl
 	call	MultiplyVolume
+	pop	hl
 	ld	a,[CH4VolLoop]
 	dec	a
 	jr	z,.zombieatpos0
@@ -2876,7 +2928,7 @@ endc
 	inc	a
 	ld	[CH4VolPos],a
 	ld	a,[hl+]
-	cp	$8f
+	cp	$fe
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH4VolPos],a
@@ -3309,16 +3361,16 @@ DefaultRegTable:
 	db	7,0,0,0,0,0,0,1,1,1,1,1
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch2
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch3
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
 	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 

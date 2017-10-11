@@ -41,7 +41,7 @@ SongPointerTable:
 ; the wave so make sure that the volume doesn't change too fast that it
 ; unintentionally produces sync effect
 
-vol_Gadunk: 		db	15,5,10,5,2,6,10,15,12,6,10,7,8,9,10,15,4,3,2,1,$8f,0
+vol_Gadunk: 		db	15,5,10,5,2,6,10,15,12,6,10,7,8,9,10,15,4,3,2,1,$fe,0
 vol_Arp:			db	8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
 vol_OctArp:			db	12,11,10,9,9,8,8,8,7,7,6,6,7,7,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
 vol_Bass1:			db	15,$ff
@@ -75,71 +75,46 @@ vol_McAlbySnare:	db	15,15,15,10,3,4,$ff,$53
 vol_McAlbyCymb:		db	12,8,6,$ff,$54
 
 ; =================================================================
-; Arpeggio sequences
+; Arpeggio/Noise sequences
 ; =================================================================
 
-arp_Gadunk: 	db	20,22,19,14,20,5,0,15,20,$ff
-arp_Pluck059:	db	19,0,5,5,9,9,0,$80,1
-arp_Pluck047:	db	19,0,4,4,7,7,0,$80,1
-arp_Octave:		db	0,19,12,12,0,0,0,0,12,$80,2
-arp_Pluck:		db	12,0,$ff
-arp_Tom:		db	22,20,18,16,14,12,10,9,7,6,4,3,2,1,0,$ff
-
-arp__017C:		db	12,12,7,7,1,1,0,0,$80,0
-arp__057C:		db	12,12,7,7,5,5,0,0,$80,0
-arp__950:		db	9,5,0,9,9,5,5,0,0,$80,3
-arp__740:		db	7,4,0,7,7,4,4,0,0,$80,3
-arp__830:		db	8,3,0,8,8,3,3,0,0,$80,3
-
-; =================================================================
-; Noise sequences
-; =================================================================
+s7	equ	$2d
 
 ; Noise values are the same as Deflemask, but with one exception:
 ; To convert 7-step noise values (noise mode 1 in deflemask) to a
 ; format usable by DevSound, take the corresponding value in the
 ; arpeggio macro and add s7.
-; Example: db s7+32 = noise value 32 with step lengh 7
+; Example: db s7+128+32 = noise value 32 with step lengh 7
 ; Note that each noiseseq must be terminated with a loop command
-; ($80) otherwise the noise value will reset!
+; ($fe) otherwise the noise value will reset!
 
-s7	equ	$2d
+arp_Gadunk: 	db	20,22,19,14,20,5,0,15,20,$ff
+arp_Pluck059:	db	19,0,5,5,9,9,0,$fe,1
+arp_Pluck047:	db	19,0,4,4,7,7,0,$fe,1
+arp_Octave:		db	0,19,12,12,0,0,0,0,12,$fe,2
+arp_Pluck:		db	12,0,$ff
+arp_Tom:		db	22,20,18,16,14,12,10,9,7,6,4,3,2,1,0,$ff
 
-arp_Kick:	db	32,26,37,$80,2
-arp_Snare:	db	s7+29,s7+23,s7+20,35,$80,3
-arp_Hat:	db	41,43,$80,1
+arp__017C:		db	12,12,7,7,1,1,0,0,$fe,0
+arp__057C:		db	12,12,7,7,5,5,0,0,$fe,0
+arp__950:		db	9,5,0,9,9,5,5,0,0,$fe,3
+arp__740:		db	7,4,0,7,7,4,4,0,0,$fe,3
+arp__830:		db	8,3,0,8,8,3,3,0,0,$fe,3
 
-arp_McAlbyKick:	db	42,28,24,20,12,20,28,$80,6
-arp_McAlbySnare:	db	28,24,28,32,36,40,40,$80,6
-arp_McAlbyHat:		db	40,42,44,$80,2
-arp_McAlbyCymb:	db	40,42,36,$80,2
+arp_Kick:	db	$a0,$9a,$a5,$fe,2
+arp_Snare:	db	s7+$9d,s7+$97,s7+$94,$a3,$fe,3
+arp_Hat:	db	$a9,$ab,$fe,1
 
-arp_RDLNoise:	db	44,44,44,44,44,43,43,43,43,42,42,42,42,42,40,40,40,40,36,36,36,36,36,32,32,32,32
-				db	24,24,24,24,24,20,20,20,20,16,16,16,16,16,12,12,12,12,8,8,8,8,8,4,4,4,4,0,$80,54
+arp_McAlbyKick:	db	$aa,$9c,$98,$94,$8c,$94,$9c,$fe,6
+arp_McAlbySnare:	db	$9c,$98,$9c,$a0,$a4,$a8,$a8,$fe,6
+arp_McAlbyHat:		db	$a8,$aa,$ac,$fe,2
+arp_McAlbyCymb:	db	$a8,$aa,$a4,$fe,2
 
-; =================================================================
-; Pulse sequences
-; =================================================================
-
-waveseq_Arp:		db	2,2,2,1,1,1,0,0,0,3,3,3,$80,0
-waveseq_OctArp:	db	2,2,2,1,1,2,$ff
-
-waveseq_Bass:		db	1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,0,0,0,0,0,0,$80,0
-waveseq_Square:	db	2,$ff
-waveseq_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$80,00
-
-waveseq_EchoTest:	db	1,$ff
+arp_RDLNoise:	db	$ac,$ac,$ac,$ac,$ac,$ab,$ab,$ab,$ab,$aa,$aa,$aa,$aa,$aa,$a8,$a8,$a8,$a8,$a4,$a4,$a4,$a4,$a4,$a0,$a0,$a0,$a0
+				db	$98,$98,$98,$98,$98,$94,$94,$94,$94,$90,$90,$90,$90,$90,$8c,$8c,$8c,$8c,$88,$88,$88,$88,$88,$84,$84,$84,$84,$80,$fe,54
 
 ; =================================================================
-; Vibrato sequences
-; Must be terminated with a loop command!
-; =================================================================
-
-vib_Dummy:	db	0,0,$80,1
-vib_Test:	db	4,2,4,6,8,6,4,2,0,-2,-4,-6,-8,-6,-4,-2,0,$80,1
-
-; =================================================================
-; Wave sequences
+; Pulse/Wave sequences
 ; =================================================================
 
 WaveTable:
@@ -185,6 +160,23 @@ waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
 waveseq_Square_:		db	$c0,$ff
 waveseq_GSCWave3:	db	20,$ff
+
+waveseq_Arp:		db	2,2,2,1,1,1,0,0,0,3,3,3,$fe,0
+waveseq_OctArp:	db	2,2,2,1,1,2,$ff
+
+waveseq_Bass:		db	1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,0,0,0,0,0,0,$fe,0
+waveseq_Square:	db	2,$ff
+waveseq_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$fe,00
+
+waveseq_EchoTest:	db	1,$ff
+
+; =================================================================
+; Vibrato sequences
+; Must be terminated with a loop command!
+; =================================================================
+
+vib_Dummy:	db	0,0,$80,1
+vib_Test:	db	4,2,4,6,8,6,4,2,0,-2,-4,-6,-8,-6,-4,-2,0,$80,1
 
 ; =================================================================
 ; Instruments
