@@ -23,7 +23,7 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ================================================================
 
-UseFXHammer	set	1
+UseFXHammer	set	0
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
@@ -53,6 +53,7 @@ db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
 ; ================================================================
 
 DevSound_Init:
+	di
 	ld	c,a		; Preserve song ID
 	
 	xor	a
@@ -144,7 +145,7 @@ DevSound_Init:
 	ldh	[rNR51],a
 	ld	a,7
 	ld	[GlobalVolume],a
-	ret
+	reti
 
 ; ================================================================
 ; Stop routine

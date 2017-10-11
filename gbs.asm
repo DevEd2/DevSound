@@ -7,8 +7,13 @@ SECTION "GBS Header", ROM0[$3f90]
 	dw	DS_Init		; init address
 	dw	DS_Play		; play address
 	dw	$fffe		; stack pointer
+if EngineSpeed == -1
 	db	0			; rTMA
 	db	0			; rTAC (both 0 = VBlank)
+else
+	db	EngineSpeed				; rTMA
+	db	TACF_START + TACF_4KHZ	; rTAC
+endc
 GBS_TitleText:
 	db "DevSound Demo"
 rept GBS_TitleText - @ + 32

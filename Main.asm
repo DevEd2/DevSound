@@ -11,6 +11,10 @@ DebugFlag	set	1
 
 UseDecimal	set	0
 
+; Engine speed (= 4096/(256-x) Hz), -1 to use VBlank
+
+EngineSpeed	set -1
+
 ; ================================================================
 ; Project includes
 ; ================================================================
@@ -54,6 +58,12 @@ Reset38:	jp	ErrorHandler
 
 SECTION	"VBlank interrupt",ROM0[$40]
 IRQ_VBlank:
+if EngineSpeed != -1
+	push	af
+	ld	a,1
+	ld	[VBlankOccurred],a
+	pop	af
+endc
 	reti
 
 SECTION	"LCD STAT interrupt",ROM0[$48]
@@ -62,7 +72,11 @@ IRQ_STAT:
 
 SECTION	"Timer interrupt",ROM0[$50]
 IRQ_Timer:
+if EngineSpeed == -1
 	reti
+else
+	jp	DoTimer
+endc
 
 SECTION	"Serial interrupt",ROM0[$58]
 IRQ_Serial:
@@ -142,7 +156,16 @@ ProgramStart:
 	ld	a,%11100100			; 3 2 1 0
 	ldh	[rBGP],a			; set background palette
 
+if EngineSpeed == -1
 	ld	a,IEF_VBLANK
+else
+	ld	a,EngineSpeed
+	ld	[rTMA],a
+	ld	[rTIMA],a
+	ld	a,TACF_START + TACF_4KHZ
+	ld	[rTAC],a
+	ld	a,IEF_VBLANK + IEF_TIMER
+endc
 	ldh	[rIE],a				; set VBlank interrupt flag
 		
 	ld	a,%10010001			; LCD on + BG on + BG $8000
@@ -167,7 +190,8 @@ MainLoop:
 		ld	hl,$98b1
 		call	DrawHex
 	endc
-.loop	
+.loop
+if EngineSpeed == -1
 	ld	a,[rLY]			; wait for scanline 0
 	and	a
 	jp	nz,.loop
@@ -184,6 +208,16 @@ MainLoop:
 	halt				; wait for VBlank
 	
 	ld	a,c
+else
+	halt				; wait for VBlank
+	ld	a,[VBlankOccurred]
+	and	a
+	jr	z,.loop
+	xor	a
+	ld	[VBlankOccurred],a
+	ld	a,[RasterTime]
+endc
+	
 	ld	hl,$9a11		; raster time display address in VRAM
 	call	DrawHex		; draw raster time
 		; playback controls
@@ -245,6 +279,31 @@ MainLoop:
 	call	DS_Fade
 .continue
 	jp	MainLoop
+	
+if EngineSpeed != -1
+DoTimer:
+	push	af
+	push	bc
+	ld	a,[rLY]			; get current scanline
+	ld	c,a				; copy to C for later use
+	ldh	a,[rBGP]		; get current palette
+	ld	b,a				; copy to B for later use
+	xor	$ff				; invert palette
+	ldh	[rBGP],a		; (draw CPU meter)
+	call	DS_Play		; update sound
+	
+	ldh	a,[rLY]			; get current scanline
+	sub	c
+	jr	nc,.nocarry
+	add	153
+.nocarry
+	ld	[RasterTime],a
+	ld	a,b				; restore palette
+	ldh	[rBGP],a		; (stop drawing CPU meter)
+	pop	bc
+	pop	af
+	reti
+endc
 	
 ; ================================================================
 ; Graphics data

@@ -5,7 +5,7 @@ ROMFile = open("DevSound.gb", "rb")     # demo ROM
 OutFile = open("DevSound.gbs", "wb")    # output file
 
 # find end of data
-endpos = ROMFile.seek(-1,2) + 1
+endpos = ROMFile.seek(-1,2) + 2
 while endpos >= 0x4000:
     if ROMFile.read(1)[0] != 0xff: break;
     ROMFile.seek(-2,1)
