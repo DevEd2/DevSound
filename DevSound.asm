@@ -35,7 +35,7 @@ include	"DevSound_Vars.asm"
 include	"DevSound_Consts.asm"
 include	"DevSound_Macros.asm"
 
-SECTION	"DevSound",ROM0[$1000]
+SECTION	"DevSound",ROMX
 
 DevSound_JumpTable:
 
@@ -3235,7 +3235,7 @@ DoArp:
 	and	$f
 	ld	[de],a
 	inc	de
-	ld	a,$80
+	ld	a,$fe
 	ld	[de],a
 	inc	de
 	xor	a
@@ -3260,7 +3260,7 @@ DoArp:
 	inc	de
 	ld	[de],a
 	inc	de
-	ld	a,$80
+	ld	a,$fe
 	ld	[de],a
 	inc	de
 	xor	a

@@ -1,9 +1,9 @@
-SECTION "GBS Header", ROM0[$f90]
+SECTION "GBS Header", ROM0[$3f90]
 	db	"GBS"		; signature
 	db	1			; version
 	db	7			; number of songs
 	db	1			; first song
-	dw	$1000		; load address
+	dw	$4000		; load address
 	dw	DS_Init		; init address
 	dw	DS_Play		; play address
 	dw	$fffe		; stack pointer
