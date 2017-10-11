@@ -290,7 +290,6 @@ CH1_CheckByte:
 	ld	[CH1VibDelay],a
 	xor	a
 	ld	hl,CH1Reset
-	set	7,[hl]			; signal the start of note for pitchbend
 	bit	0,[hl]
 	jr	nz,.noreset_checkvol
 	ld	[CH1PulsePos],a
@@ -317,7 +316,9 @@ CH1_CheckByte:
 	ld	a,[CH1Ins2]
 .odd
 	call	CH1_SetInstrument
-.noInstrumentChange	
+.noInstrumentChange
+	ld	hl,CH1Reset
+	set	7,[hl]			; signal the start of note for pitchbend
 	jp	UpdateCH2
 	
 .endChannel
@@ -595,7 +596,6 @@ CH2_CheckByte:
 	ld	[CH2VibDelay],a
 	xor	a
 	ld	hl,CH2Reset
-	set	7,[hl]
 	bit	0,[hl]
 	jr	nz,.noreset_checkvol
 	ld	[CH2PulsePos],a
@@ -891,7 +891,6 @@ CH3_CheckByte:
 	ld	[CH3VibDelay],a
 	xor	a
 	ld	hl,CH3Reset
-	set	7,[hl]
 	bit	0,[hl]
 	jr	nz,.noresetwave
 	ld	[CH3WavePos],a
@@ -921,6 +920,8 @@ CH3_CheckByte:
 .odd
 	call	CH3_SetInstrument
 .noInstrumentChange
+	ld	hl,CH3Reset
+	set	7,[hl]
 	jp	UpdateCH4
 	
 .endChannel
@@ -1592,7 +1593,7 @@ CH1_UpdateRegisters:
 .continue
 	
 	; update sweep
-	xor	a
+	ld	a,[CH1Sweep]
 	ldh	[rNR10],a
 	
 	; update pulse
@@ -1634,6 +1635,13 @@ CH1_UpdateRegisters:
 	bit	7,a
 	jr	z,.pitchbend
 .skippitchbend
+	ld	a,[CH1Sweep]
+	and	$70
+	jr	z,.noskipsweep
+	ld	a,[CH1Reset]
+	bit	7,a
+	jp	z,.updateVolume
+.noskipsweep
 	ld	a,[CH1Transpose]
 	ld	b,a
 	ld	a,[CH1Note]
