@@ -641,11 +641,11 @@ CH2_CheckByte:
 .nullnote
 	ld	a,[hl+]
 	dec	a
-	ld	[CH1Tick],a		; set tick
+	ld	[CH2Tick],a		; set tick
 	ld	a,l				; store back current pos
-	ld	[CH1Ptr],a
+	ld	[CH2Ptr],a
 	ld	a,h
-	ld	[CH1Ptr+1],a
+	ld	[CH2Ptr+1],a
 	jp	UpdateCH3
 	
 .getCommand
@@ -940,11 +940,11 @@ CH3_CheckByte:
 .nullnote
 	ld	a,[hl+]
 	dec	a
-	ld	[CH2Tick],a
+	ld	[CH3Tick],a
 	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
+	ld	[CH3Ptr],a
 	ld	a,h
-	ld	[CH2Ptr+1],a
+	ld	[CH3Ptr+1],a
 	jp	UpdateCH4
 	
 .getCommand
@@ -1297,11 +1297,11 @@ CH4_CheckByte:
 .nullnote
 	ld	a,[hl+]
 	dec	a
-	ld	[CH2Tick],a
+	ld	[CH4Tick],a
 	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
+	ld	[CH4Ptr],a
 	ld	a,h
-	ld	[CH2Ptr+1],a
+	ld	[CH4Ptr+1],a
 	jp	DoneUpdating
 	
 .getCommand
@@ -3390,6 +3390,7 @@ NoiseData:		incbin	"NoiseData.bin"
 ; ================================================================
 	
 DummyTable:	db	$ff
+vib_Dummy:	db	0,0,$80,1
 
 DummyChannel:
 	db	EndChannel
