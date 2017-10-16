@@ -29,6 +29,9 @@ UseFXHammer	set	0
 ; wave volume scaling, channel volume
 ; DemoSceneMode = 1
 
+; Uncomment this if you just want to disable wave volume scaling
+; NoWaveVolumeScaling = 1
+
 DevSound:
 
 include	"DevSound_Vars.asm"
@@ -623,6 +626,8 @@ CH2_CheckByte:
 .odd
 	call	CH2_SetInstrument
 .noInstrumentChange
+	ld	hl,CH2Reset
+	set	7,[hl]
 	jp	UpdateCH3
 	
 .endChannel
@@ -2589,13 +2594,13 @@ if !def(DemoSceneMode)
 endc
 	ld	a,[CH3Vol]
 	cp	b
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
 	ld	a,0
 endc
 	jr	z,.noreset3
 	ld	a,b
 	ld	[CH3Vol],a
-if def(DemoSceneMode)
+if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	and	a
 	ld	b,a
 	jr	z,.skip
@@ -2613,7 +2618,7 @@ if def(DemoSceneMode)
 	ld	a,b
 	ld	[CH3ComputedVol],a
 	ld	[rNR32],a
-	ld	a,e
+	ld	a,d
 	or	$80
 	ldh	[rNR34],a
 .noreset3
@@ -2649,19 +2654,28 @@ endc
 	ld	b,a
 	ld	a,[CH3Wave]
 	cp	b
-if def(DemoSceneMode)
+if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	jr	z,.noreset2
 	ld	a,b
 	ld	[CH3Wave],a
-	cp	$c0					; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
-	jr	z,.noreset2
+	cp	$c0
+if def(DemoSceneMode) 
+	jr	z,.noreset2			; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
+else
+	ld	hl,WaveBuffer
+	jr	z,.wavebuf
+endc
 	ld	c,b
 	ld	b,0
 	ld	hl,WaveTable
 	add	hl,bc
 	add	hl,bc
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+.wavebuf
 	call	LoadWave
-	ld	a,e
+	ld	a,d
 	or	%10000000
 	ldh	[rNR34],a
 .noreset2
@@ -2689,6 +2703,7 @@ endc
 if !def(DemoSceneMode)
 	call	DoPWM
 	call	DoRandomizer
+if !def(NoWaveVolumeScaling)
 	ld	a,[WaveBufUpdateFlag]
 	and	a
 	jp	z,.noupdate
@@ -2788,6 +2803,7 @@ if !def(DemoSceneMode)
 	or	$80
 	ldh	[rNR34],a
 .noupdate
+endc
 endc
 
 ; ================================================================
@@ -2979,7 +2995,7 @@ DoneUpdatingRegisters:
 ; ================================================================
 
 LoadWave:
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
 	ld	hl,ComputedWaveBuffer
 endc
 	ldh	a,[rNR51]
