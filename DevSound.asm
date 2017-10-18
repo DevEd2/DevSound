@@ -32,6 +32,10 @@ UseFXHammer	set	0
 ; Uncomment this if you just want to disable wave volume scaling
 ; NoWaveVolumeScaling = 1
 
+; Uncomment this to only disable zombie mode (for
+; compatibility with lesser emulators such as VBA).
+; DisableZombieMode=1
+
 DevSound:
 
 include	"DevSound_Vars.asm"
