@@ -11,6 +11,10 @@ DebugFlag	set	1
 
 UseDecimal	set	0
 
+; Engine speed (= 4096/(256-x) Hz), -1 to use VBlank
+
+EngineSpeed	set -1
+
 ; ================================================================
 ; Project includes
 ; ================================================================
@@ -24,51 +28,61 @@ include	"hardware.inc"
 ; Reset vectors (actual ROM starts here)
 ; ================================================================
 
-SECTION	"Reset $00",HOME[$00]
+SECTION	"Reset $00",ROM0[$00]
 Reset00:	ret
 
-SECTION	"Reset $08",HOME[$08]
+SECTION	"Reset $08",ROM0[$08]
 Reset08:	ret
 
-SECTION	"Reset $10",HOME[$10]
+SECTION	"Reset $10",ROM0[$10]
 Reset10:	ret
 
-SECTION	"Reset $18",HOME[$18]
+SECTION	"Reset $18",ROM0[$18]
 Reset18:	ret
 
-SECTION	"Reset $20",HOME[$20]
+SECTION	"Reset $20",ROM0[$20]
 Reset20:	ret
 
-SECTION	"Reset $28",HOME[$28]
+SECTION	"Reset $28",ROM0[$28]
 Reset28:	ret
 
-SECTION	"Reset $30",HOME[$30]
+SECTION	"Reset $30",ROM0[$30]
 Reset30:	ret
 
-SECTION	"Reset $38",HOME[$38]
+SECTION	"Reset $38",ROM0[$38]
 Reset38:	jp	ErrorHandler
 
 ; ================================================================
 ; Interrupt vectors
 ; ================================================================
 
-SECTION	"VBlank interrupt",HOME[$40]
+SECTION	"VBlank interrupt",ROM0[$40]
 IRQ_VBlank:
+if EngineSpeed != -1
+	push	af
+	ld	a,1
+	ld	[VBlankOccurred],a
+	pop	af
+endc
 	reti
 
-SECTION	"LCD STAT interrupt",HOME[$48]
+SECTION	"LCD STAT interrupt",ROM0[$48]
 IRQ_STAT:
 	reti
 
-SECTION	"Timer interrupt",HOME[$50]
+SECTION	"Timer interrupt",ROM0[$50]
 IRQ_Timer:
+if EngineSpeed == -1
 	reti
+else
+	jp	DoTimer
+endc
 
-SECTION	"Serial interrupt",HOME[$58]
+SECTION	"Serial interrupt",ROM0[$58]
 IRQ_Serial:
 	reti
 
-SECTION	"Joypad interrupt",Home[$60]
+SECTION	"Joypad interrupt",ROM0[$60]
 IRQ_Joypad:
 	reti
 	
@@ -82,7 +96,7 @@ include	"SystemRoutines.asm"
 ; ROM header
 ; ================================================================
 
-SECTION	"ROM header",HOME[$100]
+SECTION	"ROM header",ROM0[$100]
 
 EntryPoint:
 	nop
@@ -98,7 +112,7 @@ ProductCode		db	"ADSE"				; product code (4 bytes)
 GBCSupport:		db	0					; GBC support (0 = DMG only, $80 = DMG/GBC, $C0 = GBC only)
 NewLicenseCode:	db	"DS"				; new license code (2 bytes)
 SGBSupport:		db	0					; SGB support
-CartType:		db	$19					; Cart type, see hardware.inc for a list of values
+CartType:		db	0					; Cart type, see hardware.inc for a list of values
 ROMSize:		ds	1					; ROM size (handled by post-linking tool)
 RAMSize:		db	0					; RAM size
 DestCode:		db	1					; Destination code (0 = Japan, 1 = All others)
@@ -142,7 +156,16 @@ ProgramStart:
 	ld	a,%11100100			; 3 2 1 0
 	ldh	[rBGP],a			; set background palette
 
+if EngineSpeed == -1
 	ld	a,IEF_VBLANK
+else
+	ld	a,EngineSpeed
+	ld	[rTMA],a
+	ld	[rTIMA],a
+	ld	a,TACF_START + TACF_4KHZ
+	ld	[rTAC],a
+	ld	a,IEF_VBLANK + IEF_TIMER
+endc
 	ldh	[rIE],a				; set VBlank interrupt flag
 		
 	ld	a,%10010001			; LCD on + BG on + BG $8000
@@ -167,7 +190,8 @@ MainLoop:
 		ld	hl,$98b1
 		call	DrawHex
 	endc
-.loop	
+.loop
+if EngineSpeed == -1
 	ld	a,[rLY]			; wait for scanline 0
 	and	a
 	jp	nz,.loop
@@ -184,6 +208,16 @@ MainLoop:
 	halt				; wait for VBlank
 	
 	ld	a,c
+else
+	halt				; wait for VBlank
+	ld	a,[VBlankOccurred]
+	and	a
+	jr	z,.loop
+	xor	a
+	ld	[VBlankOccurred],a
+	ld	a,[RasterTime]
+endc
+	
 	ld	hl,$9a11		; raster time display address in VRAM
 	call	DrawHex		; draw raster time
 		; playback controls
@@ -246,6 +280,31 @@ MainLoop:
 .continue
 	jp	MainLoop
 	
+if EngineSpeed != -1
+DoTimer:
+	push	af
+	push	bc
+	ld	a,[rLY]			; get current scanline
+	ld	c,a				; copy to C for later use
+	ldh	a,[rBGP]		; get current palette
+	ld	b,a				; copy to B for later use
+	xor	$ff				; invert palette
+	ldh	[rBGP],a		; (draw CPU meter)
+	call	DS_Play		; update sound
+	
+	ldh	a,[rLY]			; get current scanline
+	sub	c
+	jr	nc,.nocarry
+	add	153
+.nocarry
+	ld	[RasterTime],a
+	ld	a,b				; restore palette
+	ldh	[rBGP],a		; (stop drawing CPU meter)
+	pop	bc
+	pop	af
+	reti
+endc
+	
 ; ================================================================
 ; Graphics data
 ; ================================================================
@@ -253,7 +312,7 @@ MainLoop:
 MainText:
 ;		 ####################
 	db	"                    "
-	db	"    DevSound v1.0   "
+	db	"    DevSound v2.1   "
 	db	"      by DevEd      "
 	db	"  deved8@gmail.com  "
 	db	"                    "
@@ -312,7 +371,13 @@ DrawDec:
 ; ================================================================
 
 	include	"ErrorHandler.asm"
-	
+
+; ================================================================
+; GBS Header
+; ================================================================
+
+	include	"gbs.asm"
+
 ; ================================================================
 ; DevSound sound driver
 ; ================================================================

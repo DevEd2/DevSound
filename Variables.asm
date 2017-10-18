@@ -14,6 +14,10 @@ SECTION	"Variables",HRAM
 VBACheck			ds	1	; variable used to determine if we're running in VBA
 sys_btnHold			ds	1	; held buttons
 sys_btnPress		ds	1	; pressed buttons
+if EngineSpeed != -1
+VBlankOccurred		ds	1
+RasterTime			ds	1
+endc
 
 ; ================================================================
 ; Project-specific variables

@@ -1,11 +1,17 @@
-# object files
+# for any of the poor souls with save game files in their working directory
+*.sgm
+*.sav
+*.rtc
+*.sn*
+*.dat
+
+# rgbds extras
+*.sym
 *.obj
 
-# symbol files
-*.sym
-
-# battery saves (the demo ROM shouldn't create any of these but let's put it here just to be safe)
-*.sav
+# precompiled Python
+*.pyc
+*$py.class
 
 # nezplug++ ini file
 nezplay.ini
@@ -13,5 +19,18 @@ nezplay.ini
 # FamiTracker modules (i use GBSImport for testing in some cases)
 *.ftm
 
-# bgb save states
-*.sn*
+# from github/gitignore/blob/master/Global/Windows.gitignore
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows shortcuts
+*.lnk
+*.db
+*.bak

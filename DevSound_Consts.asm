@@ -80,6 +80,7 @@ A_7		equ	$45
 A#7		equ	$46
 B_7		equ	$47
 rest	equ	$48
+___		equ	$49
 
 fix		equ	C_2
 
@@ -102,7 +103,9 @@ EnablePWM			equ	$8d
 EnableRandomizer	equ	$8e
 DisableAutoWave		equ	$8f
 Arp					equ	$90
-DummyCommand		equ	$91
+TonePorta			equ	$91
+ChannelVolume		equ	$92
+DummyCommand		equ	$93
 EndChannel			equ	$FF
 
 endc
