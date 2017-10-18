@@ -29,6 +29,13 @@ UseFXHammer	set	0
 ; wave volume scaling, channel volume
 ; DemoSceneMode = 1
 
+; Uncomment this if you just want to disable wave volume scaling
+; NoWaveVolumeScaling = 1
+
+; Uncomment this to only disable zombie mode (for
+; compatibility with lesser emulators such as VBA).
+; DisableZombieMode=1
+
 DevSound:
 
 include	"DevSound_Vars.asm"
@@ -603,6 +610,8 @@ CH2_CheckByte:
 .odd
 	call	CH2_SetInstrument
 .noInstrumentChange
+	ld	hl,CH2Reset
+	set	7,[hl]
 	jp	UpdateCH3
 	
 .endChannel
@@ -621,11 +630,11 @@ CH2_CheckByte:
 .nullnote
 	ld	a,[hl+]
 	dec	a
-	ld	[CH1Tick],a		; set tick
+	ld	[CH2Tick],a		; set tick
 	ld	a,l				; store back current pos
-	ld	[CH1Ptr],a
+	ld	[CH2Ptr],a
 	ld	a,h
-	ld	[CH1Ptr+1],a
+	ld	[CH2Ptr+1],a
 	jp	UpdateCH3
 	
 .getCommand
@@ -920,11 +929,11 @@ CH3_CheckByte:
 .nullnote
 	ld	a,[hl+]
 	dec	a
-	ld	[CH2Tick],a
+	ld	[CH3Tick],a
 	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
+	ld	[CH3Ptr],a
 	ld	a,h
-	ld	[CH2Ptr+1],a
+	ld	[CH3Ptr+1],a
 	jp	UpdateCH4
 	
 .getCommand
@@ -1227,6 +1236,7 @@ CH4_CheckByte:
 	ld	[CH4Ptr+1],a
 	xor	a
 	ld	[CH4NoisePos],a
+	ld	[CH4WavePos],a
 	ld	a,[CH4Reset]
 	bit	1,a
 	jr	nz,.noresetvol
@@ -1277,11 +1287,11 @@ CH4_CheckByte:
 .nullnote
 	ld	a,[hl+]
 	dec	a
-	ld	[CH2Tick],a
+	ld	[CH4Tick],a
 	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
+	ld	[CH4Ptr],a
 	ld	a,h
-	ld	[CH2Ptr+1],a
+	ld	[CH4Ptr+1],a
 	jp	DoneUpdating
 	
 .getCommand
@@ -1430,6 +1440,10 @@ CH4_SetInstrument:
 	ld	[CH4NoisePtr],a
 	ld	a,[hl+]
 	ld	[CH4NoisePtr+1],a
+	ld	a,[hl+]
+	ld	[CH4WavePtr],a
+	ld	a,[hl+]
+	ld	[CH4WavePtr+1],a
 	ret
 	
 ; ================================================================
@@ -1458,7 +1472,7 @@ UpdateRegisters:
 	rla
 	add	b
 	ldh	[rNR51],a
-
+	
 	; update global volume + fade system
 	ld	a,[FadeType]
 	ld	b,a
@@ -1551,6 +1565,14 @@ CH1_UpdateRegisters:
 
 	; update arps
 .updatearp
+; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
+	ld	a,[CH1PortaType]
+	and	a
+	jr	z,.noskiparp
+	xor	a
+	ld	[CH1Transpose],a
+	jr	.continue
+.noskiparp
 	ld	hl,CH1ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -1934,6 +1956,13 @@ CH2_UpdateRegisters:
 
 	; update arps
 .updatearp
+	ld	a,[CH2PortaType]
+	and	a
+	jr	z,.noskiparp
+	xor	a
+	ld	[CH2Transpose],a
+	jr	.continue
+.noskiparp
 	ld	hl,CH2ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -2334,6 +2363,13 @@ CH3_UpdateRegisters:
 
 	; update arps
 .updatearp
+	ld	a,[CH3PortaType]
+	and	a
+	jr	z,.noskiparp
+	xor	a
+	ld	[CH3Transpose],a
+	jr	.continue
+.noskiparp
 	ld	hl,CH3ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -2584,13 +2620,13 @@ if !def(DemoSceneMode)
 endc
 	ld	a,[CH3Vol]
 	cp	b
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
 	ld	a,0
 endc
 	jr	z,.noreset3
 	ld	a,b
 	ld	[CH3Vol],a
-if def(DemoSceneMode)
+if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	and	a
 	ld	b,a
 	jr	z,.skip
@@ -2608,7 +2644,7 @@ if def(DemoSceneMode)
 	ld	a,b
 	ld	[CH3ComputedVol],a
 	ld	[rNR32],a
-	ld	a,e
+	ld	a,d
 	or	$80
 	ldh	[rNR34],a
 .noreset3
@@ -2644,19 +2680,30 @@ endc
 	ld	b,a
 	ld	a,[CH3Wave]
 	cp	b
-if def(DemoSceneMode)
+if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	jr	z,.noreset2
 	ld	a,b
 	ld	[CH3Wave],a
-	cp	$c0					; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
-	jr	z,.noreset2
+	cp	$c0
+	push	hl
+if def(DemoSceneMode) 
+	jr	z,.noreset2			; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
+else
+	ld	hl,WaveBuffer
+	jr	z,.wavebuf
+endc
 	ld	c,b
 	ld	b,0
 	ld	hl,WaveTable
 	add	hl,bc
 	add	hl,bc
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+.wavebuf
 	call	LoadWave
-	ld	a,e
+	pop	hl
+	ld	a,d
 	or	%10000000
 	ldh	[rNR34],a
 .noreset2
@@ -2684,6 +2731,7 @@ endc
 if !def(DemoSceneMode)
 	call	DoPWM
 	call	DoRandomizer
+if !def(NoWaveVolumeScaling)
 	ld	a,[WaveBufUpdateFlag]
 	and	a
 	jp	z,.noupdate
@@ -2784,6 +2832,7 @@ if !def(DemoSceneMode)
 	ldh	[rNR34],a
 .noupdate
 endc
+endc
 
 ; ================================================================
 
@@ -2846,12 +2895,55 @@ CH4_UpdateRegisters:
 	inc	a
 	ld	[CH4NoisePos],a
 .continue
+
+	; update wave
+	ld	hl,CH4WavePtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH4WavePos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[hl+]
+	cp	$ff
+	jr	z,.updateNote
+	ld	[CH4Wave],a
+	ld	a,[CH4WavePos]
+	inc	a
+	ld	[CH4WavePos],a
+	ld	a,[hl+]
+	cp	$fe
+	jr	nz,.updateNote
+	ld	a,[hl]
+	ld	[CH4WavePos],a
 	
 ; get note
 .updateNote
-	ld	a,[CH4Transpose]
-	ld	b,a
 	ld	a,[CH4Mode]
+	ld	b,a
+	ld	a,[CH4Transpose]
+	bit	7,a
+	jr	nz,.minus
+	add	b
+	cp	45
+	jr	c,.noclamp
+	ld	a,44
+	jr	.noclamp
+.minus
+	add	b
+	cp	45
+	jr	c,.noclamp
+	xor	a
+.noclamp
+	ld	b,a
+	ld	a,[CH4Wave]
+	and	a
+	jr	z,.noise15
+	ld	a,45
+.noise15
 	add	b
 	
 	ld	hl,NoiseTable
@@ -2974,7 +3066,7 @@ DoneUpdatingRegisters:
 ; ================================================================
 
 LoadWave:
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
 	ld	hl,ComputedWaveBuffer
 endc
 	ldh	a,[rNR51]
@@ -3373,8 +3465,8 @@ DefaultRegTable:
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
-	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	dw	DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
@@ -3385,6 +3477,7 @@ NoiseData:		incbin	"NoiseData.bin"
 ; ================================================================
 	
 DummyTable:	db	$ff
+vib_Dummy:	db	0,0,$80,1
 
 DummyChannel:
 	db	EndChannel
