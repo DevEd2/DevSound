@@ -1252,6 +1252,7 @@ CH4_CheckByte:
 	ld	[CH4Ptr+1],a
 	xor	a
 	ld	[CH4NoisePos],a
+	ld	[CH4WavePos],a
 	ld	a,[CH4Reset]
 	bit	1,a
 	jr	nz,.noresetvol
@@ -1455,6 +1456,10 @@ CH4_SetInstrument:
 	ld	[CH4NoisePtr],a
 	ld	a,[hl+]
 	ld	[CH4NoisePtr+1],a
+	ld	a,[hl+]
+	ld	[CH4WavePtr],a
+	ld	a,[hl+]
+	ld	[CH4WavePtr+1],a
 	ret
 	
 ; ================================================================
@@ -1561,6 +1566,14 @@ CH1_UpdateRegisters:
 
 	; update arps
 .updatearp
+; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
+	ld	a,[CH1PortaType]
+	and	a
+	jr	z,.noskiparp
+	xor	a
+	ld	[CH1Transpose],a
+	jr	.continue
+.noskiparp
 	ld	hl,CH1ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -1944,6 +1957,13 @@ CH2_UpdateRegisters:
 
 	; update arps
 .updatearp
+	ld	a,[CH2PortaType]
+	and	a
+	jr	z,.noskiparp
+	xor	a
+	ld	[CH2Transpose],a
+	jr	.continue
+.noskiparp
 	ld	hl,CH2ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -2344,6 +2364,13 @@ CH3_UpdateRegisters:
 
 	; update arps
 .updatearp
+	ld	a,[CH3PortaType]
+	and	a
+	jr	z,.noskiparp
+	xor	a
+	ld	[CH3Transpose],a
+	jr	.continue
+.noskiparp
 	ld	hl,CH3ArpPtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -2659,6 +2686,7 @@ if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	ld	a,b
 	ld	[CH3Wave],a
 	cp	$c0
+	push	hl
 if def(DemoSceneMode) 
 	jr	z,.noreset2			; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
 else
@@ -2675,6 +2703,7 @@ endc
 	ld	l,a
 .wavebuf
 	call	LoadWave
+	pop	hl
 	ld	a,d
 	or	%10000000
 	ldh	[rNR34],a
@@ -2867,12 +2896,55 @@ CH4_UpdateRegisters:
 	inc	a
 	ld	[CH4NoisePos],a
 .continue
+
+	; update wave
+	ld	hl,CH4WavePtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH4WavePos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[hl+]
+	cp	$ff
+	jr	z,.updateNote
+	ld	[CH4Wave],a
+	ld	a,[CH4WavePos]
+	inc	a
+	ld	[CH4WavePos],a
+	ld	a,[hl+]
+	cp	$fe
+	jr	nz,.updateNote
+	ld	a,[hl]
+	ld	[CH4WavePos],a
 	
 ; get note
 .updateNote
-	ld	a,[CH4Transpose]
-	ld	b,a
 	ld	a,[CH4Mode]
+	ld	b,a
+	ld	a,[CH4Transpose]
+	bit	7,a
+	jr	nz,.minus
+	add	b
+	cp	45
+	jr	c,.noclamp
+	ld	a,44
+	jr	.noclamp
+.minus
+	add	b
+	cp	45
+	jr	c,.noclamp
+	xor	a
+.noclamp
+	ld	b,a
+	ld	a,[CH4Wave]
+	and	a
+	jr	z,.noise15
+	ld	a,45
+.noise15
 	add	b
 	
 	ld	hl,NoiseTable
@@ -3394,8 +3466,8 @@ DefaultRegTable:
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
-	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	dw	DummyTable,DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
