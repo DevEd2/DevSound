@@ -29,6 +29,10 @@ UseFXHammer	set	0
 ; wave volume scaling, channel volume
 ; DemoSceneMode = 1
 
+; Uncomment this to only disable zombie mode (for
+; compatibility with lesser emulators such as VBA).
+; DisableZombieMode=1
+
 DevSound:
 
 include	"DevSound_Vars.asm"
@@ -2831,7 +2835,7 @@ CH4_UpdateRegisters:
 	jr	nz,.noloop
 	ld	a,[hl]
 	ld	[CH4NoisePos],a
-	jr	.updatearp
+	jr	.updateNote
 .noloop
 	cp	$ff
 	jr	z,.continue
