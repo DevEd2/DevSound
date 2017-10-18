@@ -174,31 +174,11 @@ DevSound_Stop:
 
 DevSound_Fade:
 	and	3
-	or	a
-	jr	z,.fadeOut
-	dec	a
-	jr	z,.fadeIn
-	dec	a
-	jr	z,.fadeOutStop
-	ret	; default case
-.fadeOut
-	inc	a
+	cp	3
+	ret	z ; 3 is an invalid value, silently ignore it
+	inc	a ; Increment...
+	set	2,a ; Mark this fade as the first
 	ld	[FadeType],a
-	add	6
-	ld	[GlobalVolume],a
-	jr	.done
-.fadeIn
-	ld	a,2
-	ld	[FadeType],a
-	xor	a
-	ld	[GlobalVolume],a
-	jr	.done
-.fadeOutStop
-	ld	a,3
-	ld	[FadeType],a
-	add	4
-	ld	[GlobalVolume],a
-.done
 	ld	a,7
 	ld	[FadeTimer],a
 	ret
@@ -1492,12 +1472,26 @@ UpdateRegisters:
 	rla
 	add	b
 	ldh	[rNR51],a
-
+	
 	; update global volume + fade system
 	ld	a,[FadeType]
-	and	3
-	or	a
+	ld	b,a
+	and	3 ; Check if no fade
 	jr	z,.updateVolume ; Update volume
+	
+	bit	2,b ; Check if on first fade
+	jr	z,.notfirstfade
+	res	2,b
+	ld	a,b
+	ld	[FadeType],a
+	ld	b,a
+	dec a ; If fading in (value 1), volume is 0 ; otherwise, it's 7
+	jr	z,.gotfirstfadevolume
+	ld	a,7
+.gotfirstfadevolume
+	ld	[GlobalVolume],a
+.notfirstfade
+	
 	ld	a,[FadeTimer]
 	and	a
 	jr	z,.doupdate
@@ -1508,12 +1502,22 @@ UpdateRegisters:
 	ld	a,7
 	ld	[FadeTimer],a
 	ld	a,[FadeType]
+	and 3
 	dec	a
 	jr	z,.fadeout
 	dec	a
 	jr	z,.fadein
 	dec	a
-	jr	z,.fadeoutstop
+	jr	nz,.updateVolume
+.fadeoutstop
+	ld	a,[GlobalVolume]
+	and	a
+	jr	z,.dostop
+	dec	a
+	ld	[GlobalVolume],a
+	jr	.directlyUpdateVolume
+.dostop
+	call	DevSound_Stop
 	jr	.updateVolume
 .fadeout
 	ld	a,[GlobalVolume]
@@ -1532,16 +1536,6 @@ UpdateRegisters:
 .done
 	xor	a
 	ld	[FadeType],a
-	jr	.updateVolume
-.fadeoutstop
-	ld	a,[GlobalVolume]
-	and	a
-	jr	z,.dostop
-	dec	a
-	ld	[GlobalVolume],a
-	jr	.directlyUpdateVolume
-.dostop
-	call	DevSound_Stop
 .updateVolume
 	ld	a,[GlobalVolume]
 .directlyUpdateVolume ; Call when volume is already known
