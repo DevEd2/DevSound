@@ -175,7 +175,6 @@ waveseq_EchoTest:	db	1,$ff
 ; Must be terminated with a loop command!
 ; =================================================================
 
-vib_Dummy:	db	0,0,$80,1
 vib_Test:	db	4,2,4,6,8,6,4,2,0,-2,-4,-6,-8,-6,-4,-2,0,$80,1
 
 ; =================================================================
@@ -419,8 +418,7 @@ Triumph_CH4:
 	Drum	Snare,4
 	Drum	Kick,2
 	Drum	CHH,2
-	db	SetChannelPtr
-	dw	.block1
+	dbw	SetChannelPtr,.block1
 	db	EndChannel
 	
 .block1
@@ -462,8 +460,7 @@ Triumph_CH4:
 	Drum	Snare,4
 	db		fix,2
 	db		fix,2
-	db	SetChannelPtr
-	dw	.block0
+	dbw	SetChannelPtr,.block0
 	db	EndChannel
 	
 ; =================================================================
@@ -471,27 +468,17 @@ Triumph_CH4:
 PT_InsertTitleHere:	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
 	
 InsertTitleHere_CH1:
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block1
+	dbw	CallSection,.block1
+	dbw	CallSection,.block1
+	dbw	CallSection,.block1
 	db	GotoLoopPoint
 	db	EndChannel
 
@@ -510,27 +497,17 @@ InsertTitleHere_CH1:
 	
 InsertTitleHere_CH2:
 	db	SetInstrument,id_Arp
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block1
+	dbw	CallSection,.block1
+	dbw	CallSection,.block1
+	dbw	CallSection,.block1
 	db	GotoLoopPoint
 	db	EndChannel
 
@@ -564,12 +541,10 @@ InsertTitleHere_CH3:
 	db	$80,19,G_5,6,E_5,6,$80,18,G_5,4,$80,19,A_5,6,$80,17,A#5,2
 	db	$80,19,B_5,6,A_5,6,$80,18,D#5,4,$80,19,G_5,6,$80,17,D_5,2
 	db	$80,20,E_5,18,rest,78
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block1
 	db	rest,10
 	db	$80,17,C#5,2,$80,18,E_5,4,$80,17,C#5,2,$80,18,E_5,4,$80,17,C#5,2,$80,18,B_4,4,$80,17,C#5,2
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block1
 	db	rest,30
 	db	GotoLoopPoint
 	db	EndChannel
@@ -633,10 +608,8 @@ McAlbyDrumTest_CH3:
 	
 McAlbyDrumTest_CH4:
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
 	Drum	AKick,4
 	Drum	ACHH,4
 	Drum	ACHH,4
@@ -672,12 +645,9 @@ PT_FlashTitle:	dw	FlashTitle_CH1,FlashTitle_CH2,FlashTitle_CH3,FlashTitle_CH4
 
 FlashTitle_CH1:
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block1
 	db	GotoLoopPoint
 	
 .block0	
@@ -722,12 +692,9 @@ FlashTitle_CH1:
 
 FlashTitle_CH2:
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block1
 	db	GotoLoopPoint
 .block0
 	db	SetInstrument,id_Arp017C
@@ -765,26 +732,16 @@ FlashTitle_CH3:
 	db	EnablePWM,$f,7
 	db	SetInstrument,id_PWM1
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block1
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block2
-	db	CallSection
-	dw	.block2
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block2
+	dbw	CallSection,.block2
+	dbw	CallSection,.block1
 	db	GotoLoopPoint
 	db	EndChannel
 .block0
@@ -836,12 +793,9 @@ FlashTitle_CH3:
 
 FlashTitle_CH4:
 	db	SetLoopPoint
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block0
-	db	CallSection
-	dw	.block1
+	dbw	CallSection,.block0
+	dbw	CallSection,.block0
+	dbw	CallSection,.block1
 	db	GotoLoopPoint
 
 .block0

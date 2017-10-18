@@ -46,6 +46,11 @@ endc
 const_value = const_value + 1
 ENDM
 
+dbw:			macro
+	db	\1
+	dw	\2
+endm
+
 dins:			macro
 	const	id_\1
 	dw	ins_\1
