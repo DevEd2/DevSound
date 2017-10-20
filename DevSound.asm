@@ -2921,11 +2921,23 @@ CH4_UpdateRegisters:
 	
 ; get note
 .updateNote
+	ld	c,0
 	ld	a,[CH4Mode]
+	cp	45
 	ld	b,a
+	jr	c,.noise15_2
+	sub	45
+	ld	b,a
+	inc	c
+.noise15_2
 	ld	a,[CH4Transpose]
 	bit	7,a
 	jr	nz,.minus
+	cp	45
+	jr	c,.noise15_3
+	sub	45
+	ld	c,1
+.noise15_3
 	add	b
 	cp	45
 	jr	c,.noclamp
@@ -2939,6 +2951,7 @@ CH4_UpdateRegisters:
 .noclamp
 	ld	b,a
 	ld	a,[CH4Wave]
+	or	c
 	and	a
 	jr	z,.noise15
 	ld	a,45
