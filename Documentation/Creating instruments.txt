@@ -11,16 +11,13 @@ NOTE: The instrument name given here is simply an example, you can replace it wi
 The pointer should now be set up. Now let's define the instrument!
 
 4. Scroll down below, you should see a list with many entries that look something like this:
-	ins_Foo:	Instrument	0,vol_Foo,arp_Foo,pulse_Foo,_
-	ins_Bar:	Instrument	1,vol_Bar,arp_Bar,pulse_Bar,vib_Bar
-	ins_Baz:	Instrument	0,vol_Baz,arp_Baz,waveseq_Baz,_
-	ins_Boom:	Instrument	0,vol_Boom,noiseseq_Boom,_,_
+	ins_Foo:	Instrument	0,Foo,Foo,Foo,_
+	ins_Bar:	Instrument	1,Bar,Bar,Bar,Bar
+	ins_Baz:	Instrument	0,Baz,Baz,Baz,_
+	ins_Boom:	Instrument	0,Boom,Boom,_,_
 
-5. At the bottom of this list, add a new entry for your instrument. If you are creating a pulse instrument, it should look something like this:
+5. At the bottom of this list, add a new entry for your instrument. It should look something like this:
 	ins_Bepis:	Instrument,0,Bepis,Bepis,Bepis,Bepis
-	
-If you are creating a noise instrument, it should look something like this:
-	ins_Bepis:	Instrument,0,vol_Bepis,noiseseq_Bepis,_,_
 
 NOTE: The names given here are simply examples, you can replace them with whatever you want.
 (See Appendix 1 for the instrument format in detail.)
