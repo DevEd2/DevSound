@@ -24,7 +24,8 @@ SongPointerTable:
 	dw	PT_McAlbyDrumTest
 	dw	PT_FlashTitle
 	dw	PT_RDLogo
-	
+SongPointerTable_End
+
 ; =================================================================
 ; Volume sequences
 ; =================================================================
