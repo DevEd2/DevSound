@@ -14,6 +14,7 @@ SongSpeedTable:
 	db	2,2			; McAlbyDrumTest
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
+SongSpeedTable_End
 	
 	
 SongPointerTable:
@@ -24,7 +25,16 @@ SongPointerTable:
 	dw	PT_McAlbyDrumTest
 	dw	PT_FlashTitle
 	dw	PT_RDLogo
-	
+SongPointerTable_End
+
+if(SongSpeedTable_End-SongSpeedTable) < (SongPointerTable_End-SongPointerTable)
+	fail "SongSpeedTable does not have enough entries for SongSpeedTable"
+endc
+
+if(SongSpeedTable_End-SongSpeedTable) > (SongPointerTable_End-SongPointerTable)
+	warn "SongSpeedTable has extra entries"
+endc
+
 ; =================================================================
 ; Volume sequences
 ; =================================================================
