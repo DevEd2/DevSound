@@ -273,10 +273,10 @@ endc
 	call	DS_Fade
 	jr	.continue
 .fadein	
-	ld	a,[CurrentSong]
-	call	DS_Init
 	ld	a,1
 	call	DS_Fade
+	ld	a,[CurrentSong]
+	call	DS_Init
 .continue
 	jp	MainLoop
 	
