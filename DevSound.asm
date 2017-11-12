@@ -61,7 +61,7 @@ db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
 
 DevSound_Init:
 	di
-	ld	c,a		; Preserve song ID
+	ld	b,a		; Preserve song ID
 	
 	xor	a
 	ldh	[rNR52],a	; disable sound
@@ -70,17 +70,17 @@ DevSound_Init:
 	ld	[WaveBufUpdateFlag],a
 
 	; init sound RAM area
-	ld	de,DSVarsStart
-	ld	b,DSVarsEnd-DSVarsStart
+	ld	de,InitVarsStart
+	ld	c,DSVarsEnd-InitVarsStart
 	ld	hl,DefaultRegTable
 .initLoop
 	ld	a,[hl+]
 	ld	[de],a
 	inc	de
-	dec	b
+	dec	c
 	jr	nz,.initLoop
 	
-	ld	e,c		; Transfer song ID
+	ld	e,b		; Transfer song ID
 
 	; load default waveform
 	ld	hl,DefaultWave
@@ -170,6 +170,7 @@ DevSound_Stop:
 
 ; ================================================================
 ; Fade routine
+; Note : if planning to call both this and DS_Init, call this first.
 ; ================================================================
 
 DevSound_Fade:
@@ -1484,8 +1485,8 @@ UpdateRegisters:
 	res	2,b
 	ld	a,b
 	ld	[FadeType],a
-	ld	b,a
-	dec a ; If fading in (value 1), volume is 0 ; otherwise, it's 7
+	dec	a
+	dec	a ; If fading in (value 2), volume is 0 ; otherwise, it's 7
 	jr	z,.gotfirstfadevolume
 	ld	a,7
 .gotfirstfadevolume
@@ -3466,7 +3467,7 @@ endc
 	
 DefaultRegTable:
 	; global flags
-	db	7,0,0,0,0,0,0,1,1,1,1,1
+	db	0,7,0,0,0,0,1,1,1,1,1
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
