@@ -170,6 +170,7 @@ DevSound_Stop:
 
 ; ================================================================
 ; Fade routine
+; Note : if planning to call both this and DS_Init, call this first.
 ; ================================================================
 
 DevSound_Fade:
