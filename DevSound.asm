@@ -1522,9 +1522,7 @@ UpdateRegisters:
 	jr	.directlyUpdateVolume
 .dostop
 	call	DevSound_Stop
-	xor	a
-	ld	[FadeType],a
-	jr	.updateVolume
+	jr	.done
 .fadeout
 	ld	a,[GlobalVolume]
 	and	a
