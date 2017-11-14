@@ -34,7 +34,10 @@ UseFXHammer	set	0
 
 ; Uncomment this to only disable zombie mode (for
 ; compatibility with lesser emulators such as VBA).
-; DisableZombieMode=1
+; DisableZombieMode = 1
+
+; Uncomment this to disable Deflemask compatibility hacks.
+DisableDeflehacks = 1
 
 DevSound:
 
@@ -1519,7 +1522,7 @@ UpdateRegisters:
 	jr	.directlyUpdateVolume
 .dostop
 	call	DevSound_Stop
-	jr	.updateVolume
+	jr	.done
 .fadeout
 	ld	a,[GlobalVolume]
 	and	a
@@ -1566,12 +1569,14 @@ CH1_UpdateRegisters:
 	; update arps
 .updatearp
 ; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
+if !def(DisableDeflehacks)
 	ld	a,[CH1PortaType]
 	and	a
 	jr	z,.noskiparp
 	xor	a
 	ld	[CH1Transpose],a
 	jr	.continue
+endc
 .noskiparp
 	ld	hl,CH1ArpPtr
 	ld	a,[hl+]
@@ -1956,12 +1961,15 @@ CH2_UpdateRegisters:
 
 	; update arps
 .updatearp
+; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
+if !def(DisableDeflehacks)
 	ld	a,[CH2PortaType]
 	and	a
 	jr	z,.noskiparp
 	xor	a
 	ld	[CH2Transpose],a
 	jr	.continue
+endc
 .noskiparp
 	ld	hl,CH2ArpPtr
 	ld	a,[hl+]
@@ -2363,12 +2371,15 @@ CH3_UpdateRegisters:
 
 	; update arps
 .updatearp
+; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
+if !def(DisableDeflehacks)
 	ld	a,[CH3PortaType]
 	and	a
 	jr	z,.noskiparp
 	xor	a
 	ld	[CH3Transpose],a
 	jr	.continue
+endc
 .noskiparp
 	ld	hl,CH3ArpPtr
 	ld	a,[hl+]
