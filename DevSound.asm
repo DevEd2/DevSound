@@ -1520,9 +1520,6 @@ UpdateRegisters:
 	dec	a
 	ld	[GlobalVolume],a
 	jr	.directlyUpdateVolume
-.dostop
-	call	DevSound_Stop
-	jr	.done
 .fadeout
 	ld	a,[GlobalVolume]
 	and	a
@@ -1537,6 +1534,8 @@ UpdateRegisters:
 	inc	a
 	ld	[GlobalVolume],a
 	jr	.directlyUpdateVolume
+.dostop
+	call	DevSound_Stop
 .done
 	xor	a
 	ld	[FadeType],a
