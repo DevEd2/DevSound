@@ -22,7 +22,13 @@ call DS_Fade
 ```
 7. If you need help, let me know. I can usually be reached on IRC at irc.efnet.org #gbdev, with the nick DevEd. I may also be reached on Discord in this server: https://discord.gg/gpBxq85. Just ping me (I go by the name DevEd on that server) if you need anything.
 
+# Projects that use DevSound
+
+- **BotB Invitro** (https://github.com/DevEd2/BotBInvite) - A one-screen Game Boy invite I created along with Pigu for Battle of the Bits. *Note: Uses an earlier version of DevSound*
+
+- **Aevilia** (https://github.com/ISSOtm/Aevilia-GB) - An RPG for Game Boy Color by ISSOtm. I'm providing music for the game along with ViLXDRYAD from Battle of the Bits (http://battleofthebits.org). *Note: Uses a modified version of DevSound*
+
+If you are using DevSound in your project, let me know and I'll add it to this list.
+
 # Frequently Asked Questions
 *TODO*
-
-webhook test
