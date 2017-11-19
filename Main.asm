@@ -151,11 +151,59 @@ ProgramStart:
 	
 	CopyTileset1BPP	Font,0,(Font_End-Font)/8
 	
+	; Emulator check
+	ld	a,$ed				; this value isn't important
+	ld	b,a					; copy value to B
+	ld	[$c000],a			; store in WRAM
+	ld	a,[$e000]			; read back value from echo RAM
+	cp	b
+	jp	z,.noemu
+	ld	hl,.emutext
+	call	LoadMapText
+	ld	a,%10010001
+	ldh	[rLCDC],a
+	ld	a,IEF_VBLANK
+	ldh	[rIE],a
+	ei
+.waitloop
+	halt
+	call	CheckInput
+	ld	a,[sys_btnPress]
+	bit	btnA,a
+	jr	z,.waitloop
+	xor	a
+	ldh	[rLCDC],a			; no need to wait for VBlank in an emulator!
+	di
+	jp	.noemu
+	
+.emutext
+;		 ####################
+	db	"     !WARNING!      "
+	db	"                    "
+	db	"You are running this"
+	db	"ROM in an inaccurate"
+	db	"emulator. DevSound  "
+	db	"relies on a quirk of"
+	db	"the Game Boy's audio"
+	db	"hardware that most  "
+	db	"likely will not work"
+	db	"in this emulator.   "
+	db	"For best results,   "
+	db	"use a more accurate "
+	db	"emulator, such as   "
+	db	"bgb or Gambatte, or "
+	db	"run this ROM on real"
+	db	"hardware.           "
+	db	"                    "
+	db	"Press A to continue."
+;		 ####################
+	
+.noemu
 	ld	hl,MainText			; load main text
 	call	LoadMapText
-	ld	a,%11100100			; 3 2 1 0
-	ldh	[rBGP],a			; set background palette
-
+	ld	hl,MainText			; load main text
+	call	LoadMapText
+	
 if EngineSpeed == -1
 	ld	a,IEF_VBLANK
 else
