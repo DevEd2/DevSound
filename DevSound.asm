@@ -88,6 +88,7 @@ DevSound_Init:
 	; load default waveform
 	ld	hl,DefaultWave
 	call	LoadWave
+	; clear buffers
 	call	ClearWaveBuffer
 	call	ClearArpBuffer
 	
@@ -179,8 +180,8 @@ DevSound_Stop:
 DevSound_Fade:
 	and	3
 	cp	3
-	ret	z ; 3 is an invalid value, silently ignore it
-	inc	a ; Increment...
+	ret	z 	; 3 is an invalid value, silently ignore it
+	inc	a 	; Increment...
 	set	2,a ; Mark this fade as the first
 	ld	[FadeType],a
 	ld	a,7
@@ -199,7 +200,7 @@ DevSound_Play:
 	push	af
 	ld	a,[SoundEnabled]
 	and	a
-	jr	nz,.doUpdate	; if sound is enabled, jump ahead
+	jr	nz,.doUpdate		; if sound is enabled, jump ahead
 	pop	af
 	ret
 	
@@ -208,80 +209,80 @@ DevSound_Play:
 	push	de
 	push	hl
 	; get song timer
-	ld	a,[GlobalTimer]	; get global timer
-	and	a				; is GlobalTimer non-zero?
-	jr	nz,.noupdate	; if yes, don't update
-	ld	a,[TickCount]	; get current tick count
-	xor	1				; toggle between 0 and 1
-	ld	[TickCount],a	; store it in RAM
-	jr	nz,.odd			; if a is 1, jump
+	ld	a,[GlobalTimer]		; get global timer
+	and	a					; is GlobalTimer non-zero?
+	jr	nz,.noupdate		; if yes, don't update
+	ld	a,[TickCount]		; get current tick count
+	xor	1					; toggle between 0 and 1
+	ld	[TickCount],a		; store it in RAM
+	jr	nz,.odd				; if a is 1, jump
 .even
 	ld	a,[GlobalSpeed1]
 	jr	.setTimer
 .odd
 	ld	a,[GlobalSpeed2]
 .setTimer
-	ld	[GlobalTimer],a	; store timer value
-	jr	UpdateCH1		; continue ahead
+	ld	[GlobalTimer],a		; store timer value
+	jr	UpdateCH1			; continue ahead
 	
 .noupdate
-	dec	a				; subtract 1 from timer
-	ld	[GlobalTimer],a	; store timer value
-	jp	DoneUpdating	; done
+	dec	a					; subtract 1 from timer
+	ld	[GlobalTimer],a		; store timer value
+	jp	DoneUpdating		; done
 
 ; ================================================================
 	
 UpdateCH1:
 	ld	a,[CH1Enabled]
 	and	a
-	jp	z,UpdateCH2
+	jp	z,UpdateCH2			; if channel is disabled, skip to UpdateCH2
 	ld	a,[CH1Tick]
 	and	a
-	jr	z,.continue
-	dec	a
-	ld	[CH1Tick],a
-	jp	UpdateCH2
+	jr	z,.continue			; if channel tick = 0, then jump ahead
+	dec	a					; otherwise...
+	ld	[CH1Tick],a			; decrement channel tick...
+	jp	UpdateCH2			; ...and skip to UpdateCH2.
 .continue
-	ld	hl,CH1Ptr		; get pointer
+	ld	hl,CH1Ptr			; get pointer
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
 CH1_CheckByte:
-	ld	a,[hl+]			; get byte
-	cp	$ff				; if $ff...
+	ld	a,[hl+]				; get byte
+	cp	$ff					; if $ff...
 	jr	z,.endChannel
-	cp	$c9				; if $c9...
+	cp	$c9					; if $c9...
 	jr	z,.retSection
-	cp	___				; if null note...
+	cp	___					; if null note...
 	jr	z,.nullnote
-	bit	7,a				; if command...
+	bit	7,a					; if command...
 	jp	nz,.getCommand
 	; if we have a note...
 .getNote
 	ld	[CH1NoteBackup],a	; set note
-	ld	a,[hl+]
-	dec	a
-	ld	[CH1Tick],a		; set tick
-	ld	a,l				; store back current pos
+	ld	a,[hl+]				; get note length
+	dec	a					; subtract 1
+	ld	[CH1Tick],a			; set channel tick
+	ld	a,l					; store back current pos
 	ld	[CH1Ptr],a
 	ld	a,h
 	ld	[CH1Ptr+1],a
 	ld	a,[CH1PortaType]
-	dec	a				; if toneporta, don't reset everything
+	dec	a					; if toneporta, don't reset everything
 	jr	z,.noreset
 	xor	a
-	ld	[CH1ArpPos],a
+	ld	[CH1ArpPos],a		; reset arp position
 	inc	a
-	ld	[CH1VibPos],a
+	ld	[CH1VibPos],a		; reset vibrato position
 	ld	hl,CH1VibPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[hl]
-	ld	[CH1VibDelay],a
+	ld	a,[hl]				; get vibrato delay
+	ld	[CH1VibDelay],a		; set delay
 	xor	a
 	ld	hl,CH1Reset
-	bit	0,[hl]
+	bit	0,[hl]			
 	jr	nz,.noreset_checkvol
 	ld	[CH1PulsePos],a
 .noreset_checkvol
@@ -364,12 +365,12 @@ CH1_CheckByte:
 	dw	.chanvol
 
 .setInstrument
-	ld	a,[hl+]
-	push	hl
+	ld	a,[hl+]					; get ID of instrument to switch to
+	push	hl					; preserve HL
 	call	CH1_SetInstrument
 	xor	a
-	ld	[CH1InsMode],a
-	pop	hl
+	ld	[CH1InsMode],a			; reset instrument mode
+	pop	hl						; restore HL
 	jp	CH1_CheckByte
 	
 .setLoopPoint
@@ -380,7 +381,7 @@ CH1_CheckByte:
 	jp	CH1_CheckByte
 	
 .gotoLoopPoint
-	ld	hl,CH1LoopPtr
+	ld	hl,CH1LoopPtr			; get loop pointer
 	ld	a,[hl+]
 	ld	[CH1Ptr],a
 	ld	a,[hl]
@@ -3004,37 +3005,9 @@ CH4_UpdateRegisters:
 	cp	$ff
 	jr	z,.loadlast
 	ld	b,a
-if !def(DemoSceneMode)
-	ld	a,[CH4ChanVol]
-	push	hl
-	call	MultiplyVolume
-	pop	hl
-	ld	a,[CH4VolLoop]
-	dec	a
-	jr	z,.zombieatpos0
-	ld	a,[CH4VolPos]
-	and	a
-	jr	z,.zombinit
-.zombieatpos0
-endc
 	ld	a,[CH4Vol]
 	cp	b
 	jr	z,.noreset3
-if !def(DemoSceneMode)
-	ld	c,a
-	ld	a,b
-	ld	[CH4Vol],a
-	sub	c
-	and	$f
-	ld	c,a
-	ld	a,8
-.zombloop
-	ldh	[rNR42],a
-	dec	c
-	jr	nz,.zombloop
-	jr	.noreset3
-.zombinit
-endc
 	ld	a,b
 	ld	[CH4Vol],a
 	swap	a
@@ -3051,25 +3024,9 @@ endc
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH4VolPos],a
-if !def(DemoSceneMode)
-	ld	a,1
-	ld	[CH4VolLoop],a
-endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
-if !def(DemoSceneMode)
-	push	af
-	swap	a
-	and	$f
-	ld	b,a
-	ld	a,[CH4ChanVol]
-	call	MultiplyVolume
-	swap	b
-	pop	af
-	and	$f
-	or	b
-endc
 	ldh	[rNR42],a
 	ld	a,$80
 	ldh	[rNR44],a
