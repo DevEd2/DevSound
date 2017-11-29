@@ -223,7 +223,9 @@ endc
 	; Replace the 0 in ld a,0 with the ID of the song you want to load.
 	; Note that invalid values will most likely result in a crash!
 	
-	ld	a,0
+	xor	a
+	ld	[FadeType],a	; FadeType must be reset for first init
+	;ld	a,0				; uncomment this line and replace the 0 with the desired song ID
 	call	DS_Init
 	
 	ei

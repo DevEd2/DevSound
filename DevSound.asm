@@ -23,20 +23,25 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ================================================================
 
+; Comment the following line to disable SFX support (via FX Hammer).
+; Useful if you want to use your own sound effect system.
+; (Note that DevSound may require some minor modifications if you
+; want to use your own SFX system.)
 UseFXHammer	set	0
+
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
 ; DemoSceneMode = 1
 
-; Uncomment this if you just want to disable wave volume scaling
+; Uncomment this to to disable wave volume scaling.
 ; NoWaveVolumeScaling = 1
 
-; Uncomment this to only disable zombie mode (for
-; compatibility with lesser emulators such as VBA).
+; Uncomment this to disable zombie mode (for compatibility
+; with lesser emulators such as VBA).
 ; DisableZombieMode = 1
 
-; Uncomment this to disable Deflemask compatibility hacks.
+; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks = 1
 
 DevSound:
@@ -174,7 +179,7 @@ DevSound_Stop:
 
 ; ================================================================
 ; Fade routine
-; Note : if planning to call both this and DS_Init, call this first.
+; Note: if planning to call both this and DS_Init, call this first.
 ; ================================================================
 
 DevSound_Fade:
@@ -310,7 +315,7 @@ CH1_CheckByte:
 	call	CH1_SetInstrument
 .noInstrumentChange
 	ld	hl,CH1Reset
-	set	7,[hl]			; signal the start of note for pitchbend
+	set	7,[hl]			; signal the start of note for pitch bend
 	jp	UpdateCH2
 	
 .endChannel
@@ -336,12 +341,12 @@ CH1_CheckByte:
 	ld	[CH1Ptr+1],a
 	jp	UpdateCH2
 	
-.getCommand
-	sub	$80				; subtract 128 from command value
-	cp	DummyCommand-$80
+.getCommand		
+	cp	DummyCommand
 	jr	c,.nodummy
 	jp	CH1_CheckByte
 .nodummy
+	sub	$80	; subtract 128 from command value
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -643,11 +648,11 @@ CH2_CheckByte:
 	jp	UpdateCH3
 	
 .getCommand
-	sub	$80
-	cp	DummyCommand-$80
+	cp	DummyCommand
 	jr	c,.nodummy
 	jp	CH2_CheckByte
 .nodummy
+	sub	$80
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -942,11 +947,11 @@ CH3_CheckByte:
 	jp	UpdateCH4
 	
 .getCommand
-	sub	$80
-	cp	DummyCommand-$80
+	cp	DummyCommand
 	jr	c,.nodummy
 	jp	CH3_CheckByte
 .nodummy
+	sub	$80
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -1300,11 +1305,11 @@ CH4_CheckByte:
 	jp	DoneUpdating
 	
 .getCommand
-	sub	$80
-	cp	DummyCommand-$80
+	cp	DummyCommand
 	jr	c,.nodummy
 	jp	CH4_CheckByte
 .nodummy
+	sub	$80
 	call	JumpTableBelow
 	
 	dw	.setInstrument
