@@ -74,8 +74,8 @@ vol_OHH:			db	$ff,$84
 vol_CymbQ:			db	$ff,$a6
 vol_CymbL:			db	$ff,$f3
 
-vol_Echo1:			db	$ff,$c0
-vol_Echo2:			db	$ff,$40
+vol_Echo1:			db	12,$fd,3,$fe,2
+vol_Echo2:			db	4,$fd,1,$fe,2
 vol_c7:				db	$ff,$c7
 
 vol_McAlbyKick:		db	15,15,13,9,7,5,$ff,$41
@@ -590,17 +590,25 @@ EchoTest_CH1:
 	db	SetInsAlternate,id_Echo1,id_Echo2
 	db	SetLoopPoint
 	db	SetPan,$11
-	db	C_3,2,C_4,2
-	db	D_3,2,C_3,2
+	db	C_3,1,rel,1
+	db	C_4,1,rel,1
+	db	D_3,1,rel,1
+	db	C_3,1,rel,1
 	db	SetPan,$01
-	db	E_3,2,D_3,2
-	db	F_3,2,E_3,2
+	db	E_3,1,rel,1
+	db	D_3,1,rel,1
+	db	F_3,1,rel,1
+	db	E_3,1,rel,1
 	db	SetPan,$11
-	db	G_3,2,F_3,2
-	db	A_3,2,G_3,2
+	db	G_3,1,rel,1
+	db	F_3,1,rel,1
+	db	A_3,1,rel,1
+	db	G_3,1,rel,1
 	db	SetPan,$10
-	db	B_3,2,A_3,2
-	db	C_4,2,B_3,2
+	db	B_3,1,rel,1
+	db	A_3,1,rel,1
+	db	C_4,1,rel,1
+	db	B_3,1,rel,1
 	db	GotoLoopPoint
 
 ; =================================================================
