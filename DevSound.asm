@@ -358,10 +358,9 @@ CH1_CheckByte:
 	
 .getCommand		
 	cp	DummyCommand
-	jr	c,.nodummy
-	jp	CH1_CheckByte
-.nodummy
-	sub	$80	; subtract 128 from command value
+	jp	nc, CH1_CheckByte
+	; Not needed because function performs "add a" which discards bit 7
+	; sub	$80	; subtract 128 from command value
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -679,10 +678,9 @@ CH2_CheckByte:
 	
 .getCommand
 	cp	DummyCommand
-	jr	c,.nodummy
-	jp	CH2_CheckByte
-.nodummy
-	sub	$80
+	jp	nc,CH2_CheckByte
+	; Not needed because function performs "add a" which discards bit 7
+	; sub	$80
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -993,10 +991,9 @@ CH3_CheckByte:
 	
 .getCommand
 	cp	DummyCommand
-	jr	c,.nodummy
-	jp	CH3_CheckByte
-.nodummy
-	sub	$80
+	jp	nc,CH3_CheckByte
+	; Not needed because function performs "add a" which discards bit 7
+	; sub	$80
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -1366,10 +1363,9 @@ CH4_CheckByte:
 	
 .getCommand
 	cp	DummyCommand
-	jr	c,.nodummy
-	jp	CH4_CheckByte
-.nodummy
-	sub	$80
+	jp	nc,CH4_CheckByte
+	; Not needed because function performs "add a" which discards bit 7
+	; sub	$80
 	call	JumpTableBelow
 	
 	dw	.setInstrument
@@ -3338,7 +3334,7 @@ JumpTableBelow:
 ; we can manipulate it to return to the address in the table instead
 	pop	bc
 	push	hl
-	add	a
+	add	a ; It is recommended to use this to keep optimizations on the four channel's jumptables
 	add	c
 	ld	l,a
 	jr	nc,.nocarry
