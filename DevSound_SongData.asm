@@ -11,7 +11,7 @@ SongSpeedTable:
 	db	4,3			; insert title here (NOTE: Actual song name.)
 	db	8,8			; vibrato test
 	db	6,6			; gadunk
-	db	2,2			; McAlbyDrumTest
+	db	2,2			; asterix egypt
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
 SongSpeedTable_End
@@ -22,13 +22,13 @@ SongPointerTable:
 	dw	PT_InsertTitleHere
 	dw	PT_EchoTest
 	dw	PT_Gadunk
-	dw	PT_McAlbyDrumTest
+	dw	PT_Egypt
 	dw	PT_FlashTitle
 	dw	PT_RDLogo
 SongPointerTable_End
 
 if(SongSpeedTable_End-SongSpeedTable) < (SongPointerTable_End-SongPointerTable)
-	fail "SongSpeedTable does not have enough entries for SongSpeedTable"
+	fail "SongSpeedTable does not have enough entries for SongPointerTable"
 endc
 
 if(SongSpeedTable_End-SongSpeedTable) > (SongPointerTable_End-SongPointerTable)
@@ -83,6 +83,8 @@ vol_McAlbyCHH:		db	8,6,4,$ff,$23
 vol_McAlbyOHH:		db	10,6,3,$ff,$23
 vol_McAlbySnare:	db	15,15,15,10,3,4,$ff,$53
 vol_McAlbyCymb:		db	12,8,6,$ff,$54
+
+vol_EgyptBass:		db	15,15,15,15,15,15,15,15,$51,$fe,$8
 
 ; =================================================================
 ; Arpeggio/Noise sequences
@@ -239,6 +241,9 @@ InstrumentTable:
 	dins	RDLPulse2
 	dins	RDLWave
 	dins	RDLNoise
+	
+	dins	EgyptBass1
+	dins	EgyptBass2
 
 ; Instrument format: [no reset flag],[voltable id],[arptable id],[wavetable id],[vibtable id]
 ; _ for no table
@@ -289,6 +294,9 @@ ins_RDLPulse1:		Instrument	0,Echo1,_,_,_
 ins_RDLPulse2:		Instrument	0,c7,_,_,_
 ins_RDLWave:		Instrument	0,Bass1,_,GSCWave3,_
 ins_RDLNoise:		Instrument	0,Echo1,RDLNoise,_,_
+
+ins_EgyptBass1:		Instrument	0,EgyptBass,Pluck,PulseLead,_
+ins_EgyptBass2:		Instrument	0,EgyptBass,Pluck,Bass_,_
 
 ; =================================================================
 
@@ -613,18 +621,43 @@ EchoTest_CH1:
 
 ; =================================================================
 
-PT_McAlbyDrumTest:	dw	McAlbyDrumTest_CH1,McAlbyDrumTest_CH2,McAlbyDrumTest_CH3,McAlbyDrumTest_CH4
+PT_Egypt:	dw	Egypt_CH1,Egypt_CH2,Egypt_CH3,Egypt_CH4
 	
-McAlbyDrumTest_CH1:
+Egypt_CH1:
+;	db	SetLoopPoint
+;	db	SetInsAlternate,id_EgyptBass1,id_EgyptBass2
+;	dbw	CallSection,.block1
+;	dbw	CallSection,.block1
+;	dbw	CallSection,.block1
+;	dbw	CallSection,.block2
+;	dbw	CallSection,.block3
+;	dbw	CallSection,.block3
+;	dbw	CallSection,.block1
+;	db	G#2,8,G#3,8,D#3,8,G#3,8
+;	dbw	CallSection,.block3
+;	dbw	CallSection,.block1
+;	db	GotoLoopPoint
 	db	EndChannel
 	
-McAlbyDrumTest_CH2:
+;.block1
+;	db	C_2,8,C_3,8,G_2,8,C_3,8
+;	db	C_2,8,C_3,8,G_2,8,C_3,8
+;	ret
+;.block2
+;	db	F_2,8,F_3,8,C_3,8,F_3,8
+;	db	F_2,8,F_3,8,C_3,8,F_3,8
+;	ret
+;.block3
+;	db	G_2,8,G_3,8,D_3,8,G_3,8
+;	ret
+	
+Egypt_CH2:
 	db	EndChannel
 	
-McAlbyDrumTest_CH3:
+Egypt_CH3:
 	db	EndChannel
 	
-McAlbyDrumTest_CH4:
+Egypt_CH4:
 	db	SetLoopPoint
 	dbw	CallSection,.block0
 	dbw	CallSection,.block0

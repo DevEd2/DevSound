@@ -18,7 +18,11 @@ $48 - rest
 $49 - null
   Do nothing for the specified length.
   This is useful for when you want to put some effects in the middle of the note.
-    - Example: $0c,$04,$86,$10,$49,$04 will play C-3 for 8 rows with pitch bend down starting in the middle
+    - Example: C_3,4,PitchBendDown,$10,null,4 will play C-3 for 8 rows with pitch bend down starting in the middle
+  Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
+  
+$4a - release
+  Release a held volume envelope.
   Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
   
 $80 - SetInstrument
@@ -36,7 +40,7 @@ $82 - GotoLoopPoint
 $83 - CallSection
   Calls a section of song data.
   Parameter 1: Section pointer (2 bytes)
-  NOTE: Nesting sections will not work!
+  WARNING: Do not nest sections!
  
 $84 - SetChannelPointer
   Jumps to a section of song data.

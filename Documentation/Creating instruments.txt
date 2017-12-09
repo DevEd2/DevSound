@@ -8,6 +8,7 @@ CREATING INSTRUMENTS
 3. Add an entry at the bottom of the table for your instrument, like so:
 	dins Bepis
 NOTE: The instrument name given here is simply an example, you can replace it with whatever you want.
+
 The pointer should now be set up. Now let's define the instrument!
 
 4. Scroll down below, you should see a list with many entries that look something like this:
@@ -24,7 +25,7 @@ NOTE: The names given here are simply examples, you can replace them with whatev
 
 Our instrument is now defined, but there's something we're missing: the volume/arp/pulse/vibrato sequences. Let's take care of that.
 
-6. Use Ctrl-F* to search for "Volume sequences", and add a new entry for vol_Bepis (or whatever you named it). If you are creating a pulse or noise instrument, it should look something like this:
+6. Use Ctrl-F* to search for "Volume sequences", and add a new entry for vol_Bepis (or whatever you named it). It should look something like this:
 	vol_Bepis:		db	15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,$ff,0
 
 NOTE: The data given here is an example, you can replace it with whatever you want.
@@ -52,6 +53,8 @@ Note: The data given here is an example, you can replace it with whatever you wa
 (See Appendix 5 for the vibrato sequence format in detail.)
 	
 10. You're done!
+
+* That's Command-F if you're on a Mac.
 
 APPENDIX 1: INSTRUMENT FORMAT
 =============================
@@ -82,6 +85,8 @@ To loop a volume sequence, use command $fe, followed by the loop point offset. E
 
 To terminate a volume sequence, use command $ff.
 NOTE: This will not cut the note. If you want the note to be cut when the volume sequence ends, you should add 0 to the end of the volume sequence, followed by the stop command.
+
+To set a release point, use command $fe. The volume envelope will be held at the point specified until a "note release" command is triggered.
 
 For pulse/noise channel, you must specify the final envelope after volume sequence termination command, this value corresponds directly to NRx2 value. Example: $ff,$37 will load volume 3 with envelope 7 after the table ends.
 
