@@ -26,16 +26,6 @@ btnUp		equ	6
 btnDown		equ	7
 
 ; ================================================================
-; Carillon Player-specific constants
-; ================================================================
-
-InitPlayer	equ	$4000
-StartMusic	equ	$4003
-StopMusic	equ	$4006
-SelectSong	equ	$400c
-UpdateMusic	equ	$4100
-
-; ================================================================
 ; Project-specific constants
 ; ================================================================
 
