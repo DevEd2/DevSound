@@ -6,7 +6,7 @@ DevSound is a sound driver for the Game Boy which supports pulse width manipulat
 2. Run build.bat. If that doesn't work, try either adding the RGBASM binaries to your PATH or copying them to the repository directory.
 
 # Adding DevSound to your project
-1. Copy DevSound.asm, DevSound_Variables.asm, DevSound_Constants.asm, DevSound_Macros.asm, and DevSound_SongData.asm to your project directory.
+1. Copy DevSound.asm, DevSound_Variables.asm, DevSound_Constants.asm, DevSound_Macros.asm, DevSound_SongData.asm, and NoiseData.bin to your project directory.
 2. Allocate a ROM bank for DevSound. Make note of the bank number (unless your ROM does not use banking).
 3. Add the following line to your main loop: `call DS_Play`
 4. In order to load a song, use the following code:
