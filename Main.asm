@@ -15,6 +15,10 @@ UseDecimal	set	0
 
 EngineSpeed	set -1
 
+; If defined, include a visualizer in the main screen
+
+Visualizer  set 1
+
 ; ================================================================
 ; Project includes
 ; ================================================================
@@ -360,10 +364,11 @@ endc
 ; ================================================================
 	
 MainText:
+if def(Visualizer)
 ;		 ####################
 	db	"                    "
-	db	"    DevSound v2.1   "
-	db	"      by DevEd      "
+	db	"    DevSound v2.2   "
+	db	"   by DevEd & Pigu  "
 	db	"  deved8@gmail.com  "
 	db	"                    "
 	db	" Current song:  $?? "
@@ -380,6 +385,28 @@ MainText:
 	db	" Raster time:   $?? "
 	db	"                    "
 ;		 ####################
+else
+;		 ####################
+	db	"    DevSound v2.2   "
+	db	"   by DevEd & Pigu  "
+	db	"  deved8@gmail.com  "
+	db	"                    "
+	db	" Current song:  $?? "
+	db	"                    "
+	db	" Controls:          "
+	db	" A        Load song "
+	db	" B        Stop song "
+	db	" D-pad  Select song "
+	db	" Start     Fade out "
+	db	" Select     Fade in "
+	db	"                    "
+	db	" Raster time:   $?? "
+	db	"                    " ; visualizer starts here
+	db	"                    "
+	db	"                    "
+	db	"                    "
+;		 ####################
+endc
 
 Font:	incbin	"Font.bin"	; 1bpp font data
 Font_End:
