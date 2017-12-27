@@ -62,6 +62,9 @@ Reset38:	jp	ErrorHandler
 
 SECTION	"VBlank interrupt",ROM0[$40]
 IRQ_VBlank:
+if def(Visualizer)
+	jp VisualizerVBlank
+else
 if EngineSpeed != -1
 	push	af
 	ld	a,1
@@ -69,6 +72,7 @@ if EngineSpeed != -1
 	pop	af
 endc
 	reti
+endc
 
 SECTION	"LCD STAT interrupt",ROM0[$48]
 IRQ_STAT:
@@ -155,11 +159,25 @@ ProgramStart:
 	
 	CopyTileset1BPP	Font,0,(Font_End-Font)/8
 	
+if def(Visualizer)
+	CopyTileset	VisualizerGfx,$640,(VisualizerGfx_End-VisualizerGfx)/16
+	CopyBytes	VisualizerSprites,Sprites,VisualizerSprites_End-VisualizerSprites
+	; copy oam dma routine into hram
+	ld	hl,OAM_DMA_
+	ld	bc,(10 * $100) + (OAM_DMA % $100)
+.copy
+	ld	a,[hl+]
+	ld	[c],a
+	inc	c
+	dec	b
+	jr	nz,.copy
+endc
+	
 	; Emulator check
-	ld	a,$ed				; this value isn't important
-	ld	b,a					; copy value to B
-	ld	[$c000],a			; store in WRAM
-	ld	a,[$e000]			; read back value from echo RAM
+	ld	a,$ed						; this value isn't important
+	ld	b,a							; copy value to B
+	ld	[EmulatorCheck],a			; store in WRAM
+	ld	a,[EmulatorCheck + $2000]	; read back value from echo RAM
 	cp	b
 	jp	z,.noemu
 	ld	hl,.emutext
@@ -176,7 +194,7 @@ ProgramStart:
 	bit	btnA,a
 	jr	z,.waitloop
 	xor	a
-	ldh	[rLCDC],a			; no need to wait for VBlank in an emulator!
+	ldh	[rLCDC],a	; no need to wait for VBlank in an emulator!
 	di
 	jp	.noemu
 	
@@ -219,8 +237,12 @@ else
 	ld	a,IEF_VBLANK + IEF_TIMER
 endc
 	ldh	[rIE],a				; set VBlank interrupt flag
-		
+	
+if def(Visualizer)
+	ld	a,%10010011			; LCD on + BG on + BG $8000 + Sprites on
+else
 	ld	a,%10010001			; LCD on + BG on + BG $8000
+endc
 	ldh	[rLCDC],a			; enable LCD
 	
 	; Sample implementation for loading a song.
@@ -235,6 +257,18 @@ endc
 	ei
 	
 MainLoop:
+	halt				; wait for VBlank
+if EngineSpeed != -1
+	ld	a,[VBlankOccurred]
+	and	a
+	jr	z,MainLoop
+	xor	a
+	ld	[VBlankOccurred],a
+endc
+if !def(Visualizer)
+	ld	a,[RasterTime]
+	ld	hl,$9a11		; raster time display address in VRAM
+	call	DrawHex		; draw raster time
 	; draw song id
 	ld	a,[CurrentSong]
 	if	UseDecimal
@@ -244,37 +278,35 @@ MainLoop:
 		ld	hl,$98b1
 		call	DrawHex
 	endc
-.loop
+endc
 if EngineSpeed == -1
+.loop
 	ld	a,[rLY]			; wait for scanline 0
 	and	a
 	jp	nz,.loop
-	ldh	a,[rBGP]		; get current palette
-	ld	b,a				; copy to B for later use
-	xor	$ff				; invert palette
+	ld	a,%00011011		; inverted palette
 	ldh	[rBGP],a		; (draw CPU meter from top of screen)
+if def(Visualizer)
+	ldh [rOBP0],a
+	ld	a,%10101011
+	ldh [rOBP1],a
+endc
 	call	DS_Play		; update sound
 	
 	ldh	a,[rLY]			; get current scanline
-	ld	c,a
-	ld	a,b				; restore palette
+	ld	[RasterTime],a
+	ld	a,%11100100		; normal palette
 	ldh	[rBGP],a		; (stop drawing CPU meter)
-	halt				; wait for VBlank
-	
-	ld	a,c
-else
-	halt				; wait for VBlank
-	ld	a,[VBlankOccurred]
-	and	a
-	jr	z,.loop
-	xor	a
-	ld	[VBlankOccurred],a
-	ld	a,[RasterTime]
+if def(Visualizer)
+	ldh [rOBP0],a
+	ld	a,%01010100
+	ldh [rOBP1],a
 endc
-	
-	ld	hl,$9a11		; raster time display address in VRAM
-	call	DrawHex		; draw raster time
-		; playback controls
+endc
+if def(Visualizer)
+	call	UpdateVisualizer
+endc
+	; playback controls
 	call	CheckInput
 	ld	a,[sys_btnPress]
 	bit	btnUp,a
@@ -340,10 +372,11 @@ DoTimer:
 	push	bc
 	ld	a,[rLY]			; get current scanline
 	ld	c,a				; copy to C for later use
-	ldh	a,[rBGP]		; get current palette
-	ld	b,a				; copy to B for later use
-	xor	$ff				; invert palette
+	ld	a,%00011011		; inverted palette
 	ldh	[rBGP],a		; (draw CPU meter)
+	ldh [rOBP0],a
+	ld	a,%10101011
+	ldh [rOBP1],a
 	call	DS_Play		; update sound
 	
 	ldh	a,[rLY]			; get current scanline
@@ -352,11 +385,54 @@ DoTimer:
 	add	153
 .nocarry
 	ld	[RasterTime],a
-	ld	a,b				; restore palette
+	ld	a,%11100100		; normal palette
 	ldh	[rBGP],a		; (stop drawing CPU meter)
+	ldh [rOBP0],a
+	ld	a,%01010100
+	ldh [rOBP1],a
 	pop	bc
 	pop	af
 	reti
+endc
+	
+_CopyTileset1BPP:
+	ld	a,[hl+]			; get tile
+	ld	[de],a			; write tile
+	inc	de				; increment destination address
+	ld	[de],a			; write tile again
+	inc	de				; increment destination address again
+	dec	bc
+	dec	bc				; since we're copying two tiles, we need to dec bc twice
+	ld	a,b
+	or	c
+	jr	nz,_CopyTileset1BPP
+	ret
+	
+if def(Visualizer)	
+_CopyBytes:
+	inc	b
+	inc	c
+	dec	c
+	jr	nz,.loop
+	dec	b
+.loop
+	ld	a,[hl+]
+	ld	[de],a
+	inc	de
+	dec	c
+	jr	nz,.loop
+	dec	b
+	jr	nz,.loop
+	ret
+	
+OAM_DMA_:
+	ld	a,Sprites/$100
+	ld	[rDMA],a
+	ld	a,$28
+.wait
+	dec	a
+	jr	nz,.wait
+	ret
 endc
 	
 ; ================================================================
@@ -369,24 +445,26 @@ if def(Visualizer)
 	db	"                    "
 	db	"    DevSound v2.2   "
 	db	"   by DevEd & Pigu  "
-	db	"  deved8@gmail.com  "
 	db	"                    "
 	db	" Current song:  $?? "
 	db	"                    "
-	db	" Controls:          "
 	db	" A        Load song "
 	db	" B        Stop song "
 	db	" D-pad  Select song "
 	db	" Start     Fade out "
 	db	" Select     Fade in "
 	db	"                    "
-	db	"                    "
-	db	"                    "
 	db	" Raster time:   $?? "
 	db	"                    "
+	; visualizer starts here
+	db	"1",$8c,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86
+	db	"2",$8c,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86
+	db	"3W",   $84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86,$84,$85,$86
+	db	$a0,$a1,$a2,$a3,$8a,$87,$88,$88,$88,$88,$88,$88,$88,$88,$88,$89,"    "
 ;		 ####################
 else
 ;		 ####################
+	db	"                    "
 	db	"    DevSound v2.2   "
 	db	"   by DevEd & Pigu  "
 	db	"  deved8@gmail.com  "
@@ -400,10 +478,9 @@ else
 	db	" Start     Fade out "
 	db	" Select     Fade in "
 	db	"                    "
+	db	"                    "
+	db	"                    "
 	db	" Raster time:   $?? "
-	db	"                    " ; visualizer starts here
-	db	"                    "
-	db	"                    "
 	db	"                    "
 ;		 ####################
 endc
@@ -447,7 +524,15 @@ DrawDec:
 ; Error handler
 ; ================================================================
 
-	include	"ErrorHandler.asm"
+	include	"ErrorHandler.asm"	
+
+; ================================================================
+; Visualizer
+; ================================================================
+
+if def(Visualizer)
+	include	"Visualizer.asm"
+endc
 
 ; ================================================================
 ; GBS Header

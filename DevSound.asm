@@ -2838,6 +2838,18 @@ if !def(NoWaveVolumeScaling)
 	ld	b,[hl]
 	ld	c,a
 .multiplyvolume
+if def(Visualizer)
+	push	bc
+	ld	hl,VisualizerTempWave
+	ld	e,16
+.visuwavecopyloop
+	ld	a,[bc]
+	inc	bc
+	ld	[hl+],a
+	dec	e
+	jr	nz,.visuwavecopyloop
+	pop	bc
+endc
 	ld	a,[CH3Vol]
 	and	a
 	jr	z,.mute
@@ -3128,6 +3140,19 @@ DoneUpdatingRegisters:
 LoadWave:
 if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
 	ld	hl,ComputedWaveBuffer
+else
+if def(Visualizer)
+	push	hl
+	ld	bc,VisualizerTempWave
+	ld	e,16
+.visuwavecopyloop
+	ld	a,[hl+]
+	ld	[bc],a
+	inc	bc
+	dec	e
+	jr	nz,.visuwavecopyloop
+	pop	hl
+endc
 endc
 	ldh	a,[rNR51]
 	ld	c,a
