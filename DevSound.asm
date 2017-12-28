@@ -1705,9 +1705,11 @@ endc
 	jr	z,.updateNote
 	; convert pulse value
 	and	3			; make sure value does not exceed 3
-	swap	a		; swap lower and upper nybbles
-	rla				; rotate left
-	rla				;   ""    ""
+if def(Visualizer)
+	ld	[CH1Pulse],a
+endc
+	rrca			; rotate right
+	rrca			;   ""    ""
 	ldh	[rNR11],a	; transfer to register
 .noreset2
 	ld	a,[CH1PulsePos]
@@ -2096,9 +2098,11 @@ endc
 	jr	z,.updateNote
 	; convert pulse value
 	and	3			; make sure value does not exceed 3
-	swap	a		; swap lower and upper nybbles
-	rla				; rotate left
-	rla				;   ""    ""
+if def(Visualizer)
+	ld	[CH2Pulse],a
+endc
+	rrca			; rotate right
+	rrca			;   ""    ""
 	if(UseFXHammer)
 	ld	e,a
 	ld	a,[$c7cc]
@@ -2845,6 +2849,7 @@ if def(Visualizer)
 .visuwavecopyloop
 	ld	a,[bc]
 	inc	bc
+	cpl
 	ld	[hl+],a
 	dec	e
 	jr	nz,.visuwavecopyloop
@@ -3059,6 +3064,9 @@ CH4_UpdateRegisters:
 .noise15
 	add	b
 	
+if def(Visualizer)
+	ld	[CH4Noise],a
+endc
 	ld	hl,NoiseTable
 	add	l
 	ld	l,a
@@ -3147,6 +3155,7 @@ if def(Visualizer)
 	ld	e,16
 .visuwavecopyloop
 	ld	a,[hl+]
+	cpl
 	ld	[bc],a
 	inc	bc
 	dec	e
