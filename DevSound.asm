@@ -161,6 +161,13 @@ DevSound_Init:
 	ldh	[rNR51],a
 	ld	a,7
 	ld	[GlobalVolume],a
+	; if visualizer is enabled, init it too
+if def(Visualizer)
+if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
+	CopyBytes	DefaultWave,VisualizerTempWave,16
+endc
+	call	VisualizerInit
+endc
 	reti
 
 ; ================================================================
@@ -185,7 +192,12 @@ DevSound_Stop:
 	ld	[CH3Enabled],a
 	ld	[CH4Enabled],a
 	ld	[SoundEnabled],a
+	; if visualizer is enabled, init it too (to make everything zero)
+if def(Visualizer)
+	jp	VisualizerInit
+else
 	ret
+endc
 
 ; ================================================================
 ; Fade routine
@@ -1631,6 +1643,10 @@ CH1_UpdateRegisters:
 	jr	nz,.norest
 	xor	a
 	ldh	[rNR12],a
+if def(Visualizer)
+	ld	[CH1OutputLevel],a
+	ld	[CH1TempEnvelope],a
+endc
 	ldh	a,[rNR14]
 	or	%10000000
 	ldh	[rNR14],a
@@ -1894,6 +1910,29 @@ endc
 .clamp
 	ld	h,d
 	ld	l,e
+if def(Visualizer)
+.tonepordone
+	ld	a,l
+	ld	[CH1TempFreq],a
+	ld	[CH1ComputedFreq],a
+	ldh	[rNR13],a
+	ld	a,h
+	ld	d,a	; for later restart uses
+	ld	[CH1TempFreq+1],a
+	ld	[CH1ComputedFreq+1],a
+	ldh	[rNR14],a
+	jr	.updateVolume
+.normal
+	ld	a,e
+	ld	[hl+],a
+	ld	[hl],d
+.donesetFreq
+	ld	[CH1ComputedFreq],a
+	ldh	[rNR13],a
+	ld	a,d
+	ld	[CH1ComputedFreq+1],a
+	ldh	[rNR14],a
+else
 .tonepordone
 	ld	a,l
 	ld	[CH1TempFreq],a
@@ -1911,6 +1950,7 @@ endc
 	ldh	[rNR13],a
 	ld	a,d
 	ldh	[rNR14],a
+endc
 	
 	; update volume
 .updateVolume
@@ -1933,9 +1973,9 @@ endc
 	cp	$ff
 	jr	z,.loadlast
 	cp	$fd
-	jr	z,.done
+	jp	z,.done
 	ld	b,a
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,[CH1ChanVol]
 	push	hl
 	call	MultiplyVolume
@@ -1951,7 +1991,7 @@ endc
 	ld	a,[CH1Vol]
 	cp	b
 	jr	z,.noreset3
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH1Vol],a
@@ -1966,6 +2006,19 @@ if !def(DemoSceneMode)
 	jr	.noreset3
 .zombinit
 endc
+if def(Visualizer)
+	ld	a,b
+	ld	[CH1Vol],a
+	ld	[CH1OutputLevel],a
+	swap	a
+	or	8
+	ldh	[rNR12],a
+	xor	a
+	ld	[CH1TempEnvelope],a
+	ld	a,d
+	or	$80
+	ldh	[rNR14],a
+else
 	ld	a,b
 	ld	[CH1Vol],a
 	swap	a
@@ -1974,6 +2027,7 @@ endc
 	ld	a,d
 	or	$80
 	ldh	[rNR14],a
+endc
 .noreset3
 	ld	a,[CH1VolPos]
 	inc	a
@@ -1983,7 +2037,7 @@ endc
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH1VolPos],a
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,1
 	ld	[CH1VolLoop],a
 endc
@@ -2003,6 +2057,18 @@ if !def(DemoSceneMode)
 	or	b
 endc
 	ldh	[rNR12],a
+if def(Visualizer)
+	ld	b,a
+	and	$f
+	ld	[CH1TempEnvelope],a
+	and	$7
+	inc	a
+	ld	[CH1EnvelopeCounter],a
+	ld	a,b
+	swap	a
+	and	$f
+	ld	[CH1OutputLevel],a
+endc
 	ld	a,d
 	or	$80
 	ldh	[rNR14],a
@@ -2028,6 +2094,10 @@ CH2_UpdateRegisters:
 	jr	nz,.norest
 	xor	a
 	ldh	[rNR22],a
+if def(Visualizer)
+	ld	[CH2OutputLevel],a
+	ld	[CH2TempEnvelope],a
+endc
 	ldh	a,[rNR24]
 	or	%10000000
 	ldh	[rNR24],a
@@ -2289,11 +2359,21 @@ endc
 	ld	l,e
 .tonepordone
 	if(UseFXHammer)
+if def(Visualizer)
+	ld	a,l
+	ld	[CH2TempFreq],a
+	ld	[CH2ComputedFreq],a
+	ld	a,h
+	ld	d,a	; for later restart uses
+	ld	[CH2TempFreq+1],a
+	ld	[CH2ComputedFreq+1],a
+else
 	ld	a,l
 	ld	[CH2TempFreq],a
 	ld	a,h
 	ld	d,a	; for later restart uses
 	ld	[CH2TempFreq+1],a
+endc
 	ld	a,[$c7cc]
 	cp	3
 	jp	z,.updateVolume
@@ -2302,6 +2382,17 @@ endc
 	ld	a,h
 	ldh	[rNR24],a
 	else
+if def(Visualizer)
+	ld	a,l
+	ld	[CH2TempFreq],a
+	ld	[CH2ComputedFreq],a
+	ldh	[rNR23],a
+	ld	a,h
+	ld	d,a	; for later restart uses
+	ld	[CH2TempFreq+1],a
+	ld	[CH2ComputedFreq+1],a
+	ldh	[rNR24],a
+else
 	ld	a,l
 	ld	[CH2TempFreq],a
 	ldh	[rNR23],a
@@ -2309,6 +2400,7 @@ endc
 	ld	d,a	; for later restart uses
 	ld	[CH2TempFreq+1],a
 	ldh	[rNR24],a
+endc
 	endc
 	jr	.updateVolume
 .normal
@@ -2322,9 +2414,17 @@ endc
 	ld	a,e
 	jp	z,.updateVolume
 	endc
+if def(Visualizer)
+	ld	[CH2ComputedFreq],a
+	ldh	[rNR23],a
+	ld	a,d
+	ld	[CH2ComputedFreq+1],a
+	ldh	[rNR24],a
+else
 	ldh	[rNR23],a
 	ld	a,d
 	ldh	[rNR24],a
+endc
 
 	; update volume
 .updateVolume
@@ -2334,12 +2434,10 @@ endc
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-if !def(DemoSceneMode)
 	ld	a,[CH2VolLoop]
 	ld	c,a
 	cp	$ff	; ended
 	jp	z,.done
-endc
 	ld	a,[CH2VolPos]
 	add	l
 	ld	l,a
@@ -2350,9 +2448,9 @@ endc
 	cp	$ff
 	jr	z,.loadlast
 	cp	$fd
-	jr	z,.done
+	jp	z,.done
 	ld	b,a
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,[CH2ChanVol]
 	push	hl
 	call	MultiplyVolume
@@ -2368,7 +2466,7 @@ endc
 	ld	a,[CH2Vol]
 	cp	b
 	jr	z,.noreset3
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH2Vol],a
@@ -2383,6 +2481,19 @@ if !def(DemoSceneMode)
 	jr	.noreset3
 .zombinit
 endc
+if def(Visualizer)
+	ld	a,b
+	ld	[CH2Vol],a
+	ld	[CH2OutputLevel],a
+	swap	a
+	or	8
+	ldh	[rNR22],a
+	xor	a
+	ld	[CH2TempEnvelope],a
+	ld	a,d
+	or	$80
+	ldh	[rNR24],a
+else
 	ld	a,b
 	ld	[CH2Vol],a
 	swap	a
@@ -2391,6 +2502,7 @@ endc
 	ld	a,d
 	or	$80
 	ldh	[rNR24],a
+endc
 .noreset3
 	ld	a,[CH2VolPos]
 	inc	a
@@ -2400,7 +2512,7 @@ endc
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH2VolPos],a
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,1
 	ld	[CH2VolLoop],a
 endc
@@ -2420,6 +2532,18 @@ if !def(DemoSceneMode)
 	or	b
 endc
 	ldh	[rNR22],a
+if def(Visualizer)
+	ld	b,a
+	and	$f
+	ld	[CH2TempEnvelope],a
+	and	$7
+	inc	a
+	ld	[CH2EnvelopeCounter],a
+	ld	a,b
+	swap	a
+	and	$f
+	ld	[CH2OutputLevel],a
+endc
 	ld	a,d
 	or	$80
 	ldh	[rNR24],a
@@ -2667,6 +2791,29 @@ endc
 .clamp
 	ld	h,d
 	ld	l,e
+if def(Visualizer)
+.tonepordone
+	ld	a,l
+	ld	[CH3TempFreq],a
+	ld	[CH3ComputedFreq],a
+	ldh	[rNR33],a
+	ld	a,h
+	ld	d,a	; for later restart uses
+	ld	[CH3TempFreq+1],a
+	ld	[CH3ComputedFreq+1],a
+	ldh	[rNR34],a
+	jr	.updateVolume
+.normal
+	ld	a,e
+	ld	[hl+],a
+	ld	[hl],d
+.donesetFreq
+	ld	[CH3ComputedFreq],a
+	ldh	[rNR33],a
+	ld	a,d
+	ld	[CH3ComputedFreq+1],a
+	ldh	[rNR34],a
+else
 .tonepordone
 	ld	a,l
 	ld	[CH3TempFreq],a
@@ -2684,6 +2831,7 @@ endc
 	ldh	[rNR33],a
 	ld	a,d
 	ldh	[rNR34],a
+endc
 	
 .updateVolume
 	ld	hl,CH3Reset
@@ -2957,6 +3105,10 @@ CH4_UpdateRegisters:
 	jr	nz,.norest
 	xor	a
 	ldh	[rNR42],a
+if def(Visualizer)
+	ld	[CH4OutputLevel],a
+	ld	[CH4TempEnvelope],a
+endc
 	ldh	a,[rNR44]
 	or	%10000000
 	ldh	[rNR44],a
@@ -3108,6 +3260,18 @@ endc
 	ld	a,[CH4Vol]
 	cp	b
 	jr	z,.noreset3
+if def(Visualizer)
+	ld	a,b
+	ld	[CH4Vol],a
+	ld	[CH4OutputLevel],a
+	swap	a
+	or	8
+	ldh	[rNR42],a
+	xor	a
+	ld	[CH4TempEnvelope],a
+	ld	a,$80
+	ldh	[rNR44],a
+else
 	ld	a,b
 	ld	[CH4Vol],a
 	swap	a
@@ -3115,6 +3279,7 @@ endc
 	ldh	[rNR42],a
 	ld	a,$80
 	ldh	[rNR44],a
+endc
 .noreset3
 	ld	a,[CH4VolPos]
 	inc	a
@@ -3127,7 +3292,31 @@ endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
+if !def(DemoSceneMode)
+	push	af
+	swap	a
+	and	$f
+	ld	b,a
+	ld	a,[CH4ChanVol]
+	call	MultiplyVolume
+	swap	b
+	pop	af
+	and	$f
+	or	b
+endc
 	ldh	[rNR42],a
+if def(Visualizer)
+	ld	b,a
+	and	$f
+	ld	[CH4TempEnvelope],a
+	and	$7
+	inc	a
+	ld	[CH4EnvelopeCounter],a
+	ld	a,b
+	swap	a
+	and	$f
+	ld	[CH4OutputLevel],a
+endc
 	ld	a,$80
 	ldh	[rNR44],a
 	ld	a,$ff
