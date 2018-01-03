@@ -49,23 +49,31 @@ endc
 ; value after the terminator as a final volume.
 ; WARNING: since there's no way to rewrite the wave data without restarting
 ; the wave so make sure that the volume doesn't change too fast that it
-; unintentionally produces sync effect
+; unintentionally produces sync effect.
+; NOTE: If the DisableWaveScaling flag is enabled, the above does not apply.
+; Instead, there are four volume values (including 0). These values can be
+; selected with w0-w3.
+
+w0	equ	0
+w1	equ	3
+w2	equ	7
+w3	equ	15
 
 vol_Gadunk: 		db	15,5,10,5,2,6,10,15,12,6,10,7,8,9,10,15,4,3,2,1,$fe,0
 vol_Arp:			db	8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
 vol_OctArp:			db	12,11,10,9,9,8,8,8,7,7,6,6,7,7,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
-vol_Bass1:			db	15,$ff
-vol_Bass2:			db	15,15,15,15,3,$ff
-vol_Bass3:			db	15,15,15,15,15,15,15,7,7,7,7,3,$ff
+vol_Bass1:			db	w3,$ff
+vol_Bass2:			db	w3,w3,w3,w3,w1,$ff
+vol_Bass3:			db	w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w1,$ff
 vol_PulseBass:		db	15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,$ff,0
 vol_PulseBass2:		db	15,14,13,12,11,11,10,10,9,9,8,8,7,7,7,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,$ff,0
 
 vol_Tom:			db	$ff,$f1
 vol_Tom2:			db	$ff,$f3
-vol_WaveLeadShort:	db	15,15,15,15,7,$ff
-vol_WaveLeadMed:	db	15,15,15,15,15,15,15,7,$ff
-vol_WaveLeadLong:	db	15,15,15,15,15,15,15,15,15,15,15,7,$ff
-vol_WaveLeadLong2:	db	15,15,15,15,15,15,15,15,15,15,15,15,15,15,14,14,13,13,12,12,11,11,10,10,9,9,8,8,7,7,6,6,5,5,4,3,$ff
+vol_WaveLeadShort:	db	w3,w3,w3,w3,w2,$ff
+vol_WaveLeadMed:	db	w3,w3,w3,w3,w3,w3,w3,w2,$ff
+vol_WaveLeadLong:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,$ff
+vol_WaveLeadLong2:	db	w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w3,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w2,w1,$ff
 vol_Arp2:			db	$ff,$f2
 
 vol_Kick:			db	$ff,$81

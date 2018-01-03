@@ -3165,9 +3165,9 @@ ClearWaveBuffer:
 	
 if !def(DemoSceneMode)
 
-; Combine two waves. Optimized by Pigu
-; INPUT: bc = first wave addr
-;		 de = second wave addr
+; Combine two waves.
+; INPUT: bc = first wave address
+;		 de = second wave address
 
 _CombineWaves:
 	ld hl,WaveBuffer
@@ -3472,7 +3472,7 @@ endc
 ; Frequency table
 ; ================================================================
 
-FreqTable:  ; TODO: Add at least one extra octave
+FreqTable:
 ;	     C-x  C#x  D-x  D#x  E-x  F-x  F#x  G-x  G#x  A-x  A#x  B-x
 	dw	$02c,$09c,$106,$16b,$1c9,$223,$277,$2c6,$312,$356,$39b,$3da ; octave 1
 	dw	$416,$44e,$483,$4b5,$4e5,$511,$53b,$563,$589,$5ac,$5ce,$5ed ; octave 2
