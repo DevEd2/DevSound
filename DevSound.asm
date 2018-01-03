@@ -1925,7 +1925,7 @@ endc
 	ld	h,[hl]
 	ld	l,a
 	ld	a,[CH1VolLoop]
-	cp	$ff	; ended
+	inc	a	; ended
 	jp	z,.done
 	ld	a,[CH1VolPos]
 	add	l
@@ -2339,7 +2339,7 @@ endc
 if !def(DemoSceneMode)
 	ld	a,[CH2VolLoop]
 	ld	c,a
-	cp	$ff	; ended
+	inc	a	; ended
 	jp	z,.done
 endc
 	ld	a,[CH2VolPos]
