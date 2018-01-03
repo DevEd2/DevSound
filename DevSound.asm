@@ -40,7 +40,7 @@ UseFXHammer	set	0
 
 ; Uncomment this to disable zombie mode (for compatibility
 ; with lesser emulators such as VBA).
-; DisableZombieMode = 1
+DisableZombieMode = 1
 
 ; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks = 1
@@ -1934,8 +1934,7 @@ endc
 	cp	$fd
 	jr	z,.done
 	ld	b,a
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,[CH1ChanVol]
 	push	hl
 	call	MultiplyVolume
@@ -1948,12 +1947,10 @@ if !def(DisableZombieMode)
 	jr	z,.zombinit
 .zombieatpos0
 endc
-endc
 	ld	a,[CH1Vol]
 	cp	b
 	jr	z,.noreset3
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH1Vol],a
@@ -1967,7 +1964,6 @@ if !def(DisableZombieMode)
 	jr	nz,.zombloop
 	jr	.noreset3
 .zombinit
-endc
 endc
 	ld	a,b
 	ld	[CH1Vol],a
@@ -1986,17 +1982,14 @@ endc
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH1VolPos],a
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,1
 	ld	[CH1VolLoop],a
-endc
 endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	push	af
 	swap	a
 	and	$f
@@ -2007,7 +2000,6 @@ if !def(DisableZombieMode)
 	pop	af
 	and	$f
 	or	b
-endc
 endc
 	ldh	[rNR12],a
 	ld	a,d
@@ -2357,8 +2349,7 @@ endc
 	cp	$fd
 	jr	z,.done
 	ld	b,a
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,[CH2ChanVol]
 	push	hl
 	call	MultiplyVolume
@@ -2371,12 +2362,10 @@ if !def(DisableZombieMode)
 	jr	z,.zombinit
 .zombieatpos0
 endc
-endc
 	ld	a,[CH2Vol]
 	cp	b
 	jr	z,.noreset3
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH2Vol],a
@@ -2390,7 +2379,6 @@ if !def(DisableZombieMode)
 	jr	nz,.zombloop
 	jr	.noreset3
 .zombinit
-endc
 endc
 	ld	a,b
 	ld	[CH2Vol],a
@@ -2409,17 +2397,14 @@ endc
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH2VolPos],a
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,1
 	ld	[CH2VolLoop],a
-endc
 endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
-if !def(DemoSceneMode)
-if !def(DisableZombieMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	push	af
 	swap	a
 	and	$f
@@ -2430,7 +2415,6 @@ if !def(DisableZombieMode)
 	pop	af
 	and	$f
 	or	b
-endc
 endc
 	ldh	[rNR22],a
 	ld	a,d
