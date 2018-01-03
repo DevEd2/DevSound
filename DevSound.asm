@@ -32,15 +32,20 @@ UseFXHammer	set	0
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
-; DO NOT USE THIS, IT IS CURRENTLY BROKEN.
+; WARNING! THIS IS CURRENTLY BROKEN. DO NOT USE!
 ; DemoSceneMode = 1
 
 ; Uncomment this to to disable wave volume scaling.
+; PROS: Less CPU usage
+; CONS: Less volume control for CH3
 ; NoWaveVolumeScaling = 1
 
 ; Uncomment this to disable zombie mode (for compatibility
-; with lesser emulators such as VBA).
-DisableZombieMode = 1
+; with old emulators such as VBA).
+; PROS: Less CPU usage
+;		Compatible with old emulators such as VBA
+; CONS: Volume envelopes will sound "dirtier"
+; DisableZombieMode = 1
 
 ; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks = 1
