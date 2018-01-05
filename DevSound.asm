@@ -178,6 +178,10 @@ DevSound_Init:
 
 DevSound_ExternalCommand:
 	ld	hl,.commandTable
+	
+	cp	(.commandTableEnd-.commandTable)/2
+	ret	nc	; if command ID is out of bounds, exit
+	
 	add	a
 	add	l
 	ld	l,a
@@ -192,12 +196,17 @@ DevSound_ExternalCommand:
 .commandTable
 	dw	.dummy		; $00 - dummy
 	dw	.setSpeed	; $01 - set speed
+	dw	.muteChannel
+.commandTableEnd
+
 	
 .setSpeed
 	ld	a,b
 	ld	[GlobalSpeed1],a
 	ld	a,c
 	ld	[GlobalSpeed2],a
+
+.muteChannel		; TODO
 
 .dummy
 	ret
