@@ -60,10 +60,11 @@ SECTION	"DevSound",ROMX
 
 DevSound_JumpTable:
 
-DS_Init:	jp	DevSound_Init
-DS_Play:	jp	DevSound_Play
-DS_Stop:	jp	DevSound_Stop
-DS_Fade:	jp	DevSound_Fade
+DS_Init:			jp	DevSound_Init
+DS_Play:			jp	DevSound_Play
+DS_Stop:			jp	DevSound_Stop
+DS_Fade:			jp	DevSound_Fade
+DS_ExternalCommand:	jp	DevSound_ExternalCommand
 
 ; Driver thumbprint
 db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
@@ -169,6 +170,38 @@ DevSound_Init:
 	ld	[GlobalVolume],a
 	reti
 
+; ================================================================
+; External command processing routine
+; INPUT: a  = command ID
+; 		 bc = parameters
+; ================================================================
+
+DevSound_ExternalCommand:
+	ld	hl,.commandTable
+	add	a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	jp	hl
+	
+.commandTable
+	dw	.dummy		; $00 - dummy
+	dw	.setSpeed	; $01 - set speed
+	
+.setSpeed
+	ld	a,b
+	ld	[GlobalSpeed1],a
+	ld	a,c
+	ld	[GlobalSpeed2],a
+
+.dummy
+	ret
+	
 ; ================================================================
 ; Stop routine
 ; ================================================================

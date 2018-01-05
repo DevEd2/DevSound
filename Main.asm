@@ -327,6 +327,11 @@ endc
 	call	DS_Fade
 	ld	a,[CurrentSong]
 	call	DS_Init
+	jr	.continue
+.externalCommandTest
+	ld	a,1
+	ld	bc,$0101
+	call	DS_ExternalCommand
 .continue
 	jp	MainLoop
 	
