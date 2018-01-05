@@ -288,7 +288,7 @@ endc
 	bit	btnStart,a
 	jr	nz,.fadeout
 	bit	btnSelect,a
-	jr	nz,.externalCommandTest
+	jr	nz,.fadein
 	jr	.continue
 
 .add1
@@ -329,7 +329,7 @@ endc
 	call	DS_Init
 	jr	.continue
 .externalCommandTest
-	ld	a,10
+	ld	a,1
 	ld	bc,$0101
 	call	DS_ExternalCommand
 .continue

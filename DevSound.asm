@@ -176,11 +176,10 @@ DevSound_Init:
 ; 		 bc = parameters
 ; ================================================================
 
-DevSound_ExternalCommand:
-	ld	hl,.commandTable
-	
+DevSound_ExternalCommand:	
 	cp	(.commandTableEnd-.commandTable)/2
 	ret	nc	; if command ID is out of bounds, exit
+	ld	hl,.commandTable
 	
 	add	a
 	add	l
@@ -194,9 +193,9 @@ DevSound_ExternalCommand:
 	jp	hl
 	
 .commandTable
-	dw	.dummy		; $00 - dummy
-	dw	.setSpeed	; $01 - set speed
-	dw	.muteChannel
+	dw	.dummy			; $00 - dummy
+	dw	.setSpeed		; $01 - set speed
+	dw	.muteChannel	; $02 - mute given sound channel (TODO)
 .commandTableEnd
 
 	
@@ -205,8 +204,11 @@ DevSound_ExternalCommand:
 	ld	[GlobalSpeed1],a
 	ld	a,c
 	ld	[GlobalSpeed2],a
-
+;	ret
+	
 .muteChannel		; TODO
+;	ld	a,c
+;	and	3
 
 .dummy
 	ret
