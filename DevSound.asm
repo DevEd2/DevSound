@@ -273,7 +273,13 @@ DevSound_Play:
 	push	bc
 	push	de
 	push	hl
-	; get song timer
+	; reset sync tick
+	ld	a,[SyncTick]
+	and	a
+	jr	z,.getSongTimer
+	xor	a
+	ld	[SyncTick],a
+.getSongTimer
 	ld	a,[GlobalTimer]		; get global timer
 	and	a					; is GlobalTimer non-zero?
 	jr	nz,.noupdate		; if yes, don't update
@@ -442,6 +448,7 @@ CH1_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 
 .setInstrument
 	ld	a,[hl+]					; get ID of instrument to switch to
@@ -550,6 +557,11 @@ CH1_CheckByte:
 .enablePWM
 	inc	hl
 	inc	hl
+	jp	CH1_CheckByte
+	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
 	jp	CH1_CheckByte
 	
 .enableRandomizer
@@ -762,6 +774,7 @@ CH2_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 
 .setInstrument
 	ld	a,[hl+]
@@ -881,6 +894,11 @@ CH2_CheckByte:
 	and	$f
 	ld	[CH2ChanVol],a
 	jp	CH2_CheckByte
+	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
+	jp	CH1_CheckByte
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1075,6 +1093,7 @@ CH3_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 
 .setInstrument
 	ld	a,[hl+]
@@ -1267,6 +1286,11 @@ endc
 	ld	[CH3ChanVol],a
 	jp	CH3_CheckByte
 	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
+	jp	CH1_CheckByte
+	
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
@@ -1447,6 +1471,7 @@ CH4_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 		
 .setInstrument
 	ld	a,[hl+]
@@ -1541,6 +1566,11 @@ CH4_CheckByte:
 	and	$f
 	ld	[CH4ChanVol],a
 	jp	CH4_CheckByte
+	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
+	jp	CH1_CheckByte
 
 CH4_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1570,8 +1600,8 @@ CH4_SetInstrument:
 	ld	[CH4WavePtr],a
 	ld	a,[hl+]
 	ld	[CH4WavePtr+1],a
-	ret
-	
+	ret	
+
 ; ================================================================
 
 DoneUpdating:
@@ -3564,7 +3594,7 @@ endc
 	
 DefaultRegTable:
 	; global flags
-	db	0,7,0,0,0,0,1,1,1,1,1
+	db	0,7,0,0,0,0,0,1,1,1,1,1
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

@@ -108,7 +108,8 @@ DisableAutoWave		equ	$8f
 Arp					equ	$90
 TonePorta			equ	$91
 ChannelVolume		equ	$92
-DummyCommand		equ	$93
+SendSyncTick		equ	$93
+DummyCommand		equ	$94
 EndChannel			equ	$FF
 
 endc
