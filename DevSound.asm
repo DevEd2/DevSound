@@ -273,11 +273,11 @@ DevSound_Play:
 	push	bc
 	push	de
 	push	hl
-	; reset sync tick
+	; do stuff with sync tick
 	ld	a,[SyncTick]
 	and	a
 	jr	z,.getSongTimer
-	xor	a
+	dec	a
 	ld	[SyncTick],a
 .getSongTimer
 	ld	a,[GlobalTimer]		; get global timer
