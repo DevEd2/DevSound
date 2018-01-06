@@ -898,7 +898,7 @@ CH2_CheckByte:
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
-	jp	CH1_CheckByte
+	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1289,7 +1289,7 @@ endc
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
-	jp	CH1_CheckByte
+	jp	CH3_CheckByte
 	
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
@@ -1570,7 +1570,7 @@ CH4_CheckByte:
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
-	jp	CH1_CheckByte
+	jp	CH4_CheckByte
 
 CH4_SetInstrument:
 	ld	hl,InstrumentTable
