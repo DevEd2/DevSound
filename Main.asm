@@ -208,12 +208,12 @@ endc
 	db	"                    "
 	db	"You are running this"
 	db	"ROM in an inaccurate"
-	db	"emulator. DevSound  "
-	db	"relies on a quirk of"
-	db	"the Game Boy's audio"
-	db	"hardware that most  "
-	db	"likely will not work"
-	db	"in this emulator.   "
+	db	"emulator. I cannot  "
+	db	"guarantee that      "
+	db	"DevSound or this    "
+	db	"demo ROM will work  "
+	db	"properly in this    "
+	db	"emulator.           "
 	db	"For best results,   "
 	db	"use a more accurate "
 	db	"emulator, such as   "
@@ -365,6 +365,11 @@ endc
 	call	DS_Fade
 	ld	a,[CurrentSong]
 	call	DS_Init
+	jr	.continue
+.externalCommandTest
+	ld	a,1
+	ld	bc,$0101
+	call	DS_ExternalCommand
 .continue
 	jp	MainLoop
 	

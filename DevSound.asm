@@ -32,13 +32,19 @@ UseFXHammer	set	0
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
+; WARNING! THIS IS CURRENTLY BROKEN. DO NOT USE!
 ; DemoSceneMode = 1
 
 ; Uncomment this to to disable wave volume scaling.
+; PROS: Less CPU usage
+; CONS: Less volume control for CH3
 ; NoWaveVolumeScaling = 1
 
 ; Uncomment this to disable zombie mode (for compatibility
-; with lesser emulators such as VBA).
+; with old emulators such as VBA).
+; PROS: Less CPU usage
+;		Compatible with old emulators such as VBA
+; CONS: Volume envelopes will sound "dirtier"
 ; DisableZombieMode = 1
 
 ; Comment this line to enable Deflemask compatibility hacks.
@@ -54,10 +60,11 @@ SECTION	"DevSound",ROMX
 
 DevSound_JumpTable:
 
-DS_Init:	jp	DevSound_Init
-DS_Play:	jp	DevSound_Play
-DS_Stop:	jp	DevSound_Stop
-DS_Fade:	jp	DevSound_Fade
+DS_Init:			jp	DevSound_Init
+DS_Play:			jp	DevSound_Play
+DS_Stop:			jp	DevSound_Stop
+DS_Fade:			jp	DevSound_Fade
+DS_ExternalCommand:	jp	DevSound_ExternalCommand
 
 ; Driver thumbprint
 db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
@@ -171,6 +178,49 @@ endc
 	reti
 
 ; ================================================================
+; External command processing routine
+; INPUT: a  = command ID
+; 		 bc = parameters
+; ================================================================
+
+DevSound_ExternalCommand:	
+	cp	(.commandTableEnd-.commandTable)/2
+	ret	nc	; if command ID is out of bounds, exit
+	ld	hl,.commandTable
+	
+	add	a
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	jp	hl
+	
+.commandTable
+	dw	.dummy			; $00 - dummy
+	dw	.setSpeed		; $01 - set speed
+	dw	.muteChannel	; $02 - mute given sound channel (TODO)
+.commandTableEnd
+
+	
+.setSpeed
+	ld	a,b
+	ld	[GlobalSpeed1],a
+	ld	a,c
+	ld	[GlobalSpeed2],a
+;	ret
+	
+.muteChannel		; TODO
+;	ld	a,c
+;	and	3
+
+.dummy
+	ret
+	
+; ================================================================
 ; Stop routine
 ; ================================================================
 
@@ -235,7 +285,13 @@ DevSound_Play:
 	push	bc
 	push	de
 	push	hl
-	; get song timer
+	; do stuff with sync tick
+	ld	a,[SyncTick]
+	and	a
+	jr	z,.getSongTimer
+	dec	a
+	ld	[SyncTick],a
+.getSongTimer
 	ld	a,[GlobalTimer]		; get global timer
 	and	a					; is GlobalTimer non-zero?
 	jr	nz,.noupdate		; if yes, don't update
@@ -411,6 +467,7 @@ CH1_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 
 .setInstrument
 	ld	a,[hl+]					; get ID of instrument to switch to
@@ -519,6 +576,11 @@ CH1_CheckByte:
 .enablePWM
 	inc	hl
 	inc	hl
+	jp	CH1_CheckByte
+	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
 	jp	CH1_CheckByte
 	
 .enableRandomizer
@@ -738,6 +800,7 @@ CH2_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 
 .setInstrument
 	ld	a,[hl+]
@@ -856,6 +919,11 @@ CH2_CheckByte:
 	ld	a,[hl+]
 	and	$f
 	ld	[CH2ChanVol],a
+	jp	CH2_CheckByte
+	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
 	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
@@ -1058,6 +1126,7 @@ CH3_CheckByte:
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 
 .setInstrument
 	ld	a,[hl+]
@@ -1250,6 +1319,11 @@ endc
 	ld	[CH3ChanVol],a
 	jp	CH3_CheckByte
 	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
+	jp	CH3_CheckByte
+	
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
@@ -1439,6 +1513,7 @@ endc
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
+	dw	.setSyncTick
 		
 .setInstrument
 	ld	a,[hl+]
@@ -1532,6 +1607,11 @@ endc
 	ld	a,[hl+]
 	and	$f
 	ld	[CH4ChanVol],a
+	jp	CH4_CheckByte
+	
+.setSyncTick
+	ld	a,[hl+]
+	ld	[SyncTick],a
 	jp	CH4_CheckByte
 
 CH4_SetInstrument:
@@ -1993,7 +2073,7 @@ endc
 	ld	h,[hl]
 	ld	l,a
 	ld	a,[CH1VolLoop]
-	cp	$ff	; ended
+	inc	a	; ended
 	jp	z,.done
 	ld	a,[CH1VolPos]
 	add	l
@@ -2079,7 +2159,7 @@ endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	push	af
 	swap	a
 	and	$f
@@ -2471,7 +2551,7 @@ endc
 	ld	l,a
 	ld	a,[CH2VolLoop]
 	ld	c,a
-	cp	$ff	; ended
+	inc	a	; ended
 	jp	z,.done
 	ld	a,[CH2VolPos]
 	add	l
@@ -2557,7 +2637,7 @@ endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
-if !def(DemoSceneMode)
+if !def(DemoSceneMode) && !def(DisableZombieMode)
 	push	af
 	swap	a
 	and	$f
@@ -3480,9 +3560,9 @@ ClearWaveBuffer:
 	
 if !def(DemoSceneMode)
 
-; Combine two waves. Optimized by Pigu
-; INPUT: bc = first wave addr
-;		 de = second wave addr
+; Combine two waves.
+; INPUT: bc = first wave address
+;		 de = second wave address
 
 _CombineWaves:
 	ld hl,WaveBuffer
@@ -3808,7 +3888,7 @@ endc
 ; Frequency table
 ; ================================================================
 
-FreqTable:  ; TODO: Add at least one extra octave
+FreqTable:
 ;	     C-x  C#x  D-x  D#x  E-x  F-x  F#x  G-x  G#x  A-x  A#x  B-x
 	dw	$02c,$09c,$106,$16b,$1c9,$223,$277,$2c6,$312,$356,$39b,$3da ; octave 1
 	dw	$416,$44e,$483,$4b5,$4e5,$511,$53b,$563,$589,$5ac,$5ce,$5ed ; octave 2
@@ -3856,7 +3936,7 @@ endc
 	
 DefaultRegTable:
 	; global flags
-	db	0,7,0,0,0,0,1,1,1,1,1
+	db	0,7,0,0,0,0,0,1,1,1,1,1
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

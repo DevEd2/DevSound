@@ -16,6 +16,7 @@ GlobalSpeed1	ds	1
 GlobalSpeed2	ds	1
 GlobalTimer		ds	1
 TickCount		ds	1
+SyncTick		ds	1
 SoundEnabled	ds	1
 
 CH1Enabled		ds	1
