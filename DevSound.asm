@@ -23,6 +23,9 @@
 ; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ; ================================================================
 
+; Uncomment the following line to enable custom hooks.
+; UseCustomHooks	set	1
+
 ; Comment the following line to disable SFX support (via FX Hammer).
 ; Useful if you want to use your own sound effect system.
 ; (Note that DevSound may require some minor modifications if you
@@ -58,6 +61,7 @@ include	"DevSound_Macros.asm"
 
 SECTION	"DevSound",ROMX
 
+if	!def(UseCustomHooks)
 DevSound_JumpTable:
 
 DS_Init:			jp	DevSound_Init
@@ -65,6 +69,7 @@ DS_Play:			jp	DevSound_Play
 DS_Stop:			jp	DevSound_Stop
 DS_Fade:			jp	DevSound_Fade
 DS_ExternalCommand:	jp	DevSound_ExternalCommand
+endc
 
 ; Driver thumbprint
 db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
