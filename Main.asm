@@ -15,9 +15,13 @@ UseDecimal	set	0
 
 EngineSpeed	set -1
 
+if !def(GBS) ; Don't include visualizer functions at all in GBS build
+
 ; If defined, include a visualizer in the main screen
 
 Visualizer  set 1
+
+endc
 
 ; ================================================================
 ; Project includes
@@ -68,7 +72,7 @@ else
 if EngineSpeed != -1
 	push	af
 	ld	a,1
-	ld	[VBlankOccurred],a
+	ldh	[VBlankOccurred],a
 	pop	af
 endc
 	reti
@@ -536,7 +540,9 @@ endc
 ; GBS Header
 ; ================================================================
 
+if def(GBS)
 	include	"gbs.asm"
+endc
 
 ; ================================================================
 ; DevSound sound driver

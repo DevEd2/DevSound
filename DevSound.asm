@@ -366,6 +366,7 @@ CH1_CheckByte:
 	jp	UpdateCH2
 	
 .release
+	; follows FamiTracker's behavior except vibrato table which will not be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH1Tick],a		; set tick
@@ -373,9 +374,15 @@ CH1_CheckByte:
 	ld	[CH1Ptr],a
 	ld	a,h
 	ld	[CH1Ptr+1],a
-	ld	a,[CH1VolPos]	; increment volume table pos
-	inc	a
-	ld	[CH1VolPos],a
+	ld	hl,CH1VolPtr
+	ld	bc,CH1VolPos
+	call	SkipLoopPoint
+	ld	hl,CH1ArpPtr
+	ld	bc,CH1ArpPos
+	call	SkipLoopPoint
+	ld	hl,CH1PulsePtr
+	ld	bc,CH1PulsePos
+	call	SkipLoopPoint
 	jp	UpdateCH2
 	
 .getCommand		
@@ -686,6 +693,7 @@ CH2_CheckByte:
 	jp	UpdateCH3
 	
 .release
+	; follows FamiTracker's behavior except vibrato table which will not be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH2Tick],a		; set tick
@@ -693,9 +701,15 @@ CH2_CheckByte:
 	ld	[CH2Ptr],a
 	ld	a,h
 	ld	[CH2Ptr+1],a
-	ld	a,[CH2VolPos]	; increment volume table pos
-	inc	a
-	ld	[CH2VolPos],a
+	ld	hl,CH2VolPtr
+	ld	bc,CH2VolPos
+	call	SkipLoopPoint
+	ld	hl,CH2ArpPtr
+	ld	bc,CH2ArpPos
+	call	SkipLoopPoint
+	ld	hl,CH2PulsePtr
+	ld	bc,CH2PulsePos
+	call	SkipLoopPoint
 	jp	UpdateCH3
 	
 .getCommand
@@ -999,16 +1013,23 @@ CH3_CheckByte:
 	jp	UpdateCH4
 	
 .release
+	; follows FamiTracker's behavior except vibrato table which will not be affected
 	ld	a,[hl+]
 	dec	a
-	ld	[CH1Tick],a		; set tick
+	ld	[CH3Tick],a		; set tick
 	ld	a,l				; store back current pos
-	ld	[CH1Ptr],a
+	ld	[CH3Ptr],a
 	ld	a,h
-	ld	[CH1Ptr+1],a
-	ld	a,[CH1VolPos]	; increment volume table pos
-	inc	a
-	ld	[CH1VolPos],a
+	ld	[CH3Ptr+1],a
+	ld	hl,CH3VolPtr
+	ld	bc,CH3VolPos
+	call	SkipLoopPoint
+	ld	hl,CH3ArpPtr
+	ld	bc,CH3ArpPos
+	call	SkipLoopPoint
+	ld	hl,CH3WavePtr
+	ld	bc,CH3WavePos
+	call	SkipLoopPoint
 	jp	UpdateCH4
 	
 .getCommand
@@ -1312,7 +1333,9 @@ CH4_CheckByte:
 	ld	[CH4Ptr+1],a
 	xor	a
 	ld	[CH4NoisePos],a
+if !def(DisableDeflehacks)
 	ld	[CH4WavePos],a
+endc
 	ld	a,[CH4Reset]
 	bit	1,a
 	jr	nz,.noresetvol
@@ -1371,6 +1394,7 @@ CH4_CheckByte:
 	jp	DoneUpdating
 	
 .release
+	; follows FamiTracker's behavior except vibrato table which will not be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH4Tick],a		; set tick
@@ -1378,9 +1402,15 @@ CH4_CheckByte:
 	ld	[CH4Ptr],a
 	ld	a,h
 	ld	[CH4Ptr+1],a
-	ld	a,[CH4VolPos]	; increment volume table pos
-	inc	a
-	ld	[CH4VolPos],a
+	ld	hl,CH4VolPtr
+	ld	bc,CH4VolPos
+	call	SkipLoopPoint
+	ld	hl,CH4NoisePtr
+	ld	bc,CH4NoisePos
+	call	SkipLoopPoint
+	ld	hl,CH1PulsePtr
+	ld	bc,CH1PulsePos
+	call	SkipLoopPoint
 	jp	DoneUpdating
 	
 .getCommand
@@ -1528,10 +1558,12 @@ CH4_SetInstrument:
 	ld	[CH4NoisePtr],a
 	ld	a,[hl+]
 	ld	[CH4NoisePtr+1],a
+if !def(DisableDeflehacks)
 	ld	a,[hl+]
 	ld	[CH4WavePtr],a
 	ld	a,[hl+]
 	ld	[CH4WavePtr+1],a
+endc
 	ret
 	
 ; ================================================================
@@ -1995,6 +2027,9 @@ if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH1Vol],a
+if def(Visualizer)
+	ld	[CH1OutputLevel],a
+endc
 	sub	c
 	and	$f
 	ld	c,a
@@ -2470,6 +2505,9 @@ if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	c,a
 	ld	a,b
 	ld	[CH2Vol],a
+if def(Visualizer)
+	ld	[CH2OutputLevel],a
+endc
 	sub	c
 	and	$f
 	ld	c,a
@@ -3154,6 +3192,7 @@ endc
 .continue
 
 	; update wave
+if !def(DisableDeflehacks)
 	ld	hl,CH4WavePtr
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -3176,8 +3215,30 @@ endc
 	jr	nz,.updateNote
 	ld	a,[hl]
 	ld	[CH4WavePos],a
+endc
 	
 ; get note
+if def(DisableDeflehacks)
+; don't do per noise mode arp clamping if deflemask compatibility mode
+; is disabled so that relative arp with noise mode change is possible
+.updateNote
+	ld	a,[CH4Mode]
+	ld	b,a
+	ld	a,[CH4Transpose]
+	bit	7,a
+	jr	nz,.minus
+	add	b
+	cp	90
+	jr	c,.noclamp
+	ld	a,89
+	jr	.noclamp
+.minus
+	add	b
+	cp	90
+	jr	c,.noclamp
+	xor	a
+.noclamp
+else
 .updateNote
 	ld	c,0
 	ld	a,[CH4Mode]
@@ -3215,6 +3276,7 @@ endc
 	ld	a,45
 .noise15
 	add	b
+endc
 	
 if def(Visualizer)
 	ld	[CH4Noise],a
@@ -3236,14 +3298,15 @@ endc
 
 	; update volume
 .updateVolume
+	ld	hl,CH4Reset
+	res	7,[hl]
 	ld	hl,CH4VolPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
 	ld	a,[CH4VolLoop]
-	ld	c,a
 	cp	$ff	; ended
-	jr	z,.done
+	jp	z,.done
 	ld	a,[CH4VolPos]
 	add	l
 	ld	l,a
@@ -3254,12 +3317,43 @@ endc
 	cp	$ff
 	jr	z,.loadlast
 	cp	$fd
-	jr	z,.done
+	jp	z,.done
 	
 	ld	b,a
+if !def(DemoSceneMode) && !def(DisableZombieMode)
+	ld	a,[CH4ChanVol]
+	push	hl
+	call	MultiplyVolume
+	pop	hl
+	ld	a,[CH4VolLoop]
+	dec	a
+	jr	z,.zombieatpos0
+	ld	a,[CH4VolPos]
+	and	a
+	jr	z,.zombinit
+.zombieatpos0
+endc
 	ld	a,[CH4Vol]
 	cp	b
 	jr	z,.noreset3
+if !def(DemoSceneMode) && !def(DisableZombieMode)
+	ld	c,a
+	ld	a,b
+	ld	[CH4Vol],a
+if def(Visualizer)
+	ld	[CH4OutputLevel],a
+endc
+	sub	c
+	and	$f
+	ld	c,a
+	ld	a,8
+.zombloop
+	ldh	[rNR42],a
+	dec	c
+	jr	nz,.zombloop
+	jr	.noreset3
+.zombinit
+endc
 if def(Visualizer)
 	ld	a,b
 	ld	[CH4Vol],a
@@ -3289,6 +3383,10 @@ endc
 	jr	nz,.done
 	ld	a,[hl]
 	ld	[CH4VolPos],a
+if !def(DemoSceneMode) && !def(DisableZombieMode)
+	ld	a,1
+	ld	[CH4VolLoop],a
+endc
 	jr	.done
 .loadlast
 	ld	a,[hl]
@@ -3583,7 +3681,7 @@ JumpTableBelow:
 
 ClearArpBuffer:
 	ld	hl,arp_Buffer
-	push	hl
+	ld	[hl],$ff
 	inc	hl
 	ld	b,7
 	xor	a
@@ -3591,9 +3689,6 @@ ClearArpBuffer:
 	ld	a,[hl+]
 	dec	b
 	jr	nz,.loop
-	dec	a
-	pop	hl
-	ld	a,[hl]
 	ret
 	
 DoArp:
@@ -3644,6 +3739,30 @@ DoArp:
 	inc	de
 	xor	a
 	ld	[de],a
+	ret
+	
+SkipLoopPoint:
+; skip over the next loop point after position [bc] in table [hl]
+; then store the skipped position to [bc].
+	ld	a,[bc]
+	ld	d,a
+	ld	a,[hl+]
+	ld	h,[hl]
+	add	d
+	ld	l,a
+	jr	nc,.loop
+	inc	h
+.loop
+	ld	a,[hl+]
+	cp	$ff
+	jr	z,.done
+	inc	d
+	cp	$fe
+	jr	nz,.loop
+	inc	d ; skip over loop destination byte
+.done
+	ld	a,d
+	ld	[bc],a
 	ret
 	
 if !def(DemoSceneMode)
@@ -3748,8 +3867,13 @@ DefaultRegTable:
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
+if def(DisableDeflehacks)
+	dw	DummyTable,DummyTable,DummyTable
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+else
 	dw	DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+endc
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
@@ -3759,7 +3883,7 @@ NoiseData:		incbin	"NoiseData.bin"
 ; Dummy data
 ; ================================================================
 	
-DummyTable:	db	$ff
+DummyTable:	db	$ff,0
 vib_Dummy:	db	0,0,$80,1
 
 DummyChannel:

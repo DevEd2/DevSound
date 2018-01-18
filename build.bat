@@ -5,8 +5,12 @@ rem	Build ROM
 echo Assembling...
 rgbasm -o DevSound.obj -p 255 Main.asm
 if errorlevel 1 goto :BuildError
+rgbasm -DGBS -o DevSound_GBS.obj -p 255 Main.asm
+if errorlevel 1 goto :BuildError
 echo Linking...
 rgblink -p 255 -o DevSound.gb -n DevSound.sym DevSound.obj
+if errorlevel 1 goto :BuildError
+rgblink -p 255 -o DevSound_GBS.gb DevSound_GBS.obj
 if errorlevel 1 goto :BuildError
 echo Fixing...
 rgbfix -v -p 255 DevSound.gb
@@ -19,9 +23,11 @@ del DevSound.obj
 rem Make GBS file
 :MakeGBS
 echo Building GBS file...
+
 py makegbs.py
 if errorlevel 1 goto :GBSMakeError
 echo GBS file built.
+del /f DevSound_GBS.obj DevSound_GBS.gb
 echo ** Build finished with no errors **
 goto:eof
 

@@ -117,11 +117,15 @@ CH3Ins2			ds	1
 
 CH4Ptr			ds	2
 CH4VolPtr		ds	2
+if !def(DisableDeflehacks)
 CH4WavePtr		ds	2
+endc
 CH4NoisePtr		ds	2
 CH4VolPos		ds	1
 CH4VolLoop		ds	1
-CH4WavePos		ds	2
+if !def(DisableDeflehacks)
+CH4WavePos		ds	1
+endc
 CH4NoisePos		ds	1
 CH4LoopPtr		ds	2
 CH4RetPtr		ds	2
