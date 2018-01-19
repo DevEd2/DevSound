@@ -63,17 +63,17 @@ UseFXHammer	set	0
 ; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks = 1
 
-if    !def(UseROM0)
-SECTION    "DevSound",ROMX
-else
-SECTION    "DevSound",ROM0
-endc
-
 DevSound:
 
 include	"DevSound_Vars.asm"
 include	"DevSound_Consts.asm"
 include	"DevSound_Macros.asm"
+
+if    !def(UseROM0)
+SECTION    "DevSound",ROMX
+else
+SECTION    "DevSound",ROM0
+endc
 
 if	!def(UseCustomHooks)
 DevSound_JumpTable:
