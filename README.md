@@ -26,7 +26,7 @@ call DS_Fade
 
 - **BotB Invitro** (https://github.com/DevEd2/BotBInvite) - A one-screen Game Boy invite I created along with Pigu for Battle of the Bits. *Note: Uses an earlier version of DevSound*
 
-- **Aevilia** (https://github.com/ISSOtm/Aevilia-GB) - An RPG for Game Boy Color by ISSOtm, which I'm providing music for. *Note: Uses a modified version of DevSound*
+- **Aevilia** (https://github.com/ISSOtm/Aevilia-GB) - An RPG for Game Boy Color by ISSOtm, which I'm providing music for.
 
 If you are using DevSound in your project, let me know and I'll add it to this list.
 
