@@ -24,7 +24,17 @@
 ; ================================================================
 
 ; Uncomment the following line to enable custom hooks.
-; UseCustomHooks	set	1
+; UseCustomHooks		set	1
+
+; Uncomment the following line if you want the DevSound player code to be in ROM0 instead of its own bank.
+; Could be useful for multibank setups.
+; TODO: Make some tweaks to song data format to allow for multiple banks
+; UseROM0				set	1
+
+; Uncomment the following line if you want to include song data elsewhere.
+; Could be useful for multibank setups.
+; TODO: Make some tweaks to song data format to allow for multiple banks
+; DontIncludeSongData	set	1
 
 ; Comment the following line to disable SFX support (via FX Hammer).
 ; Useful if you want to use your own sound effect system.
@@ -53,13 +63,17 @@ UseFXHammer	set	0
 ; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks = 1
 
+if    !def(UseROM0)
+SECTION    "DevSound",ROMX
+else
+SECTION    "DevSound",ROM0
+endc
+
 DevSound:
 
 include	"DevSound_Vars.asm"
 include	"DevSound_Consts.asm"
 include	"DevSound_Macros.asm"
-
-SECTION	"DevSound",ROMX
 
 if	!def(UseCustomHooks)
 DevSound_JumpTable:
@@ -3978,4 +3992,6 @@ DummyChannel:
 ; Song data
 ; ================================================================
 
+if	!def(DontIncludeSongData)
 	include	"DevSound_SongData.asm"
+endc
