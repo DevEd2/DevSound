@@ -40,28 +40,33 @@
 ; Useful if you want to use your own sound effect system.
 ; (Note that DevSound may require some minor modifications if you
 ; want to use your own SFX system.)
-UseFXHammer	set	0
+UseFXHammer	set	1
 
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
 ; WARNING! THIS IS CURRENTLY BROKEN. DO NOT USE!
-; DemoSceneMode = 1
+; DemoSceneMode set	1
 
 ; Uncomment this to to disable wave volume scaling.
 ; PROS: Less CPU usage
 ; CONS: Less volume control for CH3
-; NoWaveVolumeScaling = 1
+; NoWaveVolumeScaling set	1
 
 ; Uncomment this to disable zombie mode (for compatibility
 ; with old emulators such as VBA).
 ; PROS: Less CPU usage
 ;		Compatible with old emulators such as VBA
 ; CONS: Volume envelopes will sound "dirtier"
-; DisableZombieMode = 1
+; DisableZombieMode	set	1
+
+; Uncomment this line to disable the CH3 wave RAM corruption fix.
+; Useful if you want to save on CPU usage in GBC mode.
+; NOTE: It is recommended to leave this alone if you want DMG compatibility.
+; DisableWaveRAMFix	set	1
 
 ; Comment this line to enable Deflemask compatibility hacks.
-DisableDeflehacks = 1
+DisableDeflehacks set	1
 
 DevSound:
 
@@ -678,9 +683,9 @@ UpdateCH2:
 CH2_CheckByte:
 	ld	a,[hl+]		; get byte
 	cp	$ff
-	jr	z,.endChannel
+	jp	z,.endChannel
 	cp	$c9
-	jr	z,.retSection
+	jp	z,.retSection
 	cp	release				; if release
 	jp	z,.release
 	cp	___
