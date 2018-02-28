@@ -60,11 +60,6 @@ UseFXHammer	set	1
 ; CONS: Volume envelopes will sound "dirtier"
 ; DisableZombieMode	set	1
 
-; Uncomment this line to disable the CH3 wave RAM corruption fix.
-; Useful if you want to save on CPU usage in GBC mode.
-; NOTE: It is recommended to leave this alone if you want DMG compatibility.
-; DisableWaveRAMFix	set	1
-
 ; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks set	1
 
@@ -3560,7 +3555,7 @@ endc
 	ldh	[rNR51],a		; prevents spike
 	xor	a
 	ldh	[rNR30],a		; disable CH3
-CUR_WAVE = waveBuffer
+CUR_WAVE = _AUD3WAVERAM
 rept 16
 	ld a, [hl+]			; get byte from hl
 	ldh [CUR_WAVE], a	; copy to wave ram

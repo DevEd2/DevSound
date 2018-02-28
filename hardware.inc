@@ -42,8 +42,6 @@ _OAMRAM       EQU  $FE00 ; $FE00->$FE9F
 _AUD3WAVERAM  EQU  $FF30 ; $FF30->$FF3F
 _HRAM         EQU  $FF80 ; $FF80->$FFFE
 
-waveBuffer		EQU	$FF30	; because I felt like it
-
 ; *** MBC5 Equates ***
 
 rRAMG         EQU  $0000 ; $0000->$1fff

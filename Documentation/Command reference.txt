@@ -15,10 +15,10 @@ $48 - rest
   Silences a channel for the specified length.
   Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
   
-$49 - null
+$49 - ___
   Do nothing for the specified length.
   This is useful for when you want to put some effects in the middle of the note.
-    - Example: C_3,4,PitchBendDown,$10,null,4 will play C-3 for 8 rows with pitch bend down starting in the middle
+    - Example: C_3,4,PitchBendDown,$10,___,4 will play C-3 for 8 rows with pitch bend down starting in the middle
   Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
   
 $4a - release
