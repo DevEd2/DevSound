@@ -352,6 +352,19 @@ rOCPD EQU $FF6B
 ; --
 rSVBK EQU $FF70
 
+; --
+; -- PCM12 ($FF75)
+; -- SO1 and SO2 PCM data (Read only)
+; --
+
+rPCM12 EQU $FF75
+
+; --
+; -- PCM34 ($FF76)
+; -- SO3 and SO4 PCM data (Read only)
+; --
+
+rPCM34 EQU $FF76
 
 ; --
 ; -- IE ($FFFF)

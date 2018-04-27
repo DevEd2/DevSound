@@ -55,6 +55,10 @@ UseFXHammer	set	1
 
 ; Uncomment this to disable zombie mode (for compatibility
 ; with old emulators such as VBA).
+; NOTE: Zombie mode is known to be problematic with certain
+; GBC CPU revisions. If you want your game/demo to be
+; compatible with all GBC hardware revisions, I would
+; recommend disabling this.
 ; PROS: Less CPU usage
 ;		Compatible with old emulators such as VBA
 ; CONS: Volume envelopes will sound "dirtier"
@@ -62,6 +66,11 @@ UseFXHammer	set	1
 
 ; Comment this line to enable Deflemask compatibility hacks.
 DisableDeflehacks set	1
+
+if	!def(UseFXHammerDisasm)
+FXHammer_SFXCH2		equ	$c7cc
+FXHammer_SFXCH4		equ	$c7d9
+endc
 
 DevSound:
 
@@ -703,7 +712,7 @@ CH2_CheckByte:
 	xor	a
 	ld	[CH2ArpPos],a
 	if(UseFXHammer)
-	ld	a,[$c7cc]
+	ld	a,[FXHammer_SFXCH2]
 	cp	3
 	jp	z,.noupdate
 	endc
@@ -1437,7 +1446,7 @@ endc
 	ld	[CH4VolLoop],a
 .noresetvol
 	if(UseFXHammer)
-	ld	a,[$c7d9]
+	ld	a,[FXHammer_SFXCH4]
 	cp	3
 	jp	z,.noupdate
 	endc
@@ -2218,7 +2227,7 @@ CH2_UpdateRegisters:
 	jp	z,CH3_UpdateRegisters
 	
 	if(UseFXHammer)
-	ld	a,[$c7cc]
+	ld	a,[FXHammer_SFXCH2]
 	cp	3
 	jr	z,.norest
 	endc
@@ -2309,7 +2318,7 @@ endc
 	rrca			;   ""    ""
 	if(UseFXHammer)
 	ld	e,a
-	ld	a,[$c7cc]
+	ld	a,[FXHammer_SFXCH2]
 	cp	3
 	jp	z,.noreset2
 	ld	a,e
@@ -2508,7 +2517,7 @@ else
 	ld	d,a	; for later restart uses
 	ld	[CH2TempFreq+1],a
 endc
-	ld	a,[$c7cc]
+	ld	a,[FXHammer_SFXCH2]
 	cp	3
 	jp	z,.updateVolume
 	ld	a,l
@@ -2543,7 +2552,7 @@ endc
 	ld	[hl],d
 .donesetFreq
 	if(UseFXHammer)
-	ld	a,[$c7cc]
+	ld	a,[FXHammer_SFXCH2]
 	cp	3
 	ld	a,e
 	jp	z,.updateVolume
@@ -3232,7 +3241,7 @@ CH4_UpdateRegisters:
 	jp	z,DoneUpdatingRegisters
 	
 	if(UseFXHammer)
-	ld	a,[$c7d9]
+	ld	a,[FXHammer_SFXCH4]
 	cp	3
 	jr	z,.norest
 	endc
@@ -3388,7 +3397,7 @@ endc
 .nocarry2
 	
 	if(UseFXHammer)
-	ld	a,[$c7d9]
+	ld	a,[FXHammer_SFXCH4]
 	cp	3
 	jr	z,.updateVolume
 	endc

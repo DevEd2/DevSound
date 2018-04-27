@@ -1,7 +1,7 @@
 # makegbs.py - create GBS file from DevSound_GBS.gb
 
 # open files
-ROMFile = open("DevSound_GBS.gb", "rb")     # demo ROM
+ROMFile = open("DevSound_GBS.gbc", "rb")     # demo ROM
 OutFile = open("DevSound.gbs", "wb")    # output file
 
 # find end of data

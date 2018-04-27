@@ -141,51 +141,26 @@ WaveTable:
 	dw	wave_Bass
 	dw	DefaultWave
 	dw	wave_PWMB
-	
-	dw	wave_PWM1,wave_PWM2,wave_PWM3,wave_PWM4
-	dw	wave_PWM5,wave_PWM6,wave_PWM7,wave_PWM8
-	dw	wave_PWM9,wave_PWMA,wave_PWMB,wave_PWMC
-	dw	wave_PWMD,wave_PWME,wave_PWMF,wave_PWM10
-	
 	dw	wave_PseudoSquare
 	dw	wave_GSCWave3
 	
-wave_Bass:		db	$00,$01,$11,$11,$22,$11,$00,$02,$57,$76,$7a,$cc,$ee,$fc,$b1,$23
-
-wave_PWM1:	db	$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM2:	db	$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM3:	db	$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM4:	db	$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM5:	db	$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM6:	db	$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM7:	db	$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM8:	db	$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM9:	db	$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWMA:	db	$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWMB:	db	$ff,$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWMC:	db	$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWMD:	db	$ff,$ff,$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWME:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWMF:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00
-wave_PWM10:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00
-
-wave_PseudoSquare:
-			db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
-wave_GSCWave3:
-			db	$02,$46,$8a,$cd,$ef,$fe,$de,$ff,$ee,$dc,$ba,$98,$76,$54,$32,$10
+wave_Bass:			db	$00,$01,$11,$11,$22,$11,$00,$02,$57,$76,$7a,$cc,$ee,$fc,$b1,$23
+wave_PWMB:			db	$ff,$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+wave_PseudoSquare:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
+wave_GSCWave3:		db	$02,$46,$8a,$cd,$ef,$fe,$de,$ff,$ee,$dc,$ba,$98,$76,$54,$32,$10
 
 ; use $c0 to use the wave buffer
 waveseq_Bass_:		db	0,$ff
 waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
-waveseq_Square_:		db	$c0,$ff
+waveseq_Square_:	db	$c0,$ff
 waveseq_GSCWave3:	db	20,$ff
 
 waveseq_Arp:		db	2,2,2,1,1,1,0,0,0,3,3,3,$fe,0
-waveseq_OctArp:	db	2,2,2,1,1,2,$ff
+waveseq_OctArp:		db	2,2,2,1,1,2,$ff
 
 waveseq_Bass:		db	1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,0,0,0,0,0,0,$fe,0
-waveseq_Square:	db	2,$ff
+waveseq_Square:		db	2,$ff
 waveseq_Arp2:		db	0,0,0,0,1,1,1,2,2,2,2,3,3,3,2,2,2,2,1,1,1,$fe,00
 
 waveseq_EchoTest:	db	1,$ff
@@ -256,7 +231,7 @@ InstrumentTable:
 ; Instrument format: [no reset flag],[voltable id],[arptable id],[wavetable id],[vibtable id]
 ; _ for no table
 ; !!! REMEMBER TO ADD INSTRUMENTS TO THE INSTRUMENT POINTER TABLE !!!
-ins_Gadunk:			Instrument	0,Gadunk,Gadunk,_,_
+ins_Gadunk:			Instrument	0,Gadunk,Gadunk,Bass_,_
 ins_Arp1:			Instrument	0,Arp,Pluck059,Arp,_
 ins_Arp2:			Instrument	0,Arp,Pluck047,Arp,_
 ins_OctArp:			Instrument	0,OctArp,Octave,OctArp,_
@@ -298,8 +273,8 @@ ins_Arp950:			Instrument	0,PulseBass2,_950,OctArp,_
 ins_Arp740:			Instrument	0,PulseBass2,_740,OctArp,_
 ins_Arp830:			Instrument	0,PulseBass2,_830,OctArp,_
 
-ins_RDLPulse1:		Instrument	0,Echo1,_,_,_
-ins_RDLPulse2:		Instrument	0,c7,_,_,_
+ins_RDLPulse1:		Instrument	0,Echo1,_,Bass_,_
+ins_RDLPulse2:		Instrument	0,c7,_,Bass_,_
 ins_RDLWave:		Instrument	0,Bass1,_,GSCWave3,_
 ins_RDLNoise:		Instrument	0,Echo1,RDLNoise,_,_
 
