@@ -450,7 +450,7 @@ CH1_CheckByte:
 	jp	UpdateCH2
 	
 .release
-	; follows FamiTracker's behavior except vibrato table which will not be affected
+	; follows FamiTracker's behavior except only the volume table will be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH1Tick],a		; set tick
@@ -458,15 +458,8 @@ CH1_CheckByte:
 	ld	[CH1Ptr],a
 	ld	a,h
 	ld	[CH1Ptr+1],a
-	ld	hl,CH1VolPtr
-	ld	bc,CH1VolPos
-	call	SkipLoopPoint
-	ld	hl,CH1ArpPtr
-	ld	bc,CH1ArpPos
-	call	SkipLoopPoint
-	ld	hl,CH1PulsePtr
-	ld	bc,CH1PulsePos
-	call	SkipLoopPoint
+	ld	hl,CH1VolPos
+	inc	[hl]
 	jp	UpdateCH2
 	
 .getCommand		
@@ -783,7 +776,7 @@ CH2_CheckByte:
 	jp	UpdateCH3
 	
 .release
-	; follows FamiTracker's behavior except vibrato table which will not be affected
+	; follows FamiTracker's behavior except only the volume table will be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH2Tick],a		; set tick
@@ -791,15 +784,8 @@ CH2_CheckByte:
 	ld	[CH2Ptr],a
 	ld	a,h
 	ld	[CH2Ptr+1],a
-	ld	hl,CH2VolPtr
-	ld	bc,CH2VolPos
-	call	SkipLoopPoint
-	ld	hl,CH2ArpPtr
-	ld	bc,CH2ArpPos
-	call	SkipLoopPoint
-	ld	hl,CH2PulsePtr
-	ld	bc,CH2PulsePos
-	call	SkipLoopPoint
+	ld	hl,CH2VolPos
+	inc	[hl]
 	jp	UpdateCH3
 	
 .getCommand
@@ -1018,7 +1004,7 @@ CH3_CheckByte:
 	cp	$ff
 	jr	z,.endChannel
 	cp	$c9
-	jr	z,.retSection
+	jp	z,.retSection
 	cp	release				; if release
 	jp	z,.release
 	cp	___
@@ -1109,7 +1095,7 @@ CH3_CheckByte:
 	jp	UpdateCH4
 	
 .release
-	; follows FamiTracker's behavior except vibrato table which will not be affected
+	; follows FamiTracker's behavior except only the volume table will be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH3Tick],a		; set tick
@@ -1117,15 +1103,8 @@ CH3_CheckByte:
 	ld	[CH3Ptr],a
 	ld	a,h
 	ld	[CH3Ptr+1],a
-	ld	hl,CH3VolPtr
-	ld	bc,CH3VolPos
-	call	SkipLoopPoint
-	ld	hl,CH3ArpPtr
-	ld	bc,CH3ArpPos
-	call	SkipLoopPoint
-	ld	hl,CH3WavePtr
-	ld	bc,CH3WavePos
-	call	SkipLoopPoint
+	ld	hl,CH3VolPos
+	inc	[hl]
 	jp	UpdateCH4
 	
 .getCommand
@@ -1496,7 +1475,7 @@ endc
 	jp	DoneUpdating
 	
 .release
-	; follows FamiTracker's behavior except vibrato table which will not be affected
+	; follows FamiTracker's behavior except only the volume table will be affected
 	ld	a,[hl+]
 	dec	a
 	ld	[CH4Tick],a		; set tick
@@ -1504,15 +1483,8 @@ endc
 	ld	[CH4Ptr],a
 	ld	a,h
 	ld	[CH4Ptr+1],a
-	ld	hl,CH4VolPtr
-	ld	bc,CH4VolPos
-	call	SkipLoopPoint
-	ld	hl,CH4NoisePtr
-	ld	bc,CH4NoisePos
-	call	SkipLoopPoint
-	ld	hl,CH1PulsePtr
-	ld	bc,CH1PulsePos
-	call	SkipLoopPoint
+	ld	hl,CH4VolPos
+	inc	[hl]
 	jp	DoneUpdating
 	
 .getCommand
@@ -3847,30 +3819,6 @@ DoArp:
 	inc	de
 	xor	a
 	ld	[de],a
-	ret
-	
-SkipLoopPoint:
-; skip over the next loop point after position [bc] in table [hl]
-; then store the skipped position to [bc].
-	ld	a,[bc]
-	ld	d,a
-	ld	a,[hl+]
-	ld	h,[hl]
-	add	d
-	ld	l,a
-	jr	nc,.loop
-	inc	h
-.loop
-	ld	a,[hl+]
-	cp	$ff
-	jr	z,.done
-	inc	d
-	cp	$fe
-	jr	nz,.loop
-	inc	d ; skip over loop destination byte
-.done
-	ld	a,d
-	ld	[bc],a
 	ret
 	
 if !def(DemoSceneMode)
