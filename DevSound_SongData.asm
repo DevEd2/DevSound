@@ -10,8 +10,7 @@ SongSpeedTable:
 	db	4,3			; triumph
 	db	4,3			; insert title here (NOTE: Actual song name.)
 	db	8,8			; vibrato test
-	db	6,6			; gadunk
-	db	2,2			; asterix egypt
+;	db	2,2			; asterix egypt
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
 SongSpeedTable_End
@@ -21,8 +20,7 @@ SongPointerTable:
 	dw	PT_Triumph
 	dw	PT_InsertTitleHere
 	dw	PT_EchoTest
-	dw	PT_Gadunk
-	dw	PT_Egypt
+;	dw	PT_Egypt
 	dw	PT_FlashTitle
 	dw	PT_RDLogo
 SongPointerTable_End
@@ -154,7 +152,7 @@ waveseq_Bass_:		db	0,$ff
 waveseq_Tri:		db	1,$ff
 waveseq_PulseLead:	db	2,$ff
 waveseq_Square_:	db	$c0,$ff
-waveseq_GSCWave3:	db	20,$ff
+waveseq_GSCWave3:	db	4,$ff
 
 waveseq_Arp:		db	2,2,2,1,1,1,0,0,0,3,3,3,$fe,0
 waveseq_OctArp:		db	2,2,2,1,1,2,$ff
@@ -280,71 +278,6 @@ ins_RDLNoise:		Instrument	0,Echo1,RDLNoise,_,_
 
 ins_EgyptBass1:		Instrument	0,EgyptBass,Pluck,PulseLead,_
 ins_EgyptBass2:		Instrument	0,EgyptBass,Pluck,Bass_,_
-
-; =================================================================
-
-PT_Gadunk:	dw	Gadunk_CH1,DummyChannel,Gadunk_CH3,DummyChannel
-
-Gadunk_CH1:
-
-	db	SetInstrument,id_Gadunk
-	db	SetLoopPoint
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F#3,3,rest,1
-	db	F#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F#3,3,rest,1
-	db	F#3,3,rest,1
-	db	F#3,12,rest,76	
-	db	GotoLoopPoint
-	db	EndChannel
-	
-Gadunk_CH3:
-	db	SetLoopPoint
-	db	rest,132
-	db	$80,7
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	G#3,3,rest,1
-	db	F_3,3,rest,1
-	db	F_3,3,rest,1
-	db	F#3,3,rest,1
-	db	F#3,3,rest,1
-	db	F#3,9,rest,7
-	db	GotoLoopPoint
-	db	EndChannel
 	
 ; =================================================================
 	
