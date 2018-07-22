@@ -1753,6 +1753,9 @@ CH1_UpdateRegisters:
 	ld	[CH1Note],a
 	cp	rest
 	jr	nz,.norest
+	ld	a,[CH1IsResting]
+	and	a
+	jp	nz,.done
 	xor	a
 	ldh	[rNR12],a
 if def(Visualizer)
@@ -1762,8 +1765,12 @@ endc
 	ldh	a,[rNR14]
 	or	%10000000
 	ldh	[rNR14],a
+	ld	a,1
+	ld	[CH1IsResting],a
 	jp	.done
 .norest
+	xor	a
+	ld	[CH1IsResting],a
 
 	; update arps
 .updatearp
@@ -2207,6 +2214,9 @@ CH2_UpdateRegisters:
 	ld	[CH2Note],a
 	cp	rest
 	jr	nz,.norest
+	ld	a,[CH2IsResting]
+	and	a
+	jp	nz,.done
 	xor	a
 	ldh	[rNR22],a
 if def(Visualizer)
@@ -2216,8 +2226,13 @@ endc
 	ldh	a,[rNR24]
 	or	%10000000
 	ldh	[rNR24],a
+	ld	a,1
+	ld	[CH2IsResting],a
 	jp	.done
 .norest
+	xor	a
+	ld	[CH2IsResting],a
+
 
 	; update arps
 .updatearp
@@ -2680,6 +2695,9 @@ CH3_UpdateRegisters:
 	ld	[CH3Note],a
 	cp	rest
 	jr	nz,.norest
+	ld	a,[CH3IsResting]
+	and	a
+	jp	nz,.done
 	xor	a
 	ldh	[rNR32],a
 	ld	[CH3Vol],a
@@ -2687,9 +2705,12 @@ CH3_UpdateRegisters:
 	ldh	a,[rNR34]
 	or	%10000000
 	ldh	[rNR34],a
+	ld	a,1
+	ld	[CH3IsResting],a
 	jp	.done
 .norest
-
+	xor	a
+	ld	[CH3IsResting],a
 	; update arps
 .updatearp
 ; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
@@ -3221,6 +3242,9 @@ CH4_UpdateRegisters:
 	ld	[CH4Mode],a
 	cp	rest
 	jr	nz,.norest
+	ld	a,[CH4IsResting]
+	and	a
+	jp	nz,.done
 	xor	a
 	ldh	[rNR42],a
 if def(Visualizer)
@@ -3230,8 +3254,12 @@ endc
 	ldh	a,[rNR44]
 	or	%10000000
 	ldh	[rNR44],a
+	ld	a,1
+	ld	[CH4IsResting],a
 	jp	.done
 .norest
+	xor	a
+	ld	[CH4IsResting],a
 
 	; update arps
 .updatearp
@@ -3912,7 +3940,7 @@ endc
 	
 DefaultRegTable:
 	; global flags
-	db	0,7,0,0,0,0,0,1,1,1,1,1
+	db	0,7,0,0,0,0,0,1,1,1,1,1,0,0,0,0
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

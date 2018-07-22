@@ -24,6 +24,11 @@ CH2Enabled		ds	1
 CH3Enabled		ds	1
 CH4Enabled		ds	1
 
+CH1IsResting	ds	1
+CH2IsResting	ds	1
+CH3IsResting	ds	1
+CH4IsResting	ds	1
+
 CH1Ptr			ds	2
 CH1VolPtr		ds	2
 CH1PulsePtr		ds	2
