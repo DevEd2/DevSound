@@ -45,7 +45,7 @@ UseFXHammer	set	1
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
-; WARNING! THIS IS CURRENTLY BROKEN. DO NOT USE!
+; WARNING: Any songs that use the additional features will crash DevSound!
 ; DemoSceneMode set	1
 
 ; Uncomment this to to disable wave volume scaling.
@@ -125,13 +125,14 @@ DevSound_Init:
 	
 	ld	e,b		; Transfer song ID
 
+	push	de
 	; load default waveform
 	ld	hl,DefaultWave
 	call	LoadWave
 	; clear buffers
 	call	ClearWaveBuffer
 	call	ClearArpBuffer
-	
+	pop	de
 	; set up song pointers
 	ld	hl,SongPointerTable
 	ld	d,0
