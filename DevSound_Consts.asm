@@ -84,6 +84,7 @@ rest	equ	$49
 ___		equ	$4A
 release	equ	$4B
 rel		equ	release
+echo	equ	$4c
 
 fix		equ	C_2
 
@@ -109,7 +110,10 @@ Arp					equ	$90
 TonePorta			equ	$91
 ChannelVolume		equ	$92
 SendSyncTick		equ	$93
-DummyCommand		equ	$94
+SetEchoDelay		equ	$94
+SetRepeatPoint		equ	$95
+RepeatSection		equ	$96
+DummyCommand		equ	$97
 EndChannel			equ	$FF
 
 endc

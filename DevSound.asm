@@ -40,18 +40,18 @@
 ; Useful if you want to use your own sound effect system.
 ; (Note that DevSound may require some minor modifications if you
 ; want to use your own SFX system.)
-UseFXHammer	set	1
+UseFXHammer				set	1
 
 ; Uncomment this to disable all time-consuming features
 ; This includes: wave buffer, PWM, random wave, zombie mode,
 ; wave volume scaling, channel volume
 ; WARNING: Any songs that use the additional features will crash DevSound!
-; DemoSceneMode set	1
+; DemoSceneMode 		set	1
 
 ; Uncomment this to to disable wave volume scaling.
 ; PROS: Less CPU usage
 ; CONS: Less volume control for CH3
-; NoWaveVolumeScaling set	1
+; NoWaveVolumeScaling	set	1
 
 ; Uncomment this to disable zombie mode (for compatibility
 ; with old emulators such as VBA).
@@ -62,10 +62,16 @@ UseFXHammer	set	1
 ; PROS: Less CPU usage
 ;		Compatible with old emulators such as VBA
 ; CONS: Volume envelopes will sound "dirtier"
-; DisableZombieMode	set	1
+; DisableZombieMode		set	1
 
 ; Comment this line to enable Deflemask compatibility hacks.
-DisableDeflehacks set	1
+DisableDeflehacks		set	1
+
+; Uncomment this line for a simplified echo buffer. Useful if RAM usage
+; is a concern.
+; PROS: Less RAM usage
+; CONS: Echo delay will be disabled
+; SimpleEchoBuffer		set	1
 
 if	!def(UseFXHammerDisasm)
 FXHammer_SFXCH2		equ	$c7cc
@@ -132,6 +138,7 @@ DevSound_Init:
 	; clear buffers
 	call	ClearWaveBuffer
 	call	ClearArpBuffer
+	call	ClearEchoBuffers
 	pop	de
 	; set up song pointers
 	ld	hl,SongPointerTable
@@ -345,6 +352,8 @@ DevSound_Play:
 ; ================================================================
 	
 UpdateCH1:
+	xor	a
+	ld	[CH1DoEcho],a
 	ld	a,[CH1Enabled]
 	and	a
 	jp	z,UpdateCH2			; if channel is disabled, skip to UpdateCH2
@@ -353,7 +362,7 @@ UpdateCH1:
 	jr	z,.continue			; if channel tick = 0, then jump ahead
 	dec	a					; otherwise...
 	ld	[CH1Tick],a			; decrement channel tick...
-	jp	UpdateCH2			; ...and skip to UpdateCH2.
+	jp	UpdateCH2	; ...and do echo buffer.
 .continue
 	ld	hl,CH1Ptr			; get pointer
 	ld	a,[hl+]
@@ -368,7 +377,9 @@ CH1_CheckByte:
 	cp	release				; if release
 	jp	z,.release
 	cp	___					; if null note...
-	jr	z,.nullnote
+	jp	z,.nullnote
+	cp	echo				; if echo
+	jp	z,.echo
 	bit	7,a					; if command...
 	jp	nz,.getCommand
 	; if we have a note...
@@ -384,6 +395,7 @@ CH1_CheckByte:
 	ld	a,[CH1PortaType]
 	dec	a					; if toneporta, don't reset everything
 	jr	z,.noreset
+.resetNote
 	xor	a
 	ld	[CH1ArpPos],a		; reset arp position
 	inc	a
@@ -461,6 +473,21 @@ CH1_CheckByte:
 	ld	[CH1Ptr+1],a
 	ld	hl,CH1VolPos
 	inc	[hl]
+	jp	UpdateCH2
+	
+.echo
+	ld	a,[hl+]
+	dec	a
+	ld	[CH1Tick],a
+	ld	a,l				; store back current pos
+	ld	[CH1Ptr],a
+	ld	a,h
+	ld	[CH1Ptr+1],a
+	ld	a,1
+	ld	[CH1DoEcho],a
+	ld	a,[CH1NoteCount]
+	inc	a
+	ld	[CH1NoteCount],a
 	jp	UpdateCH2
 	
 .getCommand		
@@ -664,6 +691,8 @@ CH1_SetInstrument:
 ; ================================================================
 	
 UpdateCH2:
+	xor	a
+	ld	[CH2DoEcho],a
 	ld	a,[CH2Enabled]
 	and	a
 	jp	z,UpdateCH3
@@ -688,6 +717,8 @@ CH2_CheckByte:
 	jp	z,.release
 	cp	___
 	jp	z,.nullnote
+	cp	echo
+	jp	z,.echo
 	bit	7,a			; check for command
 	jp	nz,.getCommand	
 	; if we have a note...
@@ -787,6 +818,22 @@ CH2_CheckByte:
 	ld	[CH2Ptr+1],a
 	ld	hl,CH2VolPos
 	inc	[hl]
+	jp	UpdateCH3
+	
+.echo
+	ld	a,[hl+]
+	dec	a
+	ld	[CH2Tick],a
+	ld	a,l				; store back current pos
+	ld	[CH2Ptr],a
+	ld	a,h
+	ld	[CH2Ptr+1],a
+	ld	a,1
+	ld	[CH2DoEcho],a
+	ld	a,[CH2NoteCount]
+	inc	a
+	ld	[CH2NoteCount],a
+
 	jp	UpdateCH3
 	
 .getCommand
@@ -986,6 +1033,8 @@ CH2_SetInstrument:
 ; ================================================================
 	
 UpdateCH3:
+	xor	a
+	ld	[CH3DoEcho],a
 	ld	a,[CH3Enabled]
 	and	a
 	jp	z,UpdateCH4
@@ -1003,13 +1052,15 @@ UpdateCH3:
 CH3_CheckByte:
 	ld	a,[hl+]		; get byte
 	cp	$ff
-	jr	z,.endChannel
+	jp	z,.endChannel
 	cp	$c9
 	jp	z,.retSection
 	cp	release				; if release
 	jp	z,.release
 	cp	___
 	jp	z,.nullnote
+	cp	echo
+	jp	z,.echo
 	bit	7,a			; check for command
 	jp	nz,.getCommand
 	; if we have a note...
@@ -1106,6 +1157,21 @@ CH3_CheckByte:
 	ld	[CH3Ptr+1],a
 	ld	hl,CH3VolPos
 	inc	[hl]
+	jp	UpdateCH4
+	
+.echo
+	ld	a,[hl+]
+	dec	a
+	ld	[CH3Tick],a
+	ld	a,l				; store back current pos
+	ld	[CH3Ptr],a
+	ld	a,h
+	ld	[CH3Ptr+1],a
+	ld	a,1
+	ld	[CH3DoEcho],a
+	ld	a,[CH3NoteCount]
+	inc	a
+	ld	[CH3NoteCount],a
 	jp	UpdateCH4
 	
 .getCommand
@@ -1401,6 +1467,8 @@ CH4_CheckByte:
 	jr	z,.release
 	cp	___
 	jr	z,.nullnote
+	cp	echo
+	jr	z,.nullnote			; echo not applicable for ch4
 	bit	7,a			; check for command
 	jp	nz,.getCommand	
 	; if we have a note...
@@ -1652,6 +1720,8 @@ endc
 DoneUpdating:
 
 UpdateRegisters:
+	call	DoEchoBuffers
+
 	; update panning
 	xor	a
 	ld	b,a
@@ -1749,7 +1819,6 @@ CH1_UpdateRegisters:
 	ld	a,[CH1Enabled]
 	and	a
 	jp	z,CH2_UpdateRegisters
-
 	ld	a,[CH1NoteBackup]
 	ld	[CH1Note],a
 	cp	rest
@@ -1772,7 +1841,8 @@ endc
 .norest
 	xor	a
 	ld	[CH1IsResting],a
-
+	jr	.updatearp
+	
 	; update arps
 .updatearp
 ; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
@@ -1859,6 +1929,10 @@ endc
 	
 ; get note
 .updateNote
+;	ld	a,[CH1DoEcho]
+;	and	a
+;	jr	z,.skipecho	
+;.skipecho
 	ld	a,[CH1PortaType]
 	cp	2
 	jr	c,.skippitchbend
@@ -1877,7 +1951,7 @@ endc
 	ld	b,a
 	ld	a,[CH1Note]
 	add	b
-	
+.getfrequency
 	ld	c,a
 	ld	b,0
 	
@@ -3764,6 +3838,85 @@ DoRandomizer:
 	ret
 	
 endc
+
+; ================================================================
+; Echo buffer routines
+; ================================================================
+
+DoEchoBuffers:
+.ch1
+	ld	hl,CH1EchoBuffer
+	ld	a,[EchoPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry
+	inc	h
+.nocarry
+	ld	a,[CH1Note]
+	ld	b,a
+	ld	a,[CH1Transpose]
+	add	b
+	ld	b,a
+	cp	echo
+	jr	nz,.continue1
+	ld	a,___
+.continue1
+	ld	[hl],a
+.ch2
+	ld	hl,CH2EchoBuffer
+	ld	a,[EchoPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry2
+	inc	h
+.nocarry2
+	ld	a,[CH2Note]
+	ld	b,a
+	ld	a,[CH2Transpose]
+	add	b
+	ld	b,a
+	cp	echo
+	jr	nz,.continue2
+	ld	a,___
+.continue2
+	ld	[hl],a
+.ch3
+	ld	hl,CH3EchoBuffer
+	ld	a,[EchoPos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[CH3Note]
+	ld	b,a
+	ld	a,[CH3Transpose]
+	add	b
+	ld	b,a
+	cp	echo
+	jr	nz,.continue3
+	ld	a,___
+.continue3
+	ld	[hl],a
+	ld	a,[EchoPos]
+	inc	a
+	and	$1f
+	ld	[EchoPos],a
+	ret
+	
+ClearEchoBuffers:
+	ld	hl,CH1EchoBuffer
+	ld	b,(EchoPos-1)-CH1EchoBuffer
+	xor	a
+.loop
+	ld	[hl+],a
+	dec	b
+	jr	nz,.loop
+	ld	[EchoPos],a
+	ld	[CH1EchoDelay],a
+	ld	[CH2EchoDelay],a
+	ld	[CH3EchoDelay],a
+	ret
 	
 ; ================================================================
 ; Misc routines

@@ -116,7 +116,25 @@ $92 - ChannelVolume
   Set the volume for the current channel, this will scale every instruments' volume
   NOTE: This will not affect end-of-table hardware envelope!
   Parameter 1: Volume (anywhere from 0 to 15) (1 byte)
+
+$93 - SendSyncTick
+  Send a sync tick which can be intercepted by your code. This acts as a "timer" which will automatically count down to zero.
+  Parameter 1: Sync timer (1 byte)
   
+$94 - SetEchoDelay
+  Sets the delay for the echo buffer. Must be less than 32 ($1f)!
+  Parameter 1: Delay (up to 32 or $1f) (1 byte)
+ 
+$94 - SetRepeatPoint
+  Sets a repeat point which can be jumped to with the RepeatSection command (see below)
+  No parameters.
+ 
+$95 - RepeatSection
+  Returns to the repeat point, provided it has been set with the SetRepeatPoint command (see above). Once set, the repeat counter
+  will count down to zero, at which point the section will stop repeating.
+  Parameter 1: Repeat count (1 byte)
+  NOTE: If the repeat count is zero, the section will be repeated endlessly.
+ 
 $C9 - ret
   Return from a section. (The ret instruction can be used, as long as it is not preceded with a db or dw instruction)
   No parameters.

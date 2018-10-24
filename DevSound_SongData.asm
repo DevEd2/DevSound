@@ -9,7 +9,7 @@
 SongSpeedTable:
 	db	4,3			; triumph
 	db	4,3			; insert title here (NOTE: Actual song name.)
-	db	8,8			; vibrato test
+	db	6,6			; vibrato test
 ;	db	2,2			; asterix egypt
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
@@ -514,25 +514,17 @@ EchoTest_CH1:
 	db	SetInsAlternate,id_Echo1,id_Echo2
 	db	SetLoopPoint
 	db	SetPan,$11
-	db	C_3,1,rel,1
-	db	C_4,1,rel,1
-	db	D_3,1,rel,1
-	db	C_3,1,rel,1
+	db	C_3,2,echo,2
+	db	D_3,2,echo,2
 	db	SetPan,$01
-	db	E_3,1,rel,1
-	db	D_3,1,rel,1
-	db	F_3,1,rel,1
-	db	E_3,1,rel,1
+	db	E_3,2,echo,2
+	db	F_3,2,echo,2
 	db	SetPan,$11
-	db	G_3,1,rel,1
-	db	F_3,1,rel,1
-	db	A_3,1,rel,1
-	db	G_3,1,rel,1
+	db	G_3,2,echo,2
+	db	A_3,2,echo,2
 	db	SetPan,$10
-	db	B_3,1,rel,1
-	db	A_3,1,rel,1
-	db	C_4,1,rel,1
-	db	B_3,1,rel,1
+	db	B_3,2,echo,2
+	db	C_4,2,echo,2
 	db	GotoLoopPoint
 
 ; =================================================================
