@@ -133,7 +133,7 @@ $95 - RepeatSection
   Returns to the repeat point, provided it has been set with the SetRepeatPoint command (see above). Once set, the repeat counter
   will count down to zero, at which point the section will stop repeating.
   Parameter 1: Repeat count (1 byte)
-  NOTE: If the repeat count is zero, the section will be repeated endlessly.
+  NOTE: A repeat count of zero will be ignored!
  
 $C9 - ret
   Return from a section. (The ret instruction can be used, as long as it is not preceded with a db or dw instruction)

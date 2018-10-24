@@ -400,19 +400,18 @@ Triumph_CH4:
 ; =================================================================
 
 PT_InsertTitleHere:	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
-	
+
+db	"START"
 InsertTitleHere_CH1:
 	dbw	CallSection,.block0
 	dbw	CallSection,.block0
 	db	SetLoopPoint
+	db	SetRepeatPoint
 	dbw	CallSection,.block0
-	dbw	CallSection,.block0
-	dbw	CallSection,.block0
-	dbw	CallSection,.block0
+	db	RepeatSection,4
+	db	SetRepeatPoint
 	dbw	CallSection,.block1
-	dbw	CallSection,.block1
-	dbw	CallSection,.block1
-	dbw	CallSection,.block1
+	db	RepeatSection,4
 	db	GotoLoopPoint
 	db	EndChannel
 
@@ -434,14 +433,12 @@ InsertTitleHere_CH2:
 	dbw	CallSection,.block0
 	dbw	CallSection,.block0
 	db	SetLoopPoint
+	db	SetRepeatPoint
 	dbw	CallSection,.block0
-	dbw	CallSection,.block0
-	dbw	CallSection,.block0
-	dbw	CallSection,.block0
+	db	RepeatSection,4
+	db	SetRepeatPoint
 	dbw	CallSection,.block1
-	dbw	CallSection,.block1
-	dbw	CallSection,.block1
-	dbw	CallSection,.block1
+	db	RepeatSection,4
 	db	GotoLoopPoint
 	db	EndChannel
 
@@ -505,6 +502,7 @@ InsertTitleHere_CH4:
 	Drum	CHH,2
 	db	GotoLoopPoint
 	db	EndChannel
+db	"END"
 	
 ; =================================================================
 
@@ -512,6 +510,7 @@ PT_EchoTest:	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
 	
 EchoTest_CH1:
 	db	SetInsAlternate,id_Echo1,id_Echo2
+	
 	db	SetLoopPoint
 	db	SetPan,$11
 	db	C_3,2,echo,2

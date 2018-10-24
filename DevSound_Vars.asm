@@ -41,6 +41,7 @@ CH1ArpPos				ds	1
 CH1VibPos				ds	1
 CH1VibDelay				ds	1
 CH1LoopPtr				ds	2
+CH1RepeatPtr			ds	2
 CH1RetPtr				ds	2
 CH1LoopCount			ds	1
 CH1Tick					ds	1
@@ -60,6 +61,8 @@ CH1NoteCount			ds	1
 CH1InsMode				ds	1
 CH1Ins1					ds	1
 CH1Ins2					ds	1
+CH1DoRepeat				ds	1
+CH1RepeatCount			ds	1
 
 CH2Ptr					ds	2
 CH2VolPtr				ds	2
@@ -73,6 +76,7 @@ CH2ArpPos				ds	1
 CH2VibPos				ds	1
 CH2VibDelay				ds	1
 CH2LoopPtr				ds	2
+CH2RepeatPtr			ds	2
 CH2RetPtr				ds	2
 CH2LoopCount			ds	1
 CH2Tick					ds	1
@@ -91,6 +95,8 @@ CH2NoteCount			ds	1
 CH2InsMode				ds	1
 CH2Ins1					ds	1
 CH2Ins2					ds	1
+CH2DoRepeat				ds	1
+CH2RepeatCount			ds	1
 
 CH3Ptr					ds	2
 CH3VolPtr				ds	2
@@ -103,6 +109,7 @@ CH3ArpPos				ds	1
 CH3VibPos				ds	1
 CH3VibDelay				ds	1
 CH3LoopPtr				ds	2
+CH3RepeatPtr			ds	2
 CH3RetPtr				ds	2
 CH3LoopCount			ds	1
 CH3Tick					ds	1
@@ -123,6 +130,8 @@ CH3NoteCount			ds	1
 CH3InsMode				ds	1
 CH3Ins1					ds	1
 CH3Ins2					ds	1
+CH3DoRepeat				ds	1
+CH3RepeatCount			ds	1
 
 CH4Ptr					ds	2
 CH4VolPtr				ds	2
@@ -137,6 +146,7 @@ CH4WavePos				ds	1
 endc
 CH4NoisePos				ds	1
 CH4LoopPtr				ds	2
+CH4RepeatPtr			ds	2
 CH4RetPtr				ds	2
 CH4LoopCount			ds	1
 CH4Mode					ds	1
@@ -152,6 +162,8 @@ CH4NoteCount			ds	1
 CH4InsMode				ds	1
 CH4Ins1					ds	1
 CH4Ins2					ds	1
+CH4DoRepeat				ds	1
+CH4RepeatCount			ds	1
 
 ComputedWaveBuffer		ds	16
 WaveBuffer				ds	16
@@ -173,9 +185,9 @@ if	!def(SimpleEchoBuffer)
 CH1DoEcho			ds	1
 CH2DoEcho			ds	1
 CH3DoEcho			ds	1
-CH1EchoBuffer		ds	64
-CH2EchoBuffer		ds	64
-CH3EchoBuffer		ds	64
+CH1EchoBuffer		ds	32
+CH2EchoBuffer		ds	32
+CH3EchoBuffer		ds	32
 EchoPos				ds	1
 CH1EchoDelay		ds	1
 CH2EchoDelay		ds	1

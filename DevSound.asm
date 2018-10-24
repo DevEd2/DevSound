@@ -517,6 +517,9 @@ CH1_CheckByte:
 	dw	.toneporta
 	dw	.chanvol
 	dw	.setSyncTick
+	dw	.setEchoDelay
+	dw	.setRepeatPoint
+	dw	.repeatSection
 
 .setInstrument
 	ld	a,[hl+]					; get ID of instrument to switch to
@@ -644,6 +647,49 @@ CH1_CheckByte:
 	ld	a,[hl+]
 	and	$f
 	ld	[CH1ChanVol],a
+	jp	CH1_CheckByte
+	
+.setEchoDelay
+	ld	a,[hl+]
+	and	$1f
+	ld	[CH1EchoDelay],a
+	jp	CH1_CheckByte
+	
+.setRepeatPoint
+	ld	a,l
+	ld	[CH1RepeatPtr],a
+	ld	a,h
+	ld	[CH1RepeatPtr+1],a
+	jp	CH1_CheckByte
+	
+.repeatSection
+	ld	a,[CH1RepeatCount]
+	and	a	; section currently repeating?
+	jr	z,.notrepeating
+	dec	a
+	ld	[CH1RepeatCount],a
+	and	a
+	jr	z,.stoprepeating
+	inc	hl
+	jr	.dorepeat
+.notrepeating
+	ld	a,[hl+]
+	dec	a
+	ld	[CH1RepeatCount],a
+	ld	a,1
+	ld	[CH1DoRepeat],a
+.dorepeat
+	ld	hl,CH1RepeatPtr			; get loop pointer
+	ld	a,[hl+]
+	ld	[CH1Ptr],a
+	ld	a,[hl]
+	ld	[CH1Ptr+1],a
+	jp	UpdateCH1
+.stoprepeating
+	xor	a
+	ld	[CH1DoRepeat],a
+.norepeat
+	inc	hl
 	jp	CH1_CheckByte
 	
 CH1_SetInstrument:
@@ -863,6 +909,9 @@ CH2_CheckByte:
 	dw	.toneporta
 	dw	.chanvol
 	dw	.setSyncTick
+	dw	.setEchoDelay
+	dw	.setRepeatPoint
+	dw	.repeatSection
 
 .setInstrument
 	ld	a,[hl+]
@@ -986,6 +1035,49 @@ CH2_CheckByte:
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
+	jp	CH2_CheckByte
+	
+.setEchoDelay
+	ld	a,[hl+]
+	and	$1f
+	ld	[CH2EchoDelay],a
+	jp	CH2_CheckByte
+	
+.setRepeatPoint
+	ld	a,l
+	ld	[CH2RepeatPtr],a
+	ld	a,h
+	ld	[CH2RepeatPtr+1],a
+	jp	CH2_CheckByte
+	
+.repeatSection
+	ld	a,[CH2RepeatCount]
+	and	a	; section currently repeating?
+	jr	z,.notrepeating
+	dec	a
+	ld	[CH2RepeatCount],a
+	and	a
+	jr	z,.stoprepeating
+	inc	hl
+	jr	.dorepeat
+.notrepeating
+	ld	a,[hl+]
+	dec	a
+	ld	[CH2RepeatCount],a
+	ld	a,1
+	ld	[CH2DoRepeat],a
+.dorepeat
+	ld	hl,CH2RepeatPtr			; get loop pointer
+	ld	a,[hl+]
+	ld	[CH2Ptr],a
+	ld	a,[hl]
+	ld	[CH2Ptr+1],a
+	jp	UpdateCH2
+.stoprepeating
+	xor	a
+	ld	[CH2DoRepeat],a
+.norepeat
+	inc	hl
 	jp	CH2_CheckByte
 	
 CH2_SetInstrument:
@@ -1201,6 +1293,9 @@ CH3_CheckByte:
 	dw	.toneporta
 	dw	.chanvol
 	dw	.setSyncTick
+	dw	.setEchoDelay
+	dw	.setRepeatPoint
+	dw	.repeatSection
 
 .setInstrument
 	ld	a,[hl+]
@@ -1398,6 +1493,49 @@ endc
 	ld	[SyncTick],a
 	jp	CH3_CheckByte
 	
+.setEchoDelay
+	ld	a,[hl+]
+	and	$1f
+	ld	[CH3EchoDelay],a
+	jp	CH3_CheckByte
+	
+.setRepeatPoint
+	ld	a,l
+	ld	[CH3RepeatPtr],a
+	ld	a,h
+	ld	[CH3RepeatPtr+1],a
+	jp	CH3_CheckByte
+	
+.repeatSection
+	ld	a,[CH3RepeatCount]
+	and	a	; section currently repeating?
+	jr	z,.notrepeating
+	dec	a
+	ld	[CH3RepeatCount],a
+	and	a
+	jr	z,.stoprepeating
+	inc	hl
+	jr	.dorepeat
+.notrepeating
+	ld	a,[hl+]
+	dec	a
+	ld	[CH3RepeatCount],a
+	ld	a,1
+	ld	[CH3DoRepeat],a
+.dorepeat
+	ld	hl,CH3RepeatPtr			; get loop pointer
+	ld	a,[hl+]
+	ld	[CH3Ptr],a
+	ld	a,[hl]
+	ld	[CH3Ptr+1],a
+	jp	UpdateCH3
+.stoprepeating
+	xor	a
+	ld	[CH3DoRepeat],a
+.norepeat
+	inc	hl
+	jp	CH3_CheckByte
+	
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
@@ -1583,6 +1721,9 @@ endc
 	dw	.toneporta
 	dw	.chanvol
 	dw	.setSyncTick
+	dw	.setEchoDelay
+	dw	.setRepeatPoint
+	dw	.repeatSection
 		
 .setInstrument
 	ld	a,[hl+]
@@ -1681,6 +1822,47 @@ endc
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
+	jp	CH4_CheckByte
+	
+.setEchoDelay
+	inc	hl
+	jp	CH4_CheckByte
+	
+.setRepeatPoint
+	ld	a,l
+	ld	[CH4RepeatPtr],a
+	ld	a,h
+	ld	[CH4RepeatPtr+1],a
+	jp	CH4_CheckByte
+	
+.repeatSection
+	ld	a,[CH4RepeatCount]
+	and	a	; section currently repeating?
+	jr	z,.notrepeating
+	dec	a
+	ld	[CH4RepeatCount],a
+	and	a
+	jr	z,.stoprepeating
+	inc	hl
+	jr	.dorepeat
+.notrepeating
+	ld	a,[hl+]
+	dec	a
+	ld	[CH4RepeatCount],a
+	ld	a,1
+	ld	[CH4DoRepeat],a
+.dorepeat
+	ld	hl,CH4RepeatPtr			; get loop pointer
+	ld	a,[hl+]
+	ld	[CH4Ptr],a
+	ld	a,[hl]
+	ld	[CH4Ptr+1],a
+	jp	UpdateCH4
+.stoprepeating
+	xor	a
+	ld	[CH4DoRepeat],a
+.norepeat
+	inc	hl
 	jp	CH4_CheckByte
 
 CH4_SetInstrument:
@@ -1929,6 +2111,7 @@ endc
 	
 ; get note
 .updateNote
+; TODO: check for echo and set note
 ;	ld	a,[CH1DoEcho]
 ;	and	a
 ;	jr	z,.skipecho	
@@ -4097,20 +4280,20 @@ DefaultRegTable:
 	db	0,7,0,0,0,0,0,1,1,1,1,1,0,0,0,0
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch2
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch3
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
 if def(DisableDeflehacks)
 	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 else
 	dw	DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 endc
 	
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
