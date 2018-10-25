@@ -128,6 +128,14 @@ DevSound_Init:
 	inc	de
 	dec	c
 	jr	nz,.initLoop
+	ld	h,d
+	ld	l,e
+	xor	a
+	ld	c,DSBufVarsEnd-DSBufVars
+.initLoop2
+	ld	a,[hl+]
+	dec	c
+	jr	nz,.initLoop2
 	
 	ld	e,b		; Transfer song ID
 

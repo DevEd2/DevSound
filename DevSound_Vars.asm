@@ -164,7 +164,9 @@ CH4Ins1					ds	1
 CH4Ins2					ds	1
 CH4DoRepeat				ds	1
 CH4RepeatCount			ds	1
+DSVarsEnd
 
+DSBufVars
 ComputedWaveBuffer		ds	16
 WaveBuffer				ds	16
 WavePos					ds	1
@@ -179,7 +181,7 @@ RandomizerTimer			ds	1
 RandomizerSpeed			ds	1
 
 arp_Buffer				ds	8
-DSVarsEnd
+DSBufVarsEnd
 
 if	!def(SimpleEchoBuffer)
 CH1DoEcho			ds	1
