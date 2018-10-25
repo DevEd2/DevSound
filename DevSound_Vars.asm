@@ -185,13 +185,16 @@ if	!def(SimpleEchoBuffer)
 CH1DoEcho			ds	1
 CH2DoEcho			ds	1
 CH3DoEcho			ds	1
-CH1EchoBuffer		ds	32
-CH2EchoBuffer		ds	32
-CH3EchoBuffer		ds	32
+CH1EchoBuffer		ds	64
+CH2EchoBuffer		ds	64
+CH3EchoBuffer		ds	64
 EchoPos				ds	1
 CH1EchoDelay		ds	1
 CH2EchoDelay		ds	1
 CH3EchoDelay		ds	1
+CH1NotePlayed		ds	1
+CH2NotePlayed		ds	1
+CH3NotePlayed		ds	1
 else
 CH1DoEcho			ds	1
 CH2DoEcho			ds	1
@@ -200,6 +203,9 @@ CH1EchoBuffer		ds	3
 CH2EchoBuffer		ds	3
 CH3EchoBuffer		ds	3
 EchoPos				ds	1
+CH1NotePlayed		ds	1
+CH2NotePlayed		ds	1
+CH3NotePlayed		ds	1
 endc
 
 endc

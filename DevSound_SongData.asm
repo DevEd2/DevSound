@@ -9,7 +9,7 @@
 SongSpeedTable:
 	db	4,3			; triumph
 	db	4,3			; insert title here (NOTE: Actual song name.)
-	db	6,6			; vibrato test
+	db	4,4			; vibrato test
 ;	db	2,2			; asterix egypt
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
@@ -401,7 +401,6 @@ Triumph_CH4:
 
 PT_InsertTitleHere:	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
 
-db	"START"
 InsertTitleHere_CH1:
 	dbw	CallSection,.block0
 	dbw	CallSection,.block0
@@ -502,7 +501,6 @@ InsertTitleHere_CH4:
 	Drum	CHH,2
 	db	GotoLoopPoint
 	db	EndChannel
-db	"END"
 	
 ; =================================================================
 
@@ -510,18 +508,18 @@ PT_EchoTest:	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
 	
 EchoTest_CH1:
 	db	SetInsAlternate,id_Echo1,id_Echo2
-	
+	db	SetEchoDelay,$18
 	db	SetLoopPoint
-	db	SetPan,$11
+	;db	SetPan,$11
 	db	C_3,2,echo,2
 	db	D_3,2,echo,2
-	db	SetPan,$01
+	;db	SetPan,$01
 	db	E_3,2,echo,2
 	db	F_3,2,echo,2
-	db	SetPan,$11
+	;db	SetPan,$11
 	db	G_3,2,echo,2
 	db	A_3,2,echo,2
-	db	SetPan,$10
+	;db	SetPan,$10
 	db	B_3,2,echo,2
 	db	C_4,2,echo,2
 	db	GotoLoopPoint

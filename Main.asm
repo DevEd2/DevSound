@@ -450,7 +450,7 @@ MainText:
 if def(Visualizer)
 ;		 ####################
 	db	"                    "
-	db	"    DevSound v2.3   "
+	db	"    DevSound v2.4   "
 	db	"   by DevEd & Pigu  "
 	db	"                    "
 	db	" Current song:  $?? "

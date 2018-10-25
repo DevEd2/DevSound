@@ -352,8 +352,6 @@ DevSound_Play:
 ; ================================================================
 	
 UpdateCH1:
-	xor	a
-	ld	[CH1DoEcho],a
 	ld	a,[CH1Enabled]
 	and	a
 	jp	z,UpdateCH2			; if channel is disabled, skip to UpdateCH2
@@ -371,9 +369,9 @@ UpdateCH1:
 CH1_CheckByte:
 	ld	a,[hl+]				; get byte
 	cp	$ff					; if $ff...
-	jr	z,.endChannel
+	jp	z,.endChannel
 	cp	$c9					; if $c9...
-	jr	z,.retSection
+	jp	z,.retSection
 	cp	release				; if release
 	jp	z,.release
 	cp	___					; if null note...
@@ -383,8 +381,19 @@ CH1_CheckByte:
 	bit	7,a					; if command...
 	jp	nz,.getCommand
 	; if we have a note...
+	ld	b,a
+	xor	a
+	ld	[CH1DoEcho],a
+	ld	a,b
 .getNote
-	ld	[CH1NoteBackup],a	; set note
+	ld	[CH1NoteBackup],a	; set note	
+	ld	b,a
+	ld	a,[CH1NotePlayed]
+	and	a
+	jr	nz,.skipfill
+	ld	a,b
+	call	CH1FillEchoBuffer
+.skipfill
 	ld	a,[hl+]				; get note length
 	dec	a					; subtract 1
 	ld	[CH1Tick],a			; set channel tick
@@ -395,7 +404,6 @@ CH1_CheckByte:
 	ld	a,[CH1PortaType]
 	dec	a					; if toneporta, don't reset everything
 	jr	z,.noreset
-.resetNote
 	xor	a
 	ld	[CH1ArpPos],a		; reset arp position
 	inc	a
@@ -453,6 +461,8 @@ CH1_CheckByte:
 	jp	UpdateCH1
 	
 .nullnote
+	xor	a
+	ld	[CH1DoEcho],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH1Tick],a		; set tick
@@ -464,6 +474,8 @@ CH1_CheckByte:
 	
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
+	xor	a
+	ld	[CH1DoEcho],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH1Tick],a		; set tick
@@ -476,21 +488,17 @@ CH1_CheckByte:
 	jp	UpdateCH2
 	
 .echo
-	ld	a,[hl+]
-	dec	a
-	ld	[CH1Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH1Ptr],a
-	ld	a,h
-	ld	[CH1Ptr+1],a
+	ld	b,a
 	ld	a,1
 	ld	[CH1DoEcho],a
-	ld	a,[CH1NoteCount]
-	inc	a
-	ld	[CH1NoteCount],a
-	jp	UpdateCH2
+	ld	a,b
+	jp	.getNote
 	
-.getCommand		
+.getCommand
+	ld	b,a
+	xor	a
+	ld	[CH1DoEcho],a
+	ld	a,b
 	cp	DummyCommand
 	jp	nc, CH1_CheckByte
 	; Not needed because function performs "add a" which discards bit 7
@@ -651,7 +659,7 @@ CH1_CheckByte:
 	
 .setEchoDelay
 	ld	a,[hl+]
-	and	$1f
+	and	$3f
 	ld	[CH1EchoDelay],a
 	jp	CH1_CheckByte
 	
@@ -737,8 +745,6 @@ CH1_SetInstrument:
 ; ================================================================
 	
 UpdateCH2:
-	xor	a
-	ld	[CH2DoEcho],a
 	ld	a,[CH2Enabled]
 	and	a
 	jp	z,UpdateCH3
@@ -768,8 +774,19 @@ CH2_CheckByte:
 	bit	7,a			; check for command
 	jp	nz,.getCommand	
 	; if we have a note...
+	ld	b,a
+	xor	a
+	ld	[CH2DoEcho],a
+	ld	a,b
 .getNote
 	ld	[CH2NoteBackup],a
+	ld	b,a
+	ld	a,[CH2NotePlayed]
+	and	a
+	jr	nz,.skipfill
+	ld	a,b
+	call	CH2FillEchoBuffer
+.skipfill
 	ld	a,[hl+]
 	dec	a
 	ld	[CH2Tick],a
@@ -844,6 +861,8 @@ CH2_CheckByte:
 	jp	UpdateCH2
 	
 .nullnote
+	xor	a
+	ld	[CH2DoEcho],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH2Tick],a		; set tick
@@ -855,6 +874,8 @@ CH2_CheckByte:
 	
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
+	xor	a
+	ld	[CH2DoEcho],a
 	ld	a,[hl+]
 	dec	a
 	ld	[CH2Tick],a		; set tick
@@ -867,22 +888,17 @@ CH2_CheckByte:
 	jp	UpdateCH3
 	
 .echo
-	ld	a,[hl+]
-	dec	a
-	ld	[CH2Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
-	ld	a,h
-	ld	[CH2Ptr+1],a
+	ld	b,a
 	ld	a,1
 	ld	[CH2DoEcho],a
-	ld	a,[CH2NoteCount]
-	inc	a
-	ld	[CH2NoteCount],a
-
-	jp	UpdateCH3
+	ld	a,b
+	jp	.getNote
 	
 .getCommand
+	ld	b,a
+	xor	a
+	ld	[CH2DoEcho],a
+	ld	a,b
 	cp	DummyCommand
 	jp	nc,CH2_CheckByte
 	; Not needed because function performs "add a" which discards bit 7
@@ -1039,7 +1055,7 @@ CH2_CheckByte:
 	
 .setEchoDelay
 	ld	a,[hl+]
-	and	$1f
+	and	$3f
 	ld	[CH2EchoDelay],a
 	jp	CH2_CheckByte
 	
@@ -1125,8 +1141,6 @@ CH2_SetInstrument:
 ; ================================================================
 	
 UpdateCH3:
-	xor	a
-	ld	[CH3DoEcho],a
 	ld	a,[CH3Enabled]
 	and	a
 	jp	z,UpdateCH4
@@ -1156,8 +1170,19 @@ CH3_CheckByte:
 	bit	7,a			; check for command
 	jp	nz,.getCommand
 	; if we have a note...
+	ld	b,a
+	xor	a
+	ld	[CH1DoEcho],a
+	ld	a,b
 .getNote
 	ld	[CH3NoteBackup],a
+	ld	b,a
+	ld	a,[CH3NotePlayed]
+	and	a
+	jr	nz,.skipfill
+	ld	a,b
+	call	CH3FillEchoBuffer
+.skipfill
 	ld	a,[hl+]
 	dec	a
 	ld	[CH3Tick],a
@@ -1229,6 +1254,10 @@ CH3_CheckByte:
 	jp	UpdateCH3
 	
 .nullnote
+	ld	b,a
+	xor	a
+	ld	[CH1DoEcho],a
+	ld	a,b
 	ld	a,[hl+]
 	dec	a
 	ld	[CH3Tick],a
@@ -1240,6 +1269,10 @@ CH3_CheckByte:
 	
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
+	ld	b,a
+	xor	a
+	ld	[CH1DoEcho],a
+	ld	a,b
 	ld	a,[hl+]
 	dec	a
 	ld	[CH3Tick],a		; set tick
@@ -1250,21 +1283,13 @@ CH3_CheckByte:
 	ld	hl,CH3VolPos
 	inc	[hl]
 	jp	UpdateCH4
-	
+
 .echo
-	ld	a,[hl+]
-	dec	a
-	ld	[CH3Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH3Ptr],a
-	ld	a,h
-	ld	[CH3Ptr+1],a
+	ld	b,a
 	ld	a,1
 	ld	[CH3DoEcho],a
-	ld	a,[CH3NoteCount]
-	inc	a
-	ld	[CH3NoteCount],a
-	jp	UpdateCH4
+	ld	a,b
+	jp	.getNote
 	
 .getCommand
 	cp	DummyCommand
@@ -1495,7 +1520,7 @@ endc
 	
 .setEchoDelay
 	ld	a,[hl+]
-	and	$1f
+	and	$3f
 	ld	[CH3EchoDelay],a
 	jp	CH3_CheckByte
 	
@@ -2111,11 +2136,26 @@ endc
 	
 ; get note
 .updateNote
-; TODO: check for echo and set note
-;	ld	a,[CH1DoEcho]
-;	and	a
-;	jr	z,.skipecho	
-;.skipecho
+	ld	a,[CH1DoEcho]
+	and	a
+	jr	z,.skipecho
+	ld	a,[CH1EchoDelay]
+	ld	b,a
+	ld	a,[EchoPos]
+	sub	b
+	and	$3f
+	ld	hl,CH1EchoBuffer
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[hl]
+	cp	$4a
+	jr	nz,.getfrequency
+	; TODO: Prevent null byte from being played
+	jr	.getfrequency
+.skipecho
 	ld	a,[CH1PortaType]
 	cp	2
 	jr	c,.skippitchbend
@@ -2137,12 +2177,9 @@ endc
 .getfrequency
 	ld	c,a
 	ld	b,0
-	
 	ld	hl,FreqTable
 	add	hl,bc
-	add	hl,bc	
-
-; get note frequency
+	add	hl,bc
 	ld	a,[hl+]
 	ld	e,a
 	ld	a,[hl]
@@ -2581,6 +2618,26 @@ endc
 
 ; get note
 .updateNote
+	ld	a,[CH2DoEcho]
+	and	a
+	jr	z,.skipecho
+	ld	a,[CH2EchoDelay]
+	ld	b,a
+	ld	a,[EchoPos]
+	sub	b
+	and	$3f
+	ld	hl,CH2EchoBuffer
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[hl]
+	cp	$4a
+	jr	nz,.getfrequency
+	; TODO: Prevent null byte from being played
+	jr	.getfrequency
+.skipecho
 	ld	a,[CH2PortaType]
 	cp	2
 	jr	c,.skippitchbend
@@ -2592,15 +2649,13 @@ endc
 	ld	b,a
 	ld	a,[CH2Note]
 	add	b
-	
+
+.getfrequency
 	ld	c,a
 	ld	b,0
-	
 	ld	hl,FreqTable
 	add	hl,bc
-	add	hl,bc	
-
-; get note frequency
+	add	hl,bc
 	ld	a,[hl+]
 	ld	e,a
 	ld	a,[hl]
@@ -3024,6 +3079,26 @@ endc
 	
 ; get note
 .updateNote
+	ld	a,[CH3DoEcho]
+	and	a
+	jr	z,.skipecho
+	ld	a,[CH3EchoDelay]
+	ld	b,a
+	ld	a,[EchoPos]
+	sub	b
+	and	$3f
+	ld	hl,CH3EchoBuffer
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[hl]
+	cp	$4a
+	jr	nz,.getfrequency
+	; TODO: Prevent null byte from being played
+	jr	.getfrequency
+.skipecho	
 	ld	a,[CH3PortaType]
 	cp	2
 	jr	c,.skippitchbend
@@ -3035,15 +3110,13 @@ endc
 	ld	b,a
 	ld	a,[CH3Note]
 	add	b
-	
+
+.getfrequency	
 	ld	c,a
 	ld	b,0
-	
 	ld	hl,FreqTable
 	add	hl,bc
-	add	hl,bc	
-
-; get note frequency
+	add	hl,bc
 	ld	a,[hl+]
 	ld	e,a
 	ld	a,[hl]
@@ -4037,13 +4110,15 @@ DoEchoBuffers:
 .nocarry
 	ld	a,[CH1Note]
 	ld	b,a
-	ld	a,[CH1Transpose]
-	add	b
-	ld	b,a
 	cp	echo
 	jr	nz,.continue1
 	ld	a,___
+	jr	.skiptranspose
 .continue1
+	ld	a,[CH1Transpose]
+	add	b
+	ld	b,a
+.skiptranspose
 	ld	[hl],a
 .ch2
 	ld	hl,CH2EchoBuffer
@@ -4055,13 +4130,15 @@ DoEchoBuffers:
 .nocarry2
 	ld	a,[CH2Note]
 	ld	b,a
-	ld	a,[CH2Transpose]
-	add	b
-	ld	b,a
 	cp	echo
 	jr	nz,.continue2
 	ld	a,___
+	jr	.skiptranspose2
 .continue2
+	ld	a,[CH2Transpose]
+	add	b
+	ld	b,a
+.skiptranspose2
 	ld	[hl],a
 .ch3
 	ld	hl,CH3EchoBuffer
@@ -4073,17 +4150,19 @@ DoEchoBuffers:
 .nocarry3
 	ld	a,[CH3Note]
 	ld	b,a
-	ld	a,[CH3Transpose]
-	add	b
-	ld	b,a
 	cp	echo
 	jr	nz,.continue3
 	ld	a,___
+	jr	.skiptranspose3
 .continue3
+	ld	a,[CH3Transpose]
+	add	b
+	ld	b,a
+.skiptranspose3
 	ld	[hl],a
 	ld	a,[EchoPos]
 	inc	a
-	and	$1f
+	and	$3f
 	ld	[EchoPos],a
 	ret
 	
@@ -4099,7 +4178,45 @@ ClearEchoBuffers:
 	ld	[CH1EchoDelay],a
 	ld	[CH2EchoDelay],a
 	ld	[CH3EchoDelay],a
+	ld	[CH1NotePlayed],a
+	ld	[CH2NotePlayed],a
+	ld	[CH3NotePlayed],a
 	ret
+	
+; INPUT: a = note
+CH1FillEchoBuffer:
+	push	hl
+	ld	b,a
+	ld	a,1
+	ld	[CH1NotePlayed],a
+	ld	a,b
+	ld	hl,CH1EchoBuffer
+	jr	DoFillEchoBuffer
+CH2FillEchoBuffer:
+	push	hl
+	ld	b,a
+	ld	a,1
+	ld	[CH2NotePlayed],a
+	ld	a,b
+	ld	hl,CH2EchoBuffer
+	jr	DoFillEchoBuffer
+CH3FillEchoBuffer:
+	push	hl
+	ld	b,a
+	ld	a,1
+	ld	[CH3NotePlayed],a
+	ld	a,b
+	ld	hl,CH3EchoBuffer
+	; fall through to DoFillEchoBuffer
+DoFillEchoBuffer:
+	ld	b,64
+.loop
+	ld	[hl+],a
+	dec	b
+	jr	nz,.loop
+	pop	hl
+	ret
+	
 	
 ; ================================================================
 ; Misc routines
