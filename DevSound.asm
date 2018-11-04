@@ -491,8 +491,22 @@ CH1_CheckByte:
 	ld	[CH1Ptr],a
 	ld	a,h
 	ld	[CH1Ptr+1],a
-	ld	hl,CH1VolPos
-	inc	[hl]
+	ld	hl,CH1VolPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	b,0
+.releaseloop
+	ld	a,[hl+]
+	inc	b
+	cp	$ff
+	jr	z,.norelease
+	cp	$fe
+	jr	nz,.releaseloop
+	ld	a,b
+	inc	a
+	ld	[CH1VolPos],a
+.norelease
 	jp	UpdateCH2
 	
 .echo
@@ -891,8 +905,22 @@ CH2_CheckByte:
 	ld	[CH2Ptr],a
 	ld	a,h
 	ld	[CH2Ptr+1],a
-	ld	hl,CH2VolPos
-	inc	[hl]
+	ld	hl,CH2VolPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	b,0
+.releaseloop
+	ld	a,[hl+]
+	inc	b
+	cp	$ff
+	jr	z,.norelease
+	cp	$fe
+	jr	nz,.releaseloop
+	ld	a,b
+	inc	a
+	ld	[CH2VolPos],a
+.norelease
 	jp	UpdateCH3
 	
 .echo
@@ -1277,10 +1305,8 @@ CH3_CheckByte:
 	
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
-	ld	b,a
 	xor	a
 	ld	[CH1DoEcho],a
-	ld	a,b
 	ld	a,[hl+]
 	dec	a
 	ld	[CH3Tick],a		; set tick
@@ -1288,8 +1314,23 @@ CH3_CheckByte:
 	ld	[CH3Ptr],a
 	ld	a,h
 	ld	[CH3Ptr+1],a
-	ld	hl,CH3VolPos
-	inc	[hl]
+	ld	b,b
+	ld	hl,CH3VolPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	b,0
+.releaseloop
+	ld	a,[hl+]
+	inc	b
+	cp	$ff
+	jr	z,.norelease
+	cp	$fe
+	jr	nz,.releaseloop
+	ld	a,b
+	inc	a
+	ld	[CH3VolPos],a
+.norelease
 	jp	UpdateCH4
 
 .echo
@@ -1723,8 +1764,23 @@ endc
 	ld	[CH4Ptr],a
 	ld	a,h
 	ld	[CH4Ptr+1],a
-	ld	hl,CH4VolPos
-	inc	[hl]
+	ld	hl,CH4VolPtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	b,0
+.releaseloop
+	ld	a,[hl+]
+	inc	b
+	cp	$ff
+	jr	z,.norelease
+	cp	$fe
+	jr	nz,.releaseloop
+	ld	a,b
+	inc	a
+	ld	[CH4VolPos],a
+.norelease
+
 	jp	DoneUpdating
 	
 .getCommand
