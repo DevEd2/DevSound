@@ -2,16 +2,17 @@ PY := python3
 
 all: DevSound.gbc DevSound.gbs
 
-%.asm: ;
-%.inc: ;
-%.bin: ;
-DevSound.gb: %.asm %.inc %.bin
-	rgbasm -o DevSound.obj -p 255 Main.asm
-	rgblink -p 255 -o DevSound.gbc -n DevSound.sym DevSound.obj
-	rgbfix -v -p 255 DevSound.gbc
+%.o: %.asm
+	rgbasm -o $@ -p 0xff $<
+%_GBS.o: %.asm
+	rgbasm -DGBS -o $@ -p 0xff $<
 
-DevSound.gbs: %.asm %.inc %.bin
-	rgbasm -DGBS -o DevSound_GBS.obj -p 255 Main.asm
-	rgblink -p 255 -o DevSound_GBS.gbc DevSound_GBS.obj
+DevSound.gbc: Main.o
+	rgblink -p 0xff -o $@ -n $(@:.gbc=.sym) $^
+	rgbfix -v -p 0xff $@
+DevSound_GBS.gbc: Main_GBS.o
+	rgblink -p 255 -o $@ $^
+
+DevSound.gbs: DevSound_GBS.gbc
 	$(PY) makegbs.py
-	rm -f DevSound_GBS.obj DevSound_GBS.gbc
+	rm $<

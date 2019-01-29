@@ -7,6 +7,7 @@
 
 # rgbds extras
 *.sym
+*.o
 *.obj
 
 # precompiled Python
