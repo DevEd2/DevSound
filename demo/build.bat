@@ -3,9 +3,9 @@ set PROJECTNAME="DevSound"
 
 rem	Build ROM
 echo Assembling...
-rgbasm -o %PROJECTNAME%.obj -p 255 Main.asm
+rgbasm -i ../ -o %PROJECTNAME%.obj -p 255 Main.asm
 if errorlevel 1 goto :BuildError
-rgbasm -DGBS -o %PROJECTNAME%_GBS.obj -p 255 Main.asm
+rgbasm -DGBS -i ../ -o %PROJECTNAME%_GBS.obj -p 255 Main.asm
 if errorlevel 1 goto :BuildError
 echo Linking...
 rgblink -p 255 -o %PROJECTNAME%.gbc -n %PROJECTNAME%.sym %PROJECTNAME%.obj
