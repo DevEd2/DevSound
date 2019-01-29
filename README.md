@@ -1,12 +1,21 @@
 # DevSound
 DevSound is a sound driver for the Game Boy which supports pulse width manipulation, arpeggios, and multiple waveforms. DevSound was designed with homebrew games in mind, so you can easily include it in your project.
 
-# Building the demo ROM on Windows
-1. Grab the RGBASM binaries from https://github.com/rednex/rgbds. If you already have them, you can skip this step.
-2. Run build.bat. If that doesn't work, try either adding the RGBASM binaries to your PATH or copying them to the repository directory.
+# Building a demo ROM and/or GBS
+Note that the demo ROM is included already; these instructions are if you want to try your own modifications.
+
+## Windows
+1. Grab the [RGBASM binaries](https://github.com/rednex/rgbds/releases). If you already have them, you can skip this step.
+2. Open a command prompt in the `demo` folder.
+3. Run build.bat. If that doesn't work, try either adding the RGBASM binaries to your PATH or copying them to the repository directory.
+
+## Linux
+1. Install [RGBDS](https://github.com/rednex/rgbds). If RGBDS is already installed, skip this step.
+2. Open a terminal in the `demo` folder.
+3. Run `make`.
 
 # Adding DevSound to your project
-1. Copy DevSound.asm, DevSound_Variables.asm, DevSound_Constants.asm, DevSound_Macros.asm, DevSound_SongData.asm, and NoiseData.bin to your project directory.
+1. Copy DevSound.asm, DevSound_Variables.asm, DevSound_Constants.asm, DevSound_Macros.asm, DevSound_SongData.asm, and NoiseData.bin to your project directory. If you're not using a file such as [hardware.inc](https://github.com/tobiasvl/hardware.inc) or gbhw.inc, you will need to include it as well.
 2. Allocate a ROM bank for DevSound. Make note of the bank number (unless your ROM does not use banking).
 3. Add the following line to your main loop: `call DS_Play`
 4. In order to load a song, use the following code:

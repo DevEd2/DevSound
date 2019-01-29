@@ -9,6 +9,7 @@
 *.sym
 *.o
 *.obj
+demo/DevSound_GBS.gbc
 
 # precompiled Python
 *.pyc
