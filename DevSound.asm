@@ -110,8 +110,8 @@ db	"DevSound GB music player by DevEd | email: deved8@gmail.com"
 
 DevSound_Init:
 	di
-	ld	b,a		; Preserve song ID
-	
+	push	af		; Preserve song ID
+
 	xor	a
 	ldh	[rNR52],a	; disable sound
 	ld	[PWMEnabled],a
@@ -119,27 +119,22 @@ DevSound_Init:
 	ld	[WaveBufUpdateFlag],a
 
 	; init sound RAM area
-	ld	de,InitVarsStart
+	ld	de,DefaultRegTable
+	ld	hl,InitVarsStart
 	ld	c,DSVarsEnd-InitVarsStart
-	ld	hl,DefaultRegTable
 .initLoop
-	ld	a,[hl+]
-	ld	[de],a
+	ld	a,[de]
+	ld	[hl+],a
 	inc	de
 	dec	c
 	jr	nz,.initLoop
-	ld	h,d
-	ld	l,e
 	xor	a
 	ld	c,DSBufVarsEnd-DSBufVars
 .initLoop2
-	ld	a,[hl+]
+	ld	[hl+],a
 	dec	c
 	jr	nz,.initLoop2
-	
-	ld	e,b		; Transfer song ID
 
-	push	de
 	; load default waveform
 	ld	hl,DefaultWave
 	call	LoadWave
@@ -147,11 +142,14 @@ DevSound_Init:
 	call	ClearWaveBuffer
 	call	ClearArpBuffer
 	call	ClearEchoBuffers
-	pop	de
+	pop	af
+	add	a
+	ld	e,a
+	adc	a,0
+	sub	e
+	ld	d,a
 	; set up song pointers
 	ld	hl,SongPointerTable
-	ld	d,0
-	add	hl,de
 	add	hl,de
 	ld	a,[hl+]
 	ld	h,[hl]
@@ -199,7 +197,6 @@ DevSound_Init:
 	; get tempo
 	ld	hl,SongSpeedTable
 	add	hl,de
-	add	hl,de
 	ld	a,[hl+]
 	dec	a
 	ld	[GlobalSpeed1],a
@@ -231,7 +228,7 @@ DevSound_ExternalCommand:
 	cp	(.commandTableEnd-.commandTable)/2
 	ret	nc	; if command ID is out of bounds, exit
 	ld	hl,.commandTable
-	
+
 	add	a
 	add	l
 	ld	l,a
@@ -242,28 +239,28 @@ DevSound_ExternalCommand:
 	ld	h,[hl]
 	ld	l,a
 	jp	hl
-	
+
 .commandTable
 	dw	.dummy			; $00 - dummy
 	dw	.setSpeed		; $01 - set speed
 	dw	.muteChannel	; $02 - mute given sound channel (TODO)
 .commandTableEnd
 
-	
+
 .setSpeed
 	ld	a,b
 	ld	[GlobalSpeed1],a
 	ld	a,c
 	ld	[GlobalSpeed2],a
 ;	ret
-	
+
 .muteChannel		; TODO
 ;	ld	a,c
 ;	and	3
 
 .dummy
 	ret
-	
+
 ; ================================================================
 ; Stop routine
 ; ================================================================
@@ -275,17 +272,17 @@ DevSound_Stop:
 	set	7,a
 	ld	[c],a	; enable sound output
 	dec	c
-	or	$ff
-	ld	[c],a	; all sound channels to left+right speakers
-	dec	c
-	and	$77
-	ld	[c],a	; VIN output off + master volume max
 	xor	a
 	ld	[CH1Enabled],a
 	ld	[CH2Enabled],a
 	ld	[CH3Enabled],a
 	ld	[CH4Enabled],a
 	ld	[SoundEnabled],a
+	dec	a		; Set a to $FF
+	ld	[c],a	; all sound channels to left+right speakers
+	dec	c
+	and	$77
+	ld	[c],a	; VIN output off + master volume max
 	; if visualizer is enabled, init it too (to make everything zero)
 if def(Visualizer)
 	jp	VisualizerInit
@@ -308,7 +305,7 @@ DevSound_Fade:
 	ld	a,7
 	ld	[FadeTimer],a
 	ret
-	
+
 ; ================================================================
 ; Play routine
 ; ================================================================
@@ -324,7 +321,7 @@ DevSound_Play:
 	jr	nz,.doUpdate		; if sound is enabled, jump ahead
 	pop	af
 	ret
-	
+
 .doUpdate
 	push	bc
 	push	de
@@ -351,14 +348,14 @@ DevSound_Play:
 .setTimer
 	ld	[GlobalTimer],a		; store timer value
 	jr	UpdateCH1			; continue ahead
-	
+
 .noupdate
 	dec	a					; subtract 1 from timer
 	ld	[GlobalTimer],a		; store timer value
 	jp	DoneUpdating		; done
 
 ; ================================================================
-	
+
 UpdateCH1:
 	ld	a,[CH1Enabled]
 	and	a
@@ -454,7 +451,7 @@ CH1_CheckByte:
 	ld	hl,CH1Reset
 	set	7,[hl]			; signal the start of note for pitch bend
 	jp	UpdateCH2
-	
+
 .endChannel
 	xor	a
 	ld	[CH1Enabled],a
@@ -467,7 +464,7 @@ CH1_CheckByte:
 	ld	a,[hl]
 	ld	[CH1Ptr+1],a
 	jp	UpdateCH1
-	
+
 .nullnote
 	xor	a
 	ld	[CH1DoEcho],a
@@ -479,7 +476,7 @@ CH1_CheckByte:
 	ld	a,h
 	ld	[CH1Ptr+1],a
 	jp	UpdateCH2
-	
+
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
 	xor	a
@@ -508,14 +505,14 @@ CH1_CheckByte:
 	ld	[CH1VolPos],a
 .norelease
 	jp	UpdateCH2
-	
+
 .echo
 	ld	b,a
 	ld	a,1
 	ld	[CH1DoEcho],a
 	ld	a,b
 	jp	.getNote
-	
+
 .getCommand
 	ld	b,a
 	xor	a
@@ -526,7 +523,7 @@ CH1_CheckByte:
 	; Not needed because function performs "add a" which discards bit 7
 	; sub	$80	; subtract 128 from command value
 	call	JumpTableBelow
-	
+
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -559,14 +556,14 @@ CH1_CheckByte:
 	ld	[CH1InsMode],a			; reset instrument mode
 	pop	hl						; restore HL
 	jp	CH1_CheckByte
-	
+
 .setLoopPoint
 	ld	a,l
 	ld	[CH1LoopPtr],a
 	ld	a,h
 	ld	[CH1LoopPtr+1],a
 	jp	CH1_CheckByte
-	
+
 .gotoLoopPoint
 	ld	hl,CH1LoopPtr			; get loop pointer
 	ld	a,[hl+]
@@ -585,7 +582,7 @@ CH1_CheckByte:
 	ld	a,h
 	ld	[CH1RetPtr+1],a
 	jp	UpdateCH1
-	
+
 .setChannelPtr
 	ld	a,[hl+]
 	ld	[CH1Ptr],a
@@ -600,7 +597,7 @@ CH1_CheckByte:
 	jr	z,.loadPortaType
 	ld	a,2
 	jr	.loadPortaType
-	
+
 .pitchBendDown
 	ld	a,[hl+]
 	ld	[CH1PortaSpeed],a
@@ -608,7 +605,7 @@ CH1_CheckByte:
 	jr	z,.loadPortaType
 	ld	a,3
 	jr	.loadPortaType
-	
+
 .toneporta
 	ld	a,[hl+]
 	ld	[CH1PortaSpeed],a
@@ -637,7 +634,7 @@ CH1_CheckByte:
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH1_CheckByte
-	
+
 .setInsAlternate
 	ld	a,[hl+]
 	ld	[CH1Ins1],a
@@ -646,7 +643,7 @@ CH1_CheckByte:
 	ld	a,1
 	ld	[CH1InsMode],a
 	jp	CH1_CheckByte
-	
+
 .combineWaves
 	ld	a,l
 	add	4
@@ -654,21 +651,21 @@ CH1_CheckByte:
 	jp	nc,CH1_CheckByte
 	inc	h
 	jp	CH1_CheckByte	
-	
+
 .enablePWM
 	inc	hl
 	inc	hl
 	jp	CH1_CheckByte
-	
+
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
 	jp	CH1_CheckByte
-	
+
 .enableRandomizer
 	inc	hl
 	jp	CH1_CheckByte
-	
+
 .arp
 	call	DoArp
 	jp	CH1_CheckByte
@@ -678,20 +675,20 @@ CH1_CheckByte:
 	and	$f
 	ld	[CH1ChanVol],a
 	jp	CH1_CheckByte
-	
+
 .setEchoDelay
 	ld	a,[hl+]
 	and	$3f
 	ld	[CH1EchoDelay],a
 	jp	CH1_CheckByte
-	
+
 .setRepeatPoint
 	ld	a,l
 	ld	[CH1RepeatPtr],a
 	ld	a,h
 	ld	[CH1RepeatPtr+1],a
 	jp	CH1_CheckByte
-	
+
 .repeatSection
 	ld	a,[CH1RepeatCount]
 	and	a	; section currently repeating?
@@ -721,7 +718,7 @@ CH1_CheckByte:
 .norepeat
 	inc	hl
 	jp	CH1_CheckByte
-	
+
 CH1_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
@@ -763,9 +760,9 @@ CH1_SetInstrument:
 	ld	a,[hl]
 	ld	[CH1VibDelay],a
 	ret
-	
+
 ; ================================================================
-	
+
 UpdateCH2:
 	ld	a,[CH2Enabled]
 	and	a
@@ -868,12 +865,12 @@ CH2_CheckByte:
 	ld	hl,CH2Reset
 	set	7,[hl]
 	jp	UpdateCH3
-	
+
 .endChannel
 	xor	a
 	ld	[CH2Enabled],a
 	jp	UpdateCH3
-	
+
 .retSection
 	ld	hl,CH2RetPtr
 	ld	a,[hl+]
@@ -881,7 +878,7 @@ CH2_CheckByte:
 	ld	a,[hl]
 	ld	[CH2Ptr+1],a
 	jp	UpdateCH2
-	
+
 .nullnote
 	xor	a
 	ld	[CH2DoEcho],a
@@ -893,7 +890,7 @@ CH2_CheckByte:
 	ld	a,h
 	ld	[CH2Ptr+1],a
 	jp	UpdateCH3
-	
+
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
 	xor	a
@@ -922,14 +919,14 @@ CH2_CheckByte:
 	ld	[CH2VolPos],a
 .norelease
 	jp	UpdateCH3
-	
+
 .echo
 	ld	b,a
 	ld	a,1
 	ld	[CH2DoEcho],a
 	ld	a,b
 	jp	.getNote
-	
+
 .getCommand
 	ld	b,a
 	xor	a
@@ -940,7 +937,7 @@ CH2_CheckByte:
 	; Not needed because function performs "add a" which discards bit 7
 	; sub	$80
 	call	JumpTableBelow
-	
+
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -973,14 +970,14 @@ CH2_CheckByte:
 	xor	a
 	ld	[CH2InsMode],a
 	jp	CH2_CheckByte
-	
+
 .setLoopPoint
 	ld	a,l
 	ld	[CH2LoopPtr],a
 	ld	a,h
 	ld	[CH2LoopPtr+1],a
 	jp	CH2_CheckByte
-	
+
 .gotoLoopPoint
 	ld	hl,CH2LoopPtr
 	ld	a,[hl+]
@@ -988,7 +985,7 @@ CH2_CheckByte:
 	ld	a,[hl]
 	ld	[CH2Ptr+1],a
 	jp	UpdateCH2
-	
+
 .callSection
 	ld	a,[hl+]
 	ld	[CH2Ptr],a
@@ -999,7 +996,7 @@ CH2_CheckByte:
 	ld	a,h
 	ld	[CH2RetPtr+1],a
 	jp	UpdateCH2
-	
+
 .setChannelPtr
 	ld	a,[hl+]
 	ld	[CH2Ptr],a
@@ -1014,7 +1011,7 @@ CH2_CheckByte:
 	jr	z,.loadPortaType
 	ld	a,2
 	jr	.loadPortaType
-	
+
 .pitchBendDown
 	ld	a,[hl+]
 	ld	[CH2PortaSpeed],a
@@ -1022,7 +1019,7 @@ CH2_CheckByte:
 	jr	z,.loadPortaType
 	ld	a,3
 	jr	.loadPortaType
-	
+
 .toneporta
 	ld	a,[hl+]
 	ld	[CH2PortaSpeed],a
@@ -1060,7 +1057,7 @@ CH2_CheckByte:
 	ld	a,1
 	ld	[CH2InsMode],a
 	jp	CH2_CheckByte
-	
+
 .combineWaves
 	ld	a,l
 	add	4
@@ -1068,12 +1065,12 @@ CH2_CheckByte:
 	jp	nc,CH2_CheckByte
 	inc	h
 	jp	CH2_CheckByte	
-	
+
 .enablePWM
 	inc	hl
 	inc	hl
 	jp	CH2_CheckByte
-	
+
 .arp
 	call	DoArp
 	jp	CH2_CheckByte
@@ -1083,25 +1080,25 @@ CH2_CheckByte:
 	and	$f
 	ld	[CH2ChanVol],a
 	jp	CH2_CheckByte
-	
+
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
 	jp	CH2_CheckByte
-	
+
 .setEchoDelay
 	ld	a,[hl+]
 	and	$3f
 	ld	[CH2EchoDelay],a
 	jp	CH2_CheckByte
-	
+
 .setRepeatPoint
 	ld	a,l
 	ld	[CH2RepeatPtr],a
 	ld	a,h
 	ld	[CH2RepeatPtr+1],a
 	jp	CH2_CheckByte
-	
+
 .repeatSection
 	ld	a,[CH2RepeatCount]
 	and	a	; section currently repeating?
@@ -1131,7 +1128,7 @@ CH2_CheckByte:
 .norepeat
 	inc	hl
 	jp	CH2_CheckByte
-	
+
 CH2_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
@@ -1173,9 +1170,9 @@ CH2_SetInstrument:
 	ld	a,[hl]
 	ld	[CH2VibDelay],a
 	ret
-	
+
 ; ================================================================
-	
+
 UpdateCH3:
 	ld	a,[CH3Enabled]
 	and	a
@@ -1257,7 +1254,7 @@ CH3_CheckByte:
 	ld	b,a
 	ld	a,[CH3ComputedVol]
 	ldh	[rNR32],a	; fix for volume not updating when unpausing
-	
+
 	; check if instrument mode is 1 (alternating)
 	ld	a,[CH3InsMode]
 	and	a
@@ -1275,12 +1272,12 @@ CH3_CheckByte:
 	ld	hl,CH3Reset
 	set	7,[hl]
 	jp	UpdateCH4
-	
+
 .endChannel
 	xor	a
 	ld	[CH3Enabled],a
 	jp	UpdateCH4
-	
+
 .retSection
 	ld	hl,CH3RetPtr
 	ld	a,[hl+]
@@ -1288,7 +1285,7 @@ CH3_CheckByte:
 	ld	a,[hl]
 	ld	[CH3Ptr+1],a
 	jp	UpdateCH3
-	
+
 .nullnote
 	ld	b,a
 	xor	a
@@ -1302,7 +1299,7 @@ CH3_CheckByte:
 	ld	a,h
 	ld	[CH3Ptr+1],a
 	jp	UpdateCH4
-	
+
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
 	xor	a
@@ -1339,14 +1336,14 @@ CH3_CheckByte:
 	ld	[CH3DoEcho],a
 	ld	a,b
 	jp	.getNote
-	
+
 .getCommand
 	cp	DummyCommand
 	jp	nc,CH3_CheckByte
 	; Not needed because function performs "add a" which discards bit 7
 	; sub	$80
 	call	JumpTableBelow
-	
+
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -1379,14 +1376,14 @@ CH3_CheckByte:
 	xor	a
 	ld	[CH3InsMode],a
 	jp	CH3_CheckByte
-	
+
 .setLoopPoint
 	ld	a,l
 	ld	[CH3LoopPtr],a
 	ld	a,h
 	ld	[CH3LoopPtr+1],a
 	jp	CH3_CheckByte
-	
+
 .gotoLoopPoint
 	ld	hl,CH3LoopPtr
 	ld	a,[hl+]
@@ -1394,7 +1391,7 @@ CH3_CheckByte:
 	ld	a,[hl]
 	ld	[CH3Ptr+1],a
 	jp	UpdateCH3
-	
+
 .callSection
 	ld	a,[hl+]
 	ld	[CH3Ptr],a
@@ -1405,7 +1402,7 @@ CH3_CheckByte:
 	ld	a,h
 	ld	[CH3RetPtr+1],a
 	jp	UpdateCH3
-	
+
 .setChannelPtr
 	ld	a,[hl+]
 	ld	[CH3Ptr],a
@@ -1420,7 +1417,7 @@ CH3_CheckByte:
 	jr	z,.loadPortaType
 	ld	a,2
 	jr	.loadPortaType
-	
+
 .pitchBendDown
 	ld	a,[hl+]
 	ld	[CH3PortaSpeed],a
@@ -1428,7 +1425,7 @@ CH3_CheckByte:
 	jr	z,.loadPortaType
 	ld	a,3
 	jr	.loadPortaType
-	
+
 .toneporta
 	ld	a,[hl+]
 	ld	[CH3PortaSpeed],a
@@ -1456,7 +1453,7 @@ CH3_CheckByte:
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH3_CheckByte
-	
+
 .setInsAlternate
 	ld	a,[hl+]
 	ld	[CH3Ins1],a
@@ -1465,13 +1462,13 @@ CH3_CheckByte:
 	ld	a,1
 	ld	[CH3InsMode],a
 	jp	CH3_CheckByte
-	
+
 if def(DemoSceneMode)
-	
+
 .randomizeWave
 .disableAutoWave
 	jp	CH3_CheckByte
-	
+
 .combineWaves
 	ld	a,l
 	add	4
@@ -1479,18 +1476,18 @@ if def(DemoSceneMode)
 	jp	nc,CH3_CheckByte
 	inc	h
 	jp	CH3_CheckByte	
-	
+
 .enablePWM
 	inc	hl
 	inc	hl
 	jp	CH3_CheckByte
-	
+
 .enableRandomizer
 	inc	hl
 	jp	CH3_CheckByte
-	
+
 else
-	
+
 .randomizeWave
 	push	hl
 	call	_RandomizeWave
@@ -1512,7 +1509,7 @@ else
 	pop	hl
 	pop	bc
 	jp	CH3_CheckByte
-	
+
 .enablePWM
 	push	hl
 	call	ClearWaveBuffer
@@ -1530,28 +1527,28 @@ else
 	ld	[PWMEnabled],a
 	ld	[PWMTimer],a
 	jp	CH3_CheckByte
-	
+
 .enableRandomizer
 	push	hl
 	call	ClearWaveBuffer
 	pop	hl
 	ld	a,[hl+]
 	ld	[RandomizerSpeed],a
-	ld	a,1
-	ld	[RandomizerTimer],a
-	ld	[RandomizerEnabled],a
 	xor	a
 	ld	[PWMEnabled],a
+	inc a
+	ld	[RandomizerTimer],a
+	ld	[RandomizerEnabled],a
 	jp	CH3_CheckByte
-	
+
 .disableAutoWave
 	xor	a
 	ld	[PWMEnabled],a
 	ld	[RandomizerEnabled],a
 	jp	CH3_CheckByte
-	
+
 endc
-	
+
 .arp
 	call	DoArp
 	jp	CH3_CheckByte
@@ -1561,25 +1558,25 @@ endc
 	and	$f
 	ld	[CH3ChanVol],a
 	jp	CH3_CheckByte
-	
+
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
 	jp	CH3_CheckByte
-	
+
 .setEchoDelay
 	ld	a,[hl+]
 	and	$3f
 	ld	[CH3EchoDelay],a
 	jp	CH3_CheckByte
-	
+
 .setRepeatPoint
 	ld	a,l
 	ld	[CH3RepeatPtr],a
 	ld	a,h
 	ld	[CH3RepeatPtr+1],a
 	jp	CH3_CheckByte
-	
+
 .repeatSection
 	ld	a,[CH3RepeatCount]
 	and	a	; section currently repeating?
@@ -1609,7 +1606,7 @@ endc
 .norepeat
 	inc	hl
 	jp	CH3_CheckByte
-	
+
 CH3_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
@@ -1731,12 +1728,12 @@ endc
 	call	CH4_SetInstrument
 .noInstrumentChange
 	jp	DoneUpdating
-	
+
 .endChannel
 	xor	a
 	ld	[CH4Enabled],a
 	jp	DoneUpdating
-	
+
 .retSection
 	ld	hl,CH4RetPtr
 	ld	a,[hl+]
@@ -1744,7 +1741,7 @@ endc
 	ld	a,[hl]
 	ld	[CH4Ptr+1],a
 	jp	UpdateCH4
-	
+
 .nullnote
 	ld	a,[hl+]
 	dec	a
@@ -1754,7 +1751,7 @@ endc
 	ld	a,h
 	ld	[CH4Ptr+1],a
 	jp	DoneUpdating
-	
+
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
 	ld	a,[hl+]
@@ -1782,14 +1779,14 @@ endc
 .norelease
 
 	jp	DoneUpdating
-	
+
 .getCommand
 	cp	DummyCommand
 	jp	nc,CH4_CheckByte
 	; Not needed because function performs "add a" which discards bit 7
 	; sub	$80
 	call	JumpTableBelow
-	
+
 	dw	.setInstrument
 	dw	.setLoopPoint
 	dw	.gotoLoopPoint
@@ -1822,14 +1819,14 @@ endc
 	xor	a
 	ld	[CH4InsMode],a
 	jp	CH4_CheckByte
-	
+
 .setLoopPoint
 	ld	a,l
 	ld	[CH4LoopPtr],a
 	ld	a,h
 	ld	[CH4LoopPtr+1],a
 	jp	CH4_CheckByte
-	
+
 .gotoLoopPoint
 	ld	hl,CH4LoopPtr
 	ld	a,[hl+]
@@ -1837,7 +1834,7 @@ endc
 	ld	a,[hl]
 	ld	[CH4Ptr+1],a
 	jp	UpdateCH4
-	
+
 .callSection
 	ld	a,[hl+]
 	ld	[CH4Ptr],a
@@ -1848,7 +1845,7 @@ endc
 	ld	a,h
 	ld	[CH4RetPtr+1],a
 	jp	UpdateCH4
-	
+
 .setChannelPtr
 	ld	a,[hl+]
 	ld	[CH4Ptr],a
@@ -1877,7 +1874,7 @@ endc
 	dec	a
 	ld	[GlobalSpeed2],a
 	jp	CH4_CheckByte
-	
+
 .setInsAlternate
 	ld	a,[hl+]
 	ld	[CH4Ins1],a
@@ -1886,7 +1883,7 @@ endc
 	ld	a,1
 	ld	[CH4InsMode],a
 	jp	CH4_CheckByte
-	
+
 .combineWaves
 	ld	a,l
 	add	4
@@ -1894,7 +1891,7 @@ endc
 	jp	nc,CH4_CheckByte
 	inc	h
 	jp	CH4_CheckByte	
-	
+
 .enablePWM
 .arp
 	pop	hl
@@ -1907,23 +1904,23 @@ endc
 	and	$f
 	ld	[CH4ChanVol],a
 	jp	CH4_CheckByte
-	
+
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
 	jp	CH4_CheckByte
-	
+
 .setEchoDelay
 	inc	hl
 	jp	CH4_CheckByte
-	
+
 .setRepeatPoint
 	ld	a,l
 	ld	[CH4RepeatPtr],a
 	ld	a,h
 	ld	[CH4RepeatPtr+1],a
 	jp	CH4_CheckByte
-	
+
 .repeatSection
 	ld	a,[CH4RepeatCount]
 	and	a	; section currently repeating?
@@ -1985,7 +1982,7 @@ if !def(DisableDeflehacks)
 	ld	[CH4WavePtr+1],a
 endc
 	ret
-	
+
 ; ================================================================
 
 DoneUpdating:
@@ -1994,33 +1991,27 @@ UpdateRegisters:
 	call	DoEchoBuffers
 
 	; update panning
-	xor	a
-	ld	b,a
-	ld	a,[CH1Pan]
-	add	b
-	ld	b,a
-	ld	a,[CH2Pan]
-	rla
-	add	b
+	ld	a,[CH4Pan]
+	add	a
 	ld	b,a
 	ld	a,[CH3Pan]
-	rla
-	rla
-	add	b
+	or	b
+	add	a
 	ld	b,a
-	ld	a,[CH4Pan]
-	rla
-	rla
-	rla
-	add	b
+	ld	a,[CH2Pan]
+	or	b
+	add	a
+	ld	b,a
+	ld	a,[CH1Pan]
+	or	b
 	ldh	[rNR51],a
-	
+
 	; update global volume + fade system
 	ld	a,[FadeType]
 	ld	b,a
 	and	3 ; Check if no fade
 	jr	z,.updateVolume ; Update volume
-	
+
 	bit	2,b ; Check if on first fade
 	jr	z,.notfirstfade
 	res	2,b
@@ -2033,13 +2024,28 @@ UpdateRegisters:
 .gotfirstfadevolume
 	ld	[GlobalVolume],a
 .notfirstfade
-	
+
 	ld	a,[FadeTimer]
 	and	a
 	jr	z,.doupdate
 	dec	a
 	ld	[FadeTimer],a
 	jr	.updateVolume
+.fadeout
+	ld	a,[GlobalVolume]
+	and	a
+	jr	z,.fadeFinished
+.decrementVolume
+	dec	a
+	ld	[GlobalVolume],a
+	jr	.directlyUpdateVolume
+.fadein
+	ld	a,[GlobalVolume]
+	cp	7
+	jr	z,.fadeFinished
+	inc	a
+	ld	[GlobalVolume],a
+	jr .directlyUpdateVolume
 .doupdate
 	ld	a,7
 	ld	[FadeTimer],a
@@ -2050,42 +2056,25 @@ UpdateRegisters:
 	dec	a
 	jr	z,.fadein
 	dec	a
-	jr	nz,.updateVolume
+	ld	a,[GlobalVolume]
+	jr	nz,.directlyUpdateVolume
 .fadeoutstop
-	ld	a,[GlobalVolume]
 	and	a
-	jr	z,.dostop
-	dec	a
-	ld	[GlobalVolume],a
-	jr	.directlyUpdateVolume
-.fadeout
-	ld	a,[GlobalVolume]
-	and	a
-	jr	z,.directlyUpdateVolume
-	dec	a
-	ld	[GlobalVolume],a
-	jr	.updateVolume
-.fadein
-	ld	a,[GlobalVolume]
-	cp	7
-	jr	z,.done
-	inc	a
-	ld	[GlobalVolume],a
-	jr	.directlyUpdateVolume
-.dostop
+	jr	nz,.decrementVolume
 	call	DevSound_Stop
-.done
-	xor	a
+	xor a
+.fadeFinished
+	; a is zero
 	ld	[FadeType],a
 .updateVolume
 	ld	a,[GlobalVolume]
-.directlyUpdateVolume ; Call when volume is already known
+.directlyUpdateVolume
 	and	7
 	ld	b,a
 	swap	a
-	add	b
+	or	b
 	ldh	[rNR50],a
-	
+
 CH1_UpdateRegisters:
 	ld	a,[CH1Enabled]
 	and	a
@@ -2113,7 +2102,7 @@ endc
 	xor	a
 	ld	[CH1IsResting],a
 	jr	.updatearp
-	
+
 	; update arps
 .updatearp
 ; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
@@ -2161,11 +2150,11 @@ endc
 	inc	a
 	ld	[CH1ArpPos],a
 .continue
-	
+
 	; update sweep
 	ld	a,[CH1Sweep]
 	ldh	[rNR10],a
-	
+
 	; update pulse
 	ld	hl,CH1PulsePtr
 	ld	a,[hl+]
@@ -2197,7 +2186,7 @@ endc
 	jr	nz,.updateNote
 	ld	a,[hl]
 	ld	[CH1PulsePos],a
-	
+
 ; get note
 .updateNote
 	ld	a,[CH1DoEcho]
@@ -2255,7 +2244,7 @@ endc
 	ld	[CH1TempFreq],a
 	ld	a,d
 	ld	[CH1TempFreq+1],a
-	
+
 .updateVibTable
 	ld	a,[CH1VibDelay]
 	and	a
@@ -2286,7 +2275,7 @@ endc
 	inc	a
 	ld	[CH1VibPos],a
 	jr	.getPitchOffset
-	
+
 .pitchbend
 	ld	a,[CH1PortaSpeed]
 	ld	b,a
@@ -2322,7 +2311,7 @@ endc
 	ld	a,e
 	ld	[hl+],a
 	ld	[hl],d
-	
+
 .getPitchOffset
 	ld	a,[CH1FreqOffset]
 	bit	7,a
@@ -2429,7 +2418,7 @@ else
 	ld	a,d
 	ldh	[rNR14],a
 endc
-	
+
 	; update volume
 .updateVolume
 	ld	hl,CH1Reset
@@ -2563,7 +2552,7 @@ CH2_UpdateRegisters:
 	ld	a,[CH2Enabled]
 	and	a
 	jp	z,CH3_UpdateRegisters
-	
+
 	if(UseFXHammer)
 	ld	a,[FXHammer_SFXCH2]
 	cp	3
@@ -2640,7 +2629,7 @@ endc
 	inc	a
 	ld	[CH2ArpPos],a
 .continue
-	
+
 	; update pulse
 	ld	hl,CH2PulsePtr
 	ld	a,[hl+]
@@ -2731,7 +2720,7 @@ endc
 	ld	[CH2TempFreq],a
 	ld	a,d
 	ld	[CH2TempFreq+1],a
-	
+
 .updateVibTable
 	ld	a,[CH2VibDelay]
 	and	a
@@ -2762,7 +2751,7 @@ endc
 	inc	a
 	ld	[CH2VibPos],a
 	jr	.getPitchOffset
-	
+
 .pitchbend
 	ld	a,[CH2PortaSpeed]
 	ld	b,a
@@ -2798,7 +2787,7 @@ endc
 	ld	a,e
 	ld	[hl+],a
 	ld	[hl],d
-	
+
 .getPitchOffset
 	ld	a,[CH2FreqOffset]
 	bit	7,a
@@ -3140,7 +3129,7 @@ endc
 	ldh	[rNR31],a
 	or	%10000000
 	ldh	[rNR30],a
-	
+
 ; get note
 .updateNote
 	ld	a,[CH3DoEcho]
@@ -3192,7 +3181,7 @@ endc
 	ld	[CH3TempFreq],a
 	ld	a,d
 	ld	[CH3TempFreq+1],a
-	
+
 .updateVibTable
 	ld	a,[CH3VibDelay]
 	and	a
@@ -3223,7 +3212,7 @@ endc
 	inc	a
 	ld	[CH3VibPos],a
 	jr	.getPitchOffset
-	
+
 .pitchbend
 	ld	a,[CH3PortaSpeed]
 	ld	b,a
@@ -3259,7 +3248,7 @@ endc
 	ld	a,e
 	ld	[hl+],a
 	ld	[hl],d
-	
+
 .getPitchOffset
 	ld	a,[CH3FreqOffset]
 	bit	7,a
@@ -3366,7 +3355,7 @@ else
 	ld	a,d
 	ldh	[rNR34],a
 endc
-	
+
 .updateVolume
 	ld	hl,CH3Reset
 	res	7,[hl]
@@ -3436,7 +3425,7 @@ endc
 	ld	a,[hl]
 	ld	[CH3VolPos],a
 .done
-	
+
 	; update wave
 	ld	hl,CH3WavePtr
 	ld	a,[hl+]
@@ -3627,7 +3616,7 @@ CH4_UpdateRegisters:
 	ld	a,[CH4Enabled]
 	and	a
 	jp	z,DoneUpdatingRegisters
-	
+
 	if(UseFXHammer)
 	ld	a,[FXHammer_SFXCH4]
 	cp	3
@@ -3719,7 +3708,7 @@ if !def(DisableDeflehacks)
 	ld	a,[hl]
 	ld	[CH4WavePos],a
 endc
-	
+
 ; get note
 if def(DisableDeflehacks)
 ; don't do per noise mode arp clamping if deflemask compatibility mode
@@ -3780,7 +3769,7 @@ else
 .noise15
 	add	b
 endc
-	
+
 if def(Visualizer)
 	ld	[CH4Noise],a
 endc
@@ -3790,7 +3779,7 @@ endc
 	jr	nc,.nocarry2
 	inc	h
 .nocarry2
-	
+
 	if(UseFXHammer)
 	ld	a,[FXHammer_SFXCH4]
 	cp	3
@@ -3821,7 +3810,7 @@ endc
 	jr	z,.loadlast
 	cp	$fd
 	jp	z,.done
-	
+
 	ld	b,a
 if !def(DemoSceneMode) && !def(DisableZombieMode)
 	ld	a,[CH4ChanVol]
@@ -3923,7 +3912,7 @@ endc
 	ld	a,$ff
 	ld	[CH4VolLoop],a
 .done
-	
+
 DoneUpdatingRegisters:
 	pop	hl
 	pop	de
@@ -3938,8 +3927,7 @@ DoneUpdatingRegisters:
 LoadWave:
 if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
 	ld	hl,ComputedWaveBuffer
-else
-if def(Visualizer)
+elif def(Visualizer)
 	push	hl
 	ld	bc,VisualizerTempWave
 	ld	e,16
@@ -3952,11 +3940,10 @@ if def(Visualizer)
 	jr	nz,.visuwavecopyloop
 	pop	hl
 endc
-endc
 	ldh	a,[rNR51]
 	ld	c,a
-	and	%10111011
-	ldh	[rNR51],a		; prevents spike
+	and	%10111011		; Remove CH3 from final mixing while it's disabled
+	ldh	[rNR51],a		; prevents spike on GBA
 	xor	a
 	ldh	[rNR30],a		; disable CH3
 CUR_WAVE = _AUD3WAVERAM
@@ -3965,22 +3952,23 @@ rept 16
 	ldh [CUR_WAVE], a	; copy to wave ram
 CUR_WAVE = CUR_WAVE + 1
 endr
+PURGE CUR_WAVE
 	ld	a,%10000000
 	ldh	[rNR30],a		; enable CH3
 	ld	a,c
 	ldh	[rNR51],a
 	ret
-	
+
 ClearWaveBuffer:
 	ld	b,$20 ; spill to WaveBuffer too
 	xor	a
 	ld	hl,ComputedWaveBuffer
 .loop
-	ld	[hl+],a		; copy to wave ram
+	ld	[hl+],a
 	dec	b
-	jr	nz,.loop	; loop until done
+	jr	nz,.loop
 	ret
-	
+
 if !def(DemoSceneMode)
 
 ; Combine two waves.
@@ -3989,9 +3977,7 @@ if !def(DemoSceneMode)
 
 _CombineWaves:
 	ld hl,WaveBuffer
-	ld a,16
 .loop
-	push	af
 	push	hl
 	ld	a,[bc]
 	and	$f
@@ -4014,14 +4000,27 @@ _CombineWaves:
 	or	l
 	pop	hl
 	ld	[hl+],a
-	pop	af
-	dec	a
+	ld	a,l
+	cp	LOW(WaveBuffer+16)
 	jr	nz, .loop
 	ld	a,[WaveBufUpdateFlag]
 	or	1
 	ld	[WaveBufUpdateFlag],a
 	ret
-	
+
+
+DoRandomizer:
+	ld	a,[RandomizerEnabled]
+	and	a
+	ret	z	; if randomizer is disabled, return
+	ld	a,[RandomizerTimer]
+	dec	a
+	ld	[RandomizerTimer],a
+	ret	nz
+	ld	a,[RandomizerSpeed]
+	ld	[RandomizerTimer],a
+	; Fall through
+
 ; Randomize the wave buffer
 
 _RandomizeWave:
@@ -4063,15 +4062,14 @@ DoPWM:
 	ld	a,[PWMTimer]
 	dec	a
 	ld	[PWMTimer],a
-	and	a
 	ret	nz
 	ld	a,[PWMSpeed]
 	ld	[PWMTimer],a
 	ld	a,[PWMDir]
 	and	a
-	jr	nz,.decPos
-.incPos	
 	ld	a,[WavePos]
+	jr	nz,.decPos
+.incPos
 	inc	a
 	ld	[WavePos],a
 	cp	$1e
@@ -4081,10 +4079,8 @@ DoPWM:
 	ld	[PWMDir],a
 	jr	.continue
 .decPos
-	ld	a,[WavePos]
 	dec	a
 	ld	[WavePos],a
-	and	a
 	jr	nz,.continue2
 	ld	a,[PWMDir]
 	xor	1
@@ -4102,20 +4098,14 @@ DoPWM:
 	inc	h
 .nocarry
 	pop	af
-	jr	c,.odd
-.even
-	ld	a,[PWMVol]
-	swap	a
-	ld	[hl],a
-	jr	.done
+	jr	nc,.even
 .odd
 	ld	a,[hl]
 	ld	b,a
 	ld	a,[PWMVol]
 	or	b
-	ld	[hl],a
 	jr	.done
-	
+
 .continue2
 	ld	hl,WaveBuffer
 	ld	a,[WavePos]
@@ -4130,33 +4120,19 @@ DoPWM:
 .nocarry2
 	pop	af
 	jr	nc,.odd2
-.even2
+.even
 	ld	a,[PWMVol]
 	swap	a
-	ld	[hl],a
 	jr	.done
 .odd2
 	xor	a
-	ld	[hl],a
 .done
+	ld	[hl],a
 	ld	a,[WaveBufUpdateFlag]
 	or	1
 	ld	[WaveBufUpdateFlag],a
 	ret
-	
-DoRandomizer:
-	ld	a,[RandomizerEnabled]
-	and	a
-	ret	z	; if randomizer is disabled, return
-	ld	a,[RandomizerTimer]
-	dec	a
-	ld	[RandomizerTimer],a
-	ret	nz
-	ld	a,[RandomizerSpeed]
-	ld	[RandomizerTimer],a
-	call	_RandomizeWave
-	ret
-	
+
 endc
 
 ; ================================================================
@@ -4229,7 +4205,7 @@ DoEchoBuffers:
 	and	$3f
 	ld	[EchoPos],a
 	ret
-	
+
 ClearEchoBuffers:
 	ld	hl,CH1EchoBuffer
 	ld	b,(EchoPos-1)-CH1EchoBuffer
@@ -4246,7 +4222,7 @@ ClearEchoBuffers:
 	ld	[CH2NotePlayed],a
 	ld	[CH3NotePlayed],a
 	ret
-	
+
 ; INPUT: a = note
 CH1FillEchoBuffer:
 	push	hl
@@ -4280,7 +4256,7 @@ DoFillEchoBuffer:
 	jr	nz,.loop
 	pop	hl
 	ret
-	
+
 	
 ; ================================================================
 ; Misc routines
@@ -4312,20 +4288,20 @@ ClearArpBuffer:
 	ld	b,7
 	xor	a
 .loop
-	ld	a,[hl+]
+	ld	[hl+],a
 	dec	b
 	jr	nz,.loop
 	ret
-	
+
 DoArp:
 	ld	de,arp_Buffer
+	xor a
+	ld [de], a
+	inc de
 	ld	a,[hl+]
 	and	a
 	jr	nz,.slow
 .fast
-	xor	a
-	ld	[de],a
-	inc	de
 	ld	a,[hl]
 	swap	a
 	and	$f
@@ -4333,18 +4309,9 @@ DoArp:
 	inc	de
 	ld	a,[hl+]
 	and	$f
-	ld	[de],a
-	inc	de
-	ld	a,$fe
-	ld	[de],a
-	inc	de
-	xor	a
-	ld	[de],a
-	ret
+	jr .continue
 .slow
-	xor	a
-	ld	[de],a
-	inc	de
+	xor a
 	ld	[de],a
 	inc	de
 	ld	a,[hl]
@@ -4358,6 +4325,7 @@ DoArp:
 	and	$f
 	ld	[de],a
 	inc	de
+.continue
 	ld	[de],a
 	inc	de
 	ld	a,$fe
@@ -4366,7 +4334,7 @@ DoArp:
 	xor	a
 	ld	[de],a
 	ret
-	
+
 if !def(DemoSceneMode)
 MultiplyVolume:
 	srl	b
@@ -4390,7 +4358,7 @@ MultiplyVolume:
 	and	$f
 	ld	b,a
 	ret
-	
+
 MultiplyVolume_:
 ; short version of MultiplyVolume for ch3 wave update
 	push	de
@@ -4403,9 +4371,9 @@ MultiplyVolume_:
 	ld a,[de]
 	pop	de
 	ret
-	
+
 endc
-	
+
 ; ================================================================
 ; Frequency table
 ; ================================================================
@@ -4419,7 +4387,7 @@ FreqTable:
 	dw	$783,$78a,$790,$797,$79d,$7a2,$7a7,$7ac,$7b1,$7b6,$7ba,$7be ; octave 5
 	dw	$7c1,$7c4,$7c8,$7cb,$7ce,$7d1,$7d4,$7d6,$7d9,$7db,$7dd,$7df ; octave 6
 	dw	$7e1,$7e3,$7e4,$7e6,$7e7,$7e9,$7ea,$7eb,$7ec,$7ed,$7ee,$7ef ; octave 7 (not used directly, is slightly out of tune)
-	
+
 NoiseTable:	; taken from deflemask
 	db	$a4	; 15 steps
 	db	$97,$96,$95,$94,$87,$86,$85,$84,$77,$76,$75,$74,$67,$66,$65,$64
@@ -4429,9 +4397,9 @@ NoiseTable:	; taken from deflemask
 	db	$9f,$9e,$9d,$9c,$8f,$8e,$8d,$8c,$7f,$7e,$7d,$7c,$6f,$6e,$6d,$6c
 	db	$5f,$5e,$5d,$5c,$4f,$4e,$4d,$4c,$3f,$3e,$3d,$3c,$2f,$2e,$2d,$2c
 	db	$1f,$1e,$1d,$1c,$0f,$0e,$0d,$0c,$0b,$0a,$09,$08
-	
+
 if !def(DemoSceneMode)
-	
+
 VolumeTable: ; used for volume multiplication
 	db $00,$00,$00,$00,$00,$00,$00,$00 ; 10
 	db $10,$10,$10,$10,$10,$10,$10,$10
@@ -4449,13 +4417,13 @@ VolumeTable: ; used for volume multiplication
 	db $76,$87,$98,$99,$a9,$ba,$cb,$dc
 	db $00,$11,$22,$33,$44,$55,$66,$77 ; fe
 	db $87,$98,$a9,$ba,$cb,$dc,$ed,$fe
-	
+
 endc
 
 ; ================================================================
 ; misc stuff
 ; ================================================================
-	
+
 DefaultRegTable:
 	; global flags
 	db	0,7,0,0,0,0,0,1,1,1,1,1,0,0,0,0
@@ -4476,21 +4444,21 @@ else
 	dw	DummyTable,DummyTable,DummyTable,DummyTable
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 endc
-	
+
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10
 
 NoiseData:		incbin	"NoiseData.bin"
-	
+
 ; ================================================================
 ; Dummy data
 ; ================================================================
-	
+
 DummyTable:	db	$ff,0
 vib_Dummy:	db	0,0,$80,1
 
 DummyChannel:
 	db	EndChannel
-	
+
 ; ================================================================
 ; Song data
 ; ================================================================
