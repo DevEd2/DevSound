@@ -125,11 +125,11 @@ $94 - SetEchoDelay
   Sets the delay for the echo buffer. Must be less than 32 ($1f)!
   Parameter 1: Delay (up to 32 or $1f) (1 byte)
  
-$94 - SetRepeatPoint
+$95 - SetRepeatPoint
   Sets a repeat point which can be jumped to with the RepeatSection command (see below)
   No parameters.
  
-$95 - RepeatSection
+$96 - RepeatSection
   Returns to the repeat point, provided it has been set with the SetRepeatPoint command (see above). Once set, the repeat counter
   will count down to zero, at which point the section will stop repeating.
   Parameter 1: Repeat count (1 byte)
