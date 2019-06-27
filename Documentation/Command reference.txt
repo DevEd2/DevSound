@@ -8,7 +8,7 @@ $00 - fix
   Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
   
 $00 - $47 - [note]
-  Play a note at the given frequency. Note range is from C_2 to B_7.
+  Play a note at the given frequency. Note range is from C_2 to C_8.
   Parameter 1: Note length (anywhere from 1 to 255) (1 byte)
   
 $48 - rest
