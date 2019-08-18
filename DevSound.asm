@@ -170,16 +170,12 @@ DevSound_Init:
 	ld	[CH4Ptr],a
 	ld	a,[hl+]
 	ld	[CH4Ptr+1],a
-	ld	hl,DummyChannel
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[hl+]
+	ld	a,low(DummyChannel)
 	ld	[CH1RetPtr],a
 	ld	[CH2RetPtr],a
 	ld	[CH3RetPtr],a
 	ld	[CH4RetPtr],a
-	ld	a,[hl]
+	ld	a,high(DummyChannel)
 	ld	[CH1RetPtr+1],a
 	ld	[CH2RetPtr+1],a
 	ld	[CH3RetPtr+1],a
@@ -224,7 +220,7 @@ endc
 ; 		 bc = parameters
 ; ================================================================
 
-DevSound_ExternalCommand:	
+DevSound_ExternalCommand:
 	cp	(.commandTableEnd-.commandTable)/2
 	ret	nc	; if command ID is out of bounds, exit
 	ld	hl,.commandTable
@@ -341,10 +337,10 @@ DevSound_Play:
 	ld	[TickCount],a		; store it in RAM
 	jr	nz,.odd				; if a is 1, jump
 .even
-	ld	a,[GlobalSpeed1]
+	ld	a,[GlobalSpeed2]
 	jr	.setTimer
 .odd
-	ld	a,[GlobalSpeed2]
+	ld	a,[GlobalSpeed1]
 .setTimer
 	ld	[GlobalTimer],a		; store timer value
 	jr	UpdateCH1			; continue ahead
@@ -1989,7 +1985,6 @@ DoneUpdating:
 
 UpdateRegisters:
 	call	DoEchoBuffers
-
 	; update panning
 	ld	a,[CH4Pan]
 	add	a
