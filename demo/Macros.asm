@@ -15,7 +15,7 @@ CopyBytes:				macro
 	ld	bc,\3
 	call	_CopyBytes
 	endm
-	
+
 ; Copy a tileset to a specified VRAM address.
 ; USAGE: CopyTileset [tileset],[VRAM address],[number of tiles to copy]
 ; "tiles" refers to any tileset.
@@ -25,7 +25,7 @@ CopyTileset:	macro
 	ld	de,$8000+\2		; address to copy to
 	call	_CopyBytes
 	endm
-	
+
 ; Copy a 1BPP tileset to a specified VRAM address.
 ; USAGE: CopyTileset1BPP [tileset],[VRAM address],[number of tiles to copy]
 ; "tiles" refers to any tileset.

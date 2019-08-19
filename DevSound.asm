@@ -2,7 +2,7 @@
 ; DevSound - a Game Boy music system by DevEd
 ;
 ; Copyright (c) 2017 - 2018 DevEd
-; 
+;
 ; Permission is hereby granted, free of charge, to any person obtaining
 ; a copy of this software and associated documentation files (the
 ; "Software"), to deal in the Software without restriction, including
@@ -10,10 +10,10 @@
 ; distribute, sublicense, and/or sell copies of the Software, and to
 ; permit persons to whom the Software is furnished to do so, subject to
 ; the following conditions:
-; 
+;
 ; The above copyright notice and this permission notice shall be included
 ; in all copies or substantial portions of the Software.
-; 
+;
 ; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 ; EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 ; MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -157,7 +157,7 @@ DevSound_Init:
 	ld	a,[hl+]
 	ld	[CH1Ptr],a
 	ld	a,[hl+]
-	ld	[CH1Ptr+1],a	
+	ld	[CH1Ptr+1],a
 	ld	a,[hl+]
 	ld	[CH2Ptr],a
 	ld	a,[hl+]
@@ -387,7 +387,7 @@ CH1_CheckByte:
 	ld	[CH1DoEcho],a
 	ld	a,b
 .getNote
-	ld	[CH1NoteBackup],a	; set note	
+	ld	[CH1NoteBackup],a	; set note
 	ld	b,a
 	ld	a,[CH1NotePlayed]
 	and	a
@@ -417,7 +417,7 @@ CH1_CheckByte:
 	ld	[CH1VibDelay],a		; set delay
 	xor	a
 	ld	hl,CH1Reset
-	bit	0,[hl]			
+	bit	0,[hl]
 	jr	nz,.noreset_checkvol
 	ld	[CH1PulsePos],a
 .noreset_checkvol
@@ -646,7 +646,7 @@ CH1_CheckByte:
 	ld	l,a
 	jp	nc,CH1_CheckByte
 	inc	h
-	jp	CH1_CheckByte	
+	jp	CH1_CheckByte
 
 .enablePWM
 	inc	hl
@@ -787,7 +787,7 @@ CH2_CheckByte:
 	cp	echo
 	jp	z,.echo
 	bit	7,a			; check for command
-	jp	nz,.getCommand	
+	jp	nz,.getCommand
 	; if we have a note...
 	ld	b,a
 	xor	a
@@ -1060,7 +1060,7 @@ CH2_CheckByte:
 	ld	l,a
 	jp	nc,CH2_CheckByte
 	inc	h
-	jp	CH2_CheckByte	
+	jp	CH2_CheckByte
 
 .enablePWM
 	inc	hl
@@ -1471,7 +1471,7 @@ if def(DemoSceneMode)
 	ld	l,a
 	jp	nc,CH3_CheckByte
 	inc	h
-	jp	CH3_CheckByte	
+	jp	CH3_CheckByte
 
 .enablePWM
 	inc	hl
@@ -1675,7 +1675,7 @@ CH4_CheckByte:
 	cp	echo
 	jr	z,.nullnote			; echo not applicable for ch4
 	bit	7,a			; check for command
-	jp	nz,.getCommand	
+	jp	nz,.getCommand
 	; if we have a note...
 .getNote
 	ld	[CH4ModeBackup],a
@@ -1806,7 +1806,7 @@ endc
 	dw	.setEchoDelay
 	dw	.setRepeatPoint
 	dw	.repeatSection
-		
+
 .setInstrument
 	ld	a,[hl+]
 	push	hl
@@ -1886,7 +1886,7 @@ endc
 	ld	l,a
 	jp	nc,CH4_CheckByte
 	inc	h
-	jp	CH4_CheckByte	
+	jp	CH4_CheckByte
 
 .enablePWM
 .arp
@@ -3146,7 +3146,7 @@ endc
 	jr	nz,.getfrequency
 	; TODO: Prevent null byte from being played
 	jr	.getfrequency
-.skipecho	
+.skipecho
 	ld	a,[CH3PortaType]
 	cp	2
 	jr	c,.skippitchbend
@@ -3159,7 +3159,7 @@ endc
 	ld	a,[CH3Note]
 	add	b
 
-.getfrequency	
+.getfrequency
 	ld	c,a
 	ld	b,0
 	ld	hl,FreqTable
@@ -3444,7 +3444,7 @@ if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	ld	[CH3Wave],a
 	cp	$c0
 	push	hl
-if def(DemoSceneMode) 
+if def(DemoSceneMode)
 	jr	z,.noreset2			; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
 else
 	ld	hl,WaveBuffer
@@ -3781,7 +3781,7 @@ endc
 	jr	z,.updateVolume
 	endc
 	ld	a,[hl+]
-	ldh	[rNR43],a	
+	ldh	[rNR43],a
 
 	; update volume
 .updateVolume
@@ -4252,7 +4252,7 @@ DoFillEchoBuffer:
 	pop	hl
 	ret
 
-	
+
 ; ================================================================
 ; Misc routines
 ; ================================================================

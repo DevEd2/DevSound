@@ -19,7 +19,7 @@ ClearScreen:
 	ld	hl,$9800
 	ld	bc,$800
 	jr	ClearLoop	; routine continues in ClearLoop
-	
+
 ; ================================================================
 ; Clear video RAM
 ; ================================================================
@@ -32,7 +32,7 @@ ClearVRAM:
 ; ================================================================
 ; Clear a section of RAM
 ; ================================================================
-	
+
 ClearLoop:
 	xor	a
 	ld	[hl+],a
@@ -58,7 +58,7 @@ WaitStat:
 	jr	nz,.wait2
 	pop	af
 	ret
-	
+
 ; ================================================================
 ; Check joypad input
 ; ================================================================
@@ -72,7 +72,7 @@ CheckInput:
 	and	a,$f
 	swap	a
 	ld	b,a
-	
+
 	ld	a,P1F_4
 	ld	[rP1],a
 	ld	a,[rP1]
@@ -85,7 +85,7 @@ CheckInput:
 	and	a,$f
 	or	a,b
 	ld	b,a
-	
+
 	ld	a,[sys_btnHold]
 	xor	a,b
 	and	a,b
@@ -125,7 +125,7 @@ LoadMapText:
 	ld	c,$14
 .loop
 	ld	a,[hl+]
-	sub 32	
+	sub 32
 	ld	[de],a
 	inc	de
 	dec	c

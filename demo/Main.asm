@@ -97,7 +97,7 @@ IRQ_Serial:
 SECTION	"Joypad interrupt",ROM0[$60]
 IRQ_Joypad:
 	reti
-	
+
 ; ================================================================
 ; System routines
 ; ================================================================
@@ -140,14 +140,14 @@ ROMChecksum:	ds	2					; ROM checksum (2 bytes) (handled by post-linking tool)
 ProgramStart:
 	ld	sp,$fffe
 	di						; disable interrupts
-	
+
 .wait						; wait for VBlank before disabling the LCD
 	ldh	a,[rLY]
 	cp	$90
 	jr	nz,.wait
 	xor	a
 	ld	[rLCDC],a			; disable LCD
-	
+
 	call	ClearWRAM
 
 	; clear HRAM
@@ -160,9 +160,9 @@ ProgramStart:
 	jr	nz,._loop
 
 	call	ClearVRAM
-	
+
 	CopyTileset1BPP	Font,0,(Font_End-Font)/8
-	
+
 if def(Visualizer)
 	CopyTileset	VisualizerGfx,$640,(VisualizerGfx_End-VisualizerGfx)/16
 	CopyBytes	VisualizerSprites,Sprites,VisualizerSprites_End-VisualizerSprites
@@ -176,7 +176,7 @@ if def(Visualizer)
 	dec	b
 	jr	nz,.copy
 endc
-	
+
 	; Emulator check
 	ld	a,$ed						; this value isn't important
 	ld	b,a							; copy value to B
@@ -201,7 +201,7 @@ endc
 	ldh	[rLCDC],a	; no need to wait for VBlank in an emulator!
 	di
 	jp	.noemu
-	
+
 .emutext
 ;		 ####################
 	db	"     !WARNING!      "
@@ -223,11 +223,11 @@ endc
 	db	"                    "
 	db	"Press A to continue."
 ;		 ####################
-	
+
 .noemu
 	ld	hl,MainText			; load main text
 	call	LoadMapText
-	
+
 if EngineSpeed == -1
 	ld	a,IEF_VBLANK
 else
@@ -239,25 +239,25 @@ else
 	ld	a,IEF_VBLANK + IEF_TIMER
 endc
 	ldh	[rIE],a				; set VBlank interrupt flag
-	
+
 if def(Visualizer)
 	ld	a,%10010011			; LCD on + BG on + BG $8000 + Sprites on
 else
 	ld	a,%10010001			; LCD on + BG on + BG $8000
 endc
 	ldh	[rLCDC],a			; enable LCD
-	
+
 	; Sample implementation for loading a song.
 	; Replace the 0 in ld a,0 with the ID of the song you want to load.
 	; Note that invalid values will most likely result in a crash!
-	
+
 	xor	a
 	ld	[FadeType],a	; FadeType must be reset for first init
 	;ld	a,0				; uncomment this line and replace the 0 with the desired song ID
 	call	DS_Init
-	
+
 	ei
-	
+
 MainLoop:
 	halt				; wait for VBlank
 if EngineSpeed != -1
@@ -294,7 +294,7 @@ if def(Visualizer)
 	ldh [rOBP1],a
 endc
 	call	DS_Play		; update sound
-	
+
 	ldh	a,[rLY]			; get current scanline
 	ld	[RasterTime],a
 	ld	a,%11100100		; normal palette
@@ -360,7 +360,7 @@ endc
 	ld	a,2
 	call	DS_Fade
 	jr	.continue
-.fadein	
+.fadein
 	ld	a,1
 	call	DS_Fade
 	ld	a,[CurrentSong]
@@ -372,7 +372,7 @@ endc
 	call	DS_ExternalCommand
 .continue
 	jp	MainLoop
-	
+
 if EngineSpeed != -1
 DoTimer:
 	push	af
@@ -385,7 +385,7 @@ DoTimer:
 	ld	a,%10101011
 	ldh [rOBP1],a
 	call	DS_Play		; update sound
-	
+
 	ldh	a,[rLY]			; get current scanline
 	sub	c
 	jr	nc,.nocarry
@@ -401,7 +401,7 @@ DoTimer:
 	pop	af
 	reti
 endc
-	
+
 _CopyTileset1BPP:
 	ld	a,[hl+]			; get tile
 	ld	[de],a			; write tile
@@ -414,8 +414,8 @@ _CopyTileset1BPP:
 	or	c
 	jr	nz,_CopyTileset1BPP
 	ret
-	
-if def(Visualizer)	
+
+if def(Visualizer)
 _CopyBytes:
 	inc	b
 	inc	c
@@ -431,7 +431,7 @@ _CopyBytes:
 	dec	b
 	jr	nz,.loop
 	ret
-	
+
 OAM_DMA_:
 	ld	a,Sprites/$100
 	ld	[rDMA],a
@@ -441,11 +441,11 @@ OAM_DMA_:
 	jr	nz,.wait
 	ret
 endc
-	
+
 ; ================================================================
 ; Graphics data
 ; ================================================================
-	
+
 MainText:
 if def(Visualizer)
 ;		 ####################
@@ -513,10 +513,10 @@ DrawDec:
 .notzero3
 	ld	[hl],a		; write 100's digit
 	ret
-	
+
 .div10
 	ld	c,0			; divide by 10
-.d1 
+.d1
 	ld	b,a
 	sub	10
 	jr	c,.d2
@@ -531,7 +531,7 @@ DrawDec:
 ; Error handler
 ; ================================================================
 
-	include	"ErrorHandler.asm"	
+	include	"ErrorHandler.asm"
 
 ; ================================================================
 ; Visualizer
