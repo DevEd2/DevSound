@@ -1,7 +1,7 @@
 ; ================================================================
 ; DevSound song data
 ; ================================================================
-	
+
 ; =================================================================
 ; Song speed table
 ; =================================================================
@@ -14,8 +14,8 @@ SongSpeedTable:
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
 SongSpeedTable_End
-	
-	
+
+
 SongPointerTable:
 	dw	PT_Triumph
 	dw	PT_InsertTitleHere
@@ -141,7 +141,7 @@ WaveTable:
 	dw	wave_PWMB
 	dw	wave_PseudoSquare
 	dw	wave_GSCWave3
-	
+
 wave_Bass:			db	$00,$01,$11,$11,$22,$11,$00,$02,$57,$76,$7a,$cc,$ee,$fc,$b1,$23
 wave_PWMB:			db	$ff,$ff,$ff,$ff,$ff,$f0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 wave_PseudoSquare:	db	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$44,$44,$00,$00,$00
@@ -184,14 +184,14 @@ InstrumentTable:
 	dins	Bass2
 	dins	Bass3
 	dins	GadunkWave
-	
+
 	dins	Kick
 	dins	Snare
 	dins	CHH
 	dins	OHH
 	dins	CymbQ
 	dins	CymbL
-	
+
 	dins	PulseBass
 	dins	Tom
 	dins	Arp
@@ -199,16 +199,16 @@ InstrumentTable:
 	dins	WaveLeadMed
 	dins	WaveLeadLong
 	dins	WaveLeadLong2
-	
+
 	dins	Echo1
 	dins	Echo2
-	
+
 	dins	AKick
 	dins	ASnare
 	dins	ACHH
 	dins	AOHH
 	dins	ACymb
-	
+
 	dins	Tom2
 	dins	PWM1
 	dins	Arp017C
@@ -217,12 +217,12 @@ InstrumentTable:
 	dins	Arp950
 	dins	Arp740
 	dins	Arp830
-	
+
 	dins	RDLPulse1
 	dins	RDLPulse2
 	dins	RDLWave
 	dins	RDLNoise
-	
+
 	dins	EgyptBass1
 	dins	EgyptBass2
 
@@ -278,11 +278,11 @@ ins_RDLNoise:		Instrument	0,Echo1,RDLNoise,_,_
 
 ins_EgyptBass1:		Instrument	0,EgyptBass,Pluck,PulseLead,_
 ins_EgyptBass2:		Instrument	0,EgyptBass,Pluck,Bass_,_
-	
+
 ; =================================================================
-	
+
 PT_Triumph:	dw	Triumph_CH1,Triumph_CH2,Triumph_CH3,Triumph_CH4
-	
+
 Triumph_CH1:
 	db	SetInstrument,id_OctArp
 	db	SetLoopPoint
@@ -292,7 +292,7 @@ Triumph_CH1:
 	db	C#5,20,C#5,4,D#5,4,C#5,4,A#5,6,B_5,6,A#5,4,F#5,8,G#5,8
 	db	GotoLoopPoint
 	db	EndChannel
-	
+
 Triumph_CH2:
 	db	SetLoopPoint
 	db	$80,1,G#4,6,G#4,6,G#4,12,G#4,4,G#4,4,$80,2,G#4,4,G#4,4,G#4,4,$80,1,G#4,4,$80,2,G#4,6,G#4,6,$80,1,G#4,4
@@ -301,7 +301,7 @@ Triumph_CH2:
 	db	$80,2,B_4,6,B_4,6,B_4,12,$80,1,B_4,4,$80,2,B_4,4,F#5,4,F#5,4,F#5,4,$80,1,F#5,4,$80,2,F#5,6,$80,1,E_5,6,F#5,4
 	db	GotoLoopPoint
 	db	EndChannel
-	
+
 Triumph_CH3:
 	db	SetInstrument,4
 	db	SetLoopPoint
@@ -311,7 +311,7 @@ Triumph_CH3:
 	db	F#2,4,F#3,2,$80,5,F#2,2,$80,4,C#3,4,F#3,4,F#2,4,$80,6,F#3,4,$80,4,B_2,4,B_3,4
 	db	GotoLoopPoint
 	db	EndChannel
-	
+
 Triumph_CH4:
 .block0
 	db	SetLoopPoint
@@ -354,7 +354,7 @@ Triumph_CH4:
 	Drum	CHH,2
 	dbw	SetChannelPtr,.block1
 	db	EndChannel
-	
+
 .block1
 	Drum	Kick,4
 	Drum	CHH,4
@@ -396,7 +396,7 @@ Triumph_CH4:
 	db		fix,2
 	dbw	SetChannelPtr,.block0
 	db	EndChannel
-	
+
 ; =================================================================
 
 PT_InsertTitleHere:	dw	InsertTitleHere_CH1,InsertTitleHere_CH2,InsertTitleHere_CH3,InsertTitleHere_CH4
@@ -426,7 +426,7 @@ InsertTitleHere_CH1:
 	db	$80,14,A_2,6,$80,15,fix,4,$80,14,A_2,6,A_3,2,$80,15,fix,4,$80,14,A_3,2
 	db	$80,14,F_2,6,$80,15,fix,4,$80,14,F_2,6,F_3,2,$80,15,fix,4,$80,14,C#3,2
 	ret
-	
+
 InsertTitleHere_CH2:
 	db	SetInstrument,id_Arp
 	dbw	CallSection,.block0
@@ -488,7 +488,7 @@ InsertTitleHere_CH3:
 	db	A_5,6,$80,18,B_5,4,$80,19,A_5,6,$80,17,F#5,2,$80,18,E_5,4,$80,17,F#5,2
 	db	$80,20,E_5,18
 	ret
-	
+
 InsertTitleHere_CH4:
 	db	SetLoopPoint
 	Drum	Kick,4
@@ -501,11 +501,11 @@ InsertTitleHere_CH4:
 	Drum	CHH,2
 	db	GotoLoopPoint
 	db	EndChannel
-	
+
 ; =================================================================
 
 PT_EchoTest:	dw	EchoTest_CH1,DummyChannel,DummyChannel,DummyChannel
-	
+
 EchoTest_CH1:
 	db	SetInsAlternate,id_Echo1,id_Echo2
 	db	SetEchoDelay,$18
@@ -527,7 +527,7 @@ EchoTest_CH1:
 ; =================================================================
 
 PT_Egypt:	dw	Egypt_CH1,Egypt_CH2,Egypt_CH3,Egypt_CH4
-	
+
 Egypt_CH1:
 ;	db	SetLoopPoint
 ;	db	SetInsAlternate,id_EgyptBass1,id_EgyptBass2
@@ -543,7 +543,7 @@ Egypt_CH1:
 ;	dbw	CallSection,.block1
 ;	db	GotoLoopPoint
 	db	EndChannel
-	
+
 ;.block1
 ;	db	C_2,8,C_3,8,G_2,8,C_3,8
 ;	db	C_2,8,C_3,8,G_2,8,C_3,8
@@ -555,13 +555,13 @@ Egypt_CH1:
 ;.block3
 ;	db	G_2,8,G_3,8,D_3,8,G_3,8
 ;	ret
-	
+
 Egypt_CH2:
 	db	EndChannel
-	
+
 Egypt_CH3:
 	db	EndChannel
-	
+
 Egypt_CH4:
 	db	SetLoopPoint
 	dbw	CallSection,.block0
@@ -594,7 +594,7 @@ Egypt_CH4:
 	Drum	ACHH,4
 	Drum	ACHH,4
 	ret
-	
+
 ; =================================================================
 
 PT_FlashTitle:	dw	FlashTitle_CH1,FlashTitle_CH2,FlashTitle_CH3,FlashTitle_CH4
@@ -605,8 +605,8 @@ FlashTitle_CH1:
 	dbw	CallSection,.block0
 	dbw	CallSection,.block1
 	db	GotoLoopPoint
-	
-.block0	
+
+.block0
 	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	db	A#2,4
@@ -630,7 +630,7 @@ FlashTitle_CH1:
 	db	SetInstrument,id_PulseBass2
 	db	A#2,4
 	ret
-	
+
 .block1
 	Drum	Tom2,4
 	db	rest,2
@@ -800,7 +800,7 @@ RDLogo_CH1:
 	db	A_3,16
 	db	rest,1
 	db	EndChannel
-	
+
 RDLogo_CH2:
 	db	SetInstrument,id_RDLPulse1
 	db	PitchBendDown,15
@@ -812,7 +812,7 @@ RDLogo_CH2:
 	db	D_3,16
 	db	rest,1
 	db	EndChannel
-	
+
 RDLogo_CH3:
 	db	SetInstrument,id_RDLWave
 	db	PitchBendDown,15
@@ -821,10 +821,10 @@ RDLogo_CH3:
 	db	D_3,32
 	db	rest,1
 	db	EndChannel
-	
+
 RDLogo_CH4:
 	db	SetInstrument,id_RDLNoise
 	db	fix,10,rest,1
 	db	EndChannel
-	
+
 	

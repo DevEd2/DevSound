@@ -9,9 +9,9 @@ VisualizerVBlank:
 	push	bc
 	push	de
 	push	hl
-	
+
 	call	OAM_DMA
-	
+
 	; copy wave display buffer to vram
 	ld	[tempSP],sp
 	ld	sp,WaveDisplayBuffer
@@ -32,7 +32,7 @@ VisualizerVBlank:
 	ldh	a,[tempSP+1]
 	ld	h,a
 	ld	sp,hl
-	
+
 	; update pulse type, noise type and noise frequency
 	ld	a,[CH1Pulse]
 	add	$6c
@@ -55,7 +55,7 @@ VisualizerVBlank:
 	add	45
 .noch4
 	ld	[$fe0d],a ; ch4 frequency sprite's x position
-	
+
 	; update ch1-3 frequency sprite's x position
 	ld	a,[CH1PianoPos]
 	ld	[$fe01],a
@@ -63,7 +63,7 @@ VisualizerVBlank:
 	ld	[$fe05],a
 	ld	a,[CH3PianoPos]
 	ld	[$fe09],a
-	
+
 	; update output level sprites
 	ld	a,[CH1OutputLevel]	; output levels
 	and	$f
@@ -99,13 +99,13 @@ VisualizerVBlank:
 	endr
 	dec	b
 	jr	nz,.loop2
-	
+
 	ld	hl,$9991		; raster time display address in VRAM
 	ld	a,[RasterTimeChar]
 	ld	[hl+],a
 	ld	a,[RasterTimeChar+1]
 	ld	[hl+],a
-	
+
 	; draw song id
 	ld	hl,$9890
 	ld	a,[SongIDChar]
@@ -114,7 +114,7 @@ VisualizerVBlank:
 	ld	[hl+],a
 	ld	a,[SongIDChar+2]
 	ld	[hl+],a
-	
+
 if EngineSpeed != -1
 	ld	a,1
 	ld	[VBlankOccurred],a
@@ -124,7 +124,7 @@ endc
 	pop	bc
 	pop	af
 	reti
-	
+
 VisualizerInit:
 	ld	hl,VisualizerVarsStart
 	ld	b,VisualizerVarsEnd-VisualizerVarsStart
@@ -141,7 +141,7 @@ UpdateVisualizer:
 	ld	a,[RasterTime]
 	ld	hl,RasterTimeChar
 	call	DrawHex
-	
+
 	; draw song id
 	ld	a,[CurrentSong]
 	if	UseDecimal
@@ -153,7 +153,7 @@ UpdateVisualizer:
 		inc	hl
 		call	DrawHex
 	endc
-	
+
 	; depack the current wave and convert it into delta form
 	ld	hl,DepackedWaveDelta
 	ld	de,VisualizerTempWave
@@ -179,7 +179,7 @@ UpdateVisualizer:
 	jr	nz,.loop
 	xor	a
 	ld	[hl],a
-	
+
 	; clear and draw wave display buffer
 	ld	hl,WaveDisplayBuffer+63
 	ld	b,63
@@ -236,13 +236,13 @@ UpdateVisualizer:
 	pop	bc
 	dec	b
 	jr	nz,.drawtileloop
-	
+
 	call	UpdateVisualizerEnvelope
 	ld	a,[EnvelopeTimer]
 	add	EnvelopeSpeed
 	ld	[EnvelopeTimer],a
 	call	c,UpdateVisualizerEnvelope
-	
+
 	ld	bc,CH1ComputedFreq
 	ld	de,CH1OutputLevel
 	ld	hl,CH1PianoPos
@@ -255,7 +255,7 @@ UpdateVisualizer:
 	ld	de,CH3Vol
 	ld	hl,CH3PianoPos
 	jp	CalcPianoPos
-	
+
 UpdateVisualizerEnvelope_:	macro
 	ld	a,[\1TempEnvelope]
 	ld	b,a
@@ -280,13 +280,13 @@ UpdateVisualizerEnvelope_:	macro
 	ld	[\1OutputLevel],a
 .skip\@
 	endm
-	
+
 UpdateVisualizerEnvelope:
 	UpdateVisualizerEnvelope_	CH1
 	UpdateVisualizerEnvelope_	CH2
 	UpdateVisualizerEnvelope_	CH4
 	ret
-	
+
 CalcPianoPos:
 	; calculate frequency sprite's x position based on the computed frequency
 	; using some of hax math from Anniversary Crystal's music player routine
@@ -357,12 +357,12 @@ PianoPosConst	equ 8127	; ⌊287.7474⌋-256 in 8.8 bit fixed point form
 	pop	hl
 	ld	[hl],a			; [hl] = 287.7474-24*log₂(2048-[bc])
 	ret
-	
+
 .nonote
 	pop	hl
 	ld	[hl],0
 	ret
-	
+
 .logtable
 ; ⌊log₂(1+(x/256))*256⌋
 	db	  0,  1,  2,  4,  5,  7,  8,  9, 11, 12, 14, 15, 16, 18, 19, 21
@@ -381,7 +381,7 @@ PianoPosConst	equ 8127	; ⌊287.7474⌋-256 in 8.8 bit fixed point form
 	db	219,220,221,222,222,223,224,225,225,226,227,228,229,229,230,231
 	db	232,232,233,234,235,235,236,237,238,239,239,240,241,242,242,243
 	db	244,245,245,246,247,247,248,249,250,250,251,252,253,253,254,255
-	
+
 VisualizerSprites:
 	db	128,  0,$67,0	; CH1 freq
 	db	136,  0,$67,0	; CH2 freq
@@ -396,6 +396,6 @@ VisualizerSprites:
 	db	152,152,$70,0	; CH3 left output level
 	db	152,160,$70,0	; CH4 left output level
 VisualizerSprites_End:
-	
+
 VisualizerGfx:	incbin	"VisualizerGFX.bin"
 VisualizerGfx_End:

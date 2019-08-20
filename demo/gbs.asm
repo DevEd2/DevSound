@@ -17,7 +17,7 @@ endc
 GBS_TitleText:
 	db "DevSound Demo"
 rept GBS_TitleText - @ + 32
-	db	0												; if ds is used, $ff will be filled instead 
+	db	0												; if ds is used, $ff will be filled instead
 endr
 GBS_AuthorText:
 	db "DevEd"

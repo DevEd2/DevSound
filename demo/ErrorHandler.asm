@@ -7,10 +7,10 @@
 ErrorHandler:
 	; store stack pointer
 	ld	[tempSP],sp
-	
+
 	push	hl
 	push	af
-	
+
 	; store AF
 	; Note that F normally cannot be read directly, so we must first
 	; push af and then pop it to hl.
@@ -19,63 +19,63 @@ ErrorHandler:
 	ldh	[tempAF],a
 	ld	a,l
 	ldh	[tempAF+1],a
-	
+
 	; store BC
 	ld	a,b
 	ldh	[tempBC],a
 	ld	a,c
 	ldh	[tempBC+1],a
-	
+
 	; store DE
 	ld	a,d
 	ldh	[tempDE],a
 	ld	a,e
 	ldh	[tempDE+1],a
-	
+
 	; store HL
 	pop	hl
 	ld	a,h
 	ldh	[tempHL],a
 	ld	a,l
 	ldh	[tempHL+1],a
-	
+
 	; store PC
 	pop	hl				; hl = old program counter
 	ld	a,h
 	ldh	[tempPC],a
 	ld	a,l
 	ldh	[tempPC+1],a
-	
+
 	; store IF
 	ldh	a,[rIF]
 	ldh	[tempIF],a
-	
+
 	; store IE
 	ldh	a,[rIE]
 	ldh	[tempIE],a
-	
+
 .wait					; wait for VBlank before disabling the LCD
 	ldh	a,[rLY]
 	cp	$90
 	jr	nz,.wait
 	; Note that it probably isn't a good idea to use halt to wait for VBlank
 	; because interrupts may not be enabled when an error occurs.
-	
+
 	xor	a
 	ldh	[rLCDC],a		; disable LCD
-	
+
 	ld	a,%11100100		; default palette
 	ldh	[rBGP],a
-	
+
 	call	ClearVRAM
-	
+
 	CopyTileset1BPP	Font,0,97
 	ld	hl,ErrorHandlerTilemap
 	call	LoadMapText
-	
+
 DrawRegisterValues:
 	ld	de,tempAF
-	
+
 	ld	hl,$9965
 	ld	a,[de]
 	inc	de
@@ -113,20 +113,20 @@ DrawRegisterValues:
 	ld	a,[de]
 	inc	de
 	call	DrawHex
-	
+
 	ld	hl,$99a5
 	ld	a,[tempSP+1]
 	call	DrawHex
 	ld	a,[tempSP]
 	call	DrawHex
-	
+
 	; TODO: Draw IF and IE
-	
+
 	ld	a,[rIF]
 	ld	b,a
 	ld	hl,$99c8
 	call	DrawBin
-	
+
 	ld	a,[rIE]
 	ld	b,a
 	ld	hl,$99e8
@@ -134,7 +134,7 @@ DrawRegisterValues:
 
 	ld	a,%10010001
 	ldh	[rLCDC],a
-	
+
 	call	DS_Stop
 
 ErrorHandler_loop:
@@ -146,7 +146,7 @@ ErrorHandler_loop:
 .continue
 	halt
 	jr	ErrorHandler_loop
-	
+
 DrawBin:
 	bit	7,b
 	call	nz,.draw1
@@ -180,7 +180,7 @@ DrawBin:
 	ld	a,"1" - 32
 	ld	[hl+],a
 	ret
-	
+
 ErrorHandlerTilemap:
 ;		 ####################
 	db	"     - ERROR -      "

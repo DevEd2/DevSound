@@ -3,7 +3,7 @@ PY := python3
 
 ASFLAGS = -p 0xff -i ../
 LDFLAGS = -p 0xff
-FXFLAGS = -p 0xff
+FXFLAGS = -p 0xff -v
 
 
 all: DevSound.gbc DevSound.gbs
