@@ -352,22 +352,26 @@ DevSound_Play:
 
 ; ================================================================
 
-UpdateCH1:
-	ld	a,[CH1Enabled]
+UpdateChannel: macro
+IS_PULSE_CHANNEL equ (\1 == 1) || (\1 == 2)
+IS_WAVE_CHANNEL   equ \1 == 3
+IS_NOISE_CHANNEL  equ \1 == 4
+
+	ld	a,[CH\1Enabled]
 	and	a
-	jp	z,UpdateCH2			; if channel is disabled, skip to UpdateCH2
-	ld	a,[CH1Tick]
+	jp	z,CH\1Updated		; if channel is disabled, skip to next one
+	ld	a,[CH\1Tick]
 	and	a
 	jr	z,.continue			; if channel tick = 0, then jump ahead
 	dec	a					; otherwise...
-	ld	[CH1Tick],a			; decrement channel tick...
-	jp	UpdateCH2	; ...and do echo buffer.
+	ld	[CH\1Tick],a		; decrement channel tick...
+	jp	CH\1Updated			; ...and do echo buffer.
 .continue
-	ld	hl,CH1Ptr			; get pointer
+	ld	hl,CH\1Ptr			; get pointer
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-CH1_CheckByte:
+CH\1_CheckByte:
 	ld	a,[hl+]				; get byte
 	cp	$ff					; if $ff...
 	jp	z,.endChannel
@@ -382,109 +386,166 @@ CH1_CheckByte:
 	bit	7,a					; if command...
 	jp	nz,.getCommand
 	; if we have a note...
+if !IS_NOISE_CHANNEL
 	ld	b,a
 	xor	a
-	ld	[CH1DoEcho],a
+	ld	[CH\1DoEcho],a
 	ld	a,b
+endc
 .getNote
-	ld	[CH1NoteBackup],a	; set note
+if IS_NOISE_CHANNEL
+	ld	[CH\1ModeBackup],a
+else
+	ld	[CH\1NoteBackup],a	; set note
 	ld	b,a
-	ld	a,[CH1NotePlayed]
+	ld	a,[CH\1NotePlayed]
 	and	a
 	jr	nz,.skipfill
 	ld	a,b
-	call	CH1FillEchoBuffer
+	call	CH\1FillEchoBuffer
 .skipfill
+endc
 	ld	a,[hl+]				; get note length
 	dec	a					; subtract 1
-	ld	[CH1Tick],a			; set channel tick
+	ld	[CH\1Tick],a		; set channel tick
 	ld	a,l					; store back current pos
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,h
-	ld	[CH1Ptr+1],a
-	ld	a,[CH1PortaType]
+	ld	[CH\1Ptr+1],a
+if !IS_NOISE_CHANNEL
+	ld	a,[CH\1PortaType]
 	dec	a					; if toneporta, don't reset everything
 	jr	z,.noreset
+endc
+
+if !IS_WAVE_CHANNEL
+	if ((\1 == 2) || (\1 == 4)) && UseFXHammer
+	ld	a,[FXHammer_SFXCH\1]
+	cp	3
+	jr	z,.noupdate
+	endc
 	xor	a
-	ld	[CH1ArpPos],a		; reset arp position
+else
+	ld	a, $FF
+	ld	[CH\1Wave],a
+	ld	a,[CH\1ComputedVol]		; Fix for volume not updating when unpausing
+endc
+	ldh	[rNR\12],a
+.noupdate
+
+	xor	a
+if IS_NOISE_CHANNEL
+	ld	[CH\1NoisePos],a
+	if !def(DisableDeflehacks)
+	ld	[CH\1WavePos],a
+	endc
+else
+	ld	[CH\1ArpPos],a		; reset arp position
 	inc	a
-	ld	[CH1VibPos],a		; reset vibrato position
-	ld	hl,CH1VibPtr
+	ld	[CH\1VibPos],a		; reset vibrato position
+
+	ld	hl,CH\1VibPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[hl]				; get vibrato delay
-	ld	[CH1VibDelay],a		; set delay
+	ld	a,[hl]					; get vibrato delay
+	ld	[CH\1VibDelay],a		; set delay
+endc
+
 	xor	a
-	ld	hl,CH1Reset
+	ld	hl,CH\1Reset
+if !IS_NOISE_CHANNEL
 	bit	0,[hl]
 	jr	nz,.noreset_checkvol
-	ld	[CH1PulsePos],a
+	if IS_PULSE_CHANNEL
+	ld	[CH\1PulsePos],a
+	elif IS_WAVE_CHANNEL
+	ld	[CH\1WavePos],a
+	endc
 .noreset_checkvol
+endc
 	bit	1,[hl]
 	jr	nz,.noreset
-	ld	[CH1VolPos],a
-	ld	[CH1VolLoop],a
+	ld	[CH\1VolPos],a
+if !IS_WAVE_CHANNEL
+	ld	[CH\1VolLoop],a
+endc
 .noreset
-	ld	a,[CH1NoteCount]
+	ld	a,[CH\1NoteCount]
 	inc	a
-	ld	[CH1NoteCount],a
+	ld	[CH\1NoteCount],a
 	ld	b,a
+
 	; check if instrument mode is 1 (alternating)
-	ld	a,[CH1InsMode]
+	ld	a,[CH\1InsMode]
 	and	a
 	jr	z,.noInstrumentChange
 	ld	a,b
 	rra
 	jr	nc,.notodd
-	ld	a,[CH1Ins1]
+	ld	a,[CH\1Ins1]
 	jr	.odd
 .notodd
-	ld	a,[CH1Ins2]
+	ld	a,[CH\1Ins2]
 .odd
-	call	CH1_SetInstrument
+	call	CH\1_SetInstrument
 .noInstrumentChange
-	ld	hl,CH1Reset
+if !IS_NOISE_CHANNEL
+	ld	hl,CH\1Reset
 	set	7,[hl]			; signal the start of note for pitch bend
-	jp	UpdateCH2
+endc
+	jp	CH\1Updated
 
 .endChannel
 	xor	a
-	ld	[CH1Enabled],a
-	jp	UpdateCH2
+	ld	[CH\1Enabled],a
+	jp	CH\1Updated
 
 .retSection
-	ld	hl,CH1RetPtr
+	ld	hl,CH\1RetPtr
 	ld	a,[hl+]
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,[hl]
-	ld	[CH1Ptr+1],a
-	jp	UpdateCH1
+	ld	[CH\1Ptr+1],a
+	jp	UpdateCH\1
+
+.echo ; Not applicable to CH4
+if !IS_NOISE_CHANNEL
+	ld	b,a
+	ld	a,1
+	ld	[CH\1DoEcho],a
+	ld	a,b
+	jp	.getNote
+endc
 
 .nullnote
+if !IS_NOISE_CHANNEL
 	xor	a
-	ld	[CH1DoEcho],a
+	ld	[CH\1DoEcho],a
+endc
 	ld	a,[hl+]
 	dec	a
-	ld	[CH1Tick],a		; set tick
+	ld	[CH\1Tick],a		; set tick
 	ld	a,l				; store back current pos
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,h
-	ld	[CH1Ptr+1],a
-	jp	UpdateCH2
+	ld	[CH\1Ptr+1],a
+	jp	CH\1Updated
 
 .release
 	; follows FamiTracker's behavior except only the volume table will be affected
+if !IS_NOISE_CHANNEL
 	xor	a
-	ld	[CH1DoEcho],a
+	ld	[CH\1DoEcho],a
+endc
 	ld	a,[hl+]
 	dec	a
-	ld	[CH1Tick],a		; set tick
+	ld	[CH\1Tick],a		; set tick
 	ld	a,l				; store back current pos
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,h
-	ld	[CH1Ptr+1],a
-	ld	hl,CH1VolPtr
+	ld	[CH\1Ptr+1],a
+	ld	hl,CH\1VolPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
@@ -498,24 +559,19 @@ CH1_CheckByte:
 	jr	nz,.releaseloop
 	ld	a,b
 	inc	a
-	ld	[CH1VolPos],a
+	ld	[CH\1VolPos],a
 .norelease
-	jp	UpdateCH2
-
-.echo
-	ld	b,a
-	ld	a,1
-	ld	[CH1DoEcho],a
-	ld	a,b
-	jp	.getNote
+	jp	CH\1Updated
 
 .getCommand
+if !IS_NOISE_CHANNEL
 	ld	b,a
 	xor	a
-	ld	[CH1DoEcho],a
+	ld	[CH\1DoEcho],a
 	ld	a,b
+endc
 	cp	DummyCommand
-	jp	nc, CH1_CheckByte
+	jp	nc, CH\1_CheckByte
 	; Not needed because function performs "add a" which discards bit 7
 	; sub	$80	; subtract 128 from command value
 	call	JumpTableBelow
@@ -531,11 +587,19 @@ CH1_CheckByte:
 	dw	.setPan
 	dw	.setSpeed
 	dw	.setInsAlternate
-	dw	CH1_CheckByte	;.randomizeWave
+if IS_WAVE_CHANNEL && !def(DemoSceneMode)
+	dw	.randomizeWave
+else
+	dw	CH\1_CheckByte
+endc
 	dw	.combineWaves
 	dw	.enablePWM
 	dw	.enableRandomizer
-	dw	CH1_CheckByte	;.disableAutoWave
+if IS_WAVE_CHANNEL && !def(DemoSceneMode)
+	dw	.disableAutoWave
+else
+	dw	CH\1_CheckByte
+endc
 	dw	.arp
 	dw	.toneporta
 	dw	.chanvol
@@ -547,48 +611,49 @@ CH1_CheckByte:
 .setInstrument
 	ld	a,[hl+]					; get ID of instrument to switch to
 	push	hl					; preserve HL
-	call	CH1_SetInstrument
-	xor	a
-	ld	[CH1InsMode],a			; reset instrument mode
+	call	CH\1_SetInstrument
 	pop	hl						; restore HL
-	jp	CH1_CheckByte
+	xor	a
+	ld	[CH\1InsMode],a			; reset instrument mode
+	jp	CH\1_CheckByte
 
 .setLoopPoint
 	ld	a,l
-	ld	[CH1LoopPtr],a
+	ld	[CH\1LoopPtr],a
 	ld	a,h
-	ld	[CH1LoopPtr+1],a
-	jp	CH1_CheckByte
+	ld	[CH\1LoopPtr+1],a
+	jp	CH\1_CheckByte
 
 .gotoLoopPoint
-	ld	hl,CH1LoopPtr			; get loop pointer
+	ld	hl,CH\1LoopPtr			; get loop pointer
 	ld	a,[hl+]
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,[hl]
-	ld	[CH1Ptr+1],a
-	jp	UpdateCH1
+	ld	[CH\1Ptr+1],a
+	jp	UpdateCH\1
 
 .callSection
 	ld	a,[hl+]
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,[hl+]
-	ld	[CH1Ptr+1],a
+	ld	[CH\1Ptr+1],a
 	ld	a,l
-	ld	[CH1RetPtr],a
+	ld	[CH\1RetPtr],a
 	ld	a,h
-	ld	[CH1RetPtr+1],a
-	jp	UpdateCH1
+	ld	[CH\1RetPtr+1],a
+	jp	UpdateCH\1
 
 .setChannelPtr
 	ld	a,[hl+]
-	ld	[CH1Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,[hl]
-	ld	[CH1Ptr+1],a
-	jp	UpdateCH1
+	ld	[CH\1Ptr+1],a
+	jp	UpdateCH\1
 
+if !IS_NOISE_CHANNEL
 .pitchBendUp
 	ld	a,[hl+]
-	ld	[CH1PortaSpeed],a
+	ld	[CH\1PortaSpeed],a
 	and	a
 	jr	z,.loadPortaType
 	ld	a,2
@@ -596,7 +661,7 @@ CH1_CheckByte:
 
 .pitchBendDown
 	ld	a,[hl+]
-	ld	[CH1PortaSpeed],a
+	ld	[CH\1PortaSpeed],a
 	and	a
 	jr	z,.loadPortaType
 	ld	a,3
@@ -604,23 +669,26 @@ CH1_CheckByte:
 
 .toneporta
 	ld	a,[hl+]
-	ld	[CH1PortaSpeed],a
+	ld	[CH\1PortaSpeed],a
 	and	a
 	jr	z,.loadPortaType
 	ld	a,1
 .loadPortaType
-	ld	[CH1PortaType],a
-	jp	CH1_CheckByte
+	ld	[CH\1PortaType],a
+	jp	CH\1_CheckByte
+endc
 
+if \1 == 1
 .setSweep
 	ld	a,[hl+]
-	ld	[CH1Sweep],a
-	jp	CH1_CheckByte
+	ld	[CH\1Sweep],a
+	jp	CH\1_CheckByte
+endc
 
 .setPan
 	ld	a,[hl+]
-	ld	[CH1Pan],a
-	jp	CH1_CheckByte
+	ld	[CH\1Pan],a
+	jp	CH\1_CheckByte
 
 .setSpeed
 	ld	a,[hl+]
@@ -629,866 +697,23 @@ CH1_CheckByte:
 	ld	a,[hl+]
 	dec	a
 	ld	[GlobalSpeed2],a
-	jp	CH1_CheckByte
+	jp	CH\1_CheckByte
 
 .setInsAlternate
 	ld	a,[hl+]
-	ld	[CH1Ins1],a
+	ld	[CH\1Ins1],a
 	ld	a,[hl+]
-	ld	[CH1Ins2],a
+	ld	[CH\1Ins2],a
 	ld	a,1
-	ld	[CH1InsMode],a
-	jp	CH1_CheckByte
+	ld	[CH\1InsMode],a
+	jp	CH\1_CheckByte
 
-.combineWaves
-	ld	a,l
-	add	4
-	ld	l,a
-	jp	nc,CH1_CheckByte
-	inc	h
-	jp	CH1_CheckByte
-
-.enablePWM
-	inc	hl
-	inc	hl
-	jp	CH1_CheckByte
-
-.setSyncTick
-	ld	a,[hl+]
-	ld	[SyncTick],a
-	jp	CH1_CheckByte
-
-.enableRandomizer
-	inc	hl
-	jp	CH1_CheckByte
-
-.arp
-	call	DoArp
-	jp	CH1_CheckByte
-
-.chanvol
-	ld	a,[hl+]
-	and	$f
-	ld	[CH1ChanVol],a
-	jp	CH1_CheckByte
-
-.setEchoDelay
-	ld	a,[hl+]
-	and	$3f
-	ld	[CH1EchoDelay],a
-	jp	CH1_CheckByte
-
-.setRepeatPoint
-	ld	a,l
-	ld	[CH1RepeatPtr],a
-	ld	a,h
-	ld	[CH1RepeatPtr+1],a
-	jp	CH1_CheckByte
-
-.repeatSection
-	ld	a,[CH1RepeatCount]
-	and	a	; section currently repeating?
-	jr	z,.notrepeating
-	dec	a
-	ld	[CH1RepeatCount],a
-	and	a
-	jr	z,.stoprepeating
-	inc	hl
-	jr	.dorepeat
-.notrepeating
-	ld	a,[hl+]
-	dec	a
-	ld	[CH1RepeatCount],a
-	ld	a,1
-	ld	[CH1DoRepeat],a
-.dorepeat
-	ld	hl,CH1RepeatPtr			; get loop pointer
-	ld	a,[hl+]
-	ld	[CH1Ptr],a
-	ld	a,[hl]
-	ld	[CH1Ptr+1],a
-	jp	UpdateCH1
-.stoprepeating
-	xor	a
-	ld	[CH1DoRepeat],a
-.norepeat
-	inc	hl
-	jp	CH1_CheckByte
-
-CH1_SetInstrument:
-	ld	hl,InstrumentTable
-	ld	e,a
-	ld	d,0
-	add	hl,de
-	add	hl,de
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	and	3
-	ld	[CH1Reset],a
-	ld	b,a
-	; vol table
-	ld	a,[hl+]
-	ld	[CH1VolPtr],a
-	ld	a,[hl+]
-	ld	[CH1VolPtr+1],a
-	; arp table
-	ld	a,[hl+]
-	ld	[CH1ArpPtr],a
-	ld	a,[hl+]
-	ld	[CH1ArpPtr+1],a
-	; pulse table
-	ld	a,[hl+]
-	ld	[CH1PulsePtr],a
-	ld	a,[hl+]
-	ld	[CH1PulsePtr+1],a
-	; vib table
-	ld	a,[hl+]
-	ld	[CH1VibPtr],a
-	ld	a,[hl+]
-	ld	[CH1VibPtr+1],a
-	ld	hl,CH1VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[hl]
-	ld	[CH1VibDelay],a
-	ret
-
-; ================================================================
-
-UpdateCH2:
-	ld	a,[CH2Enabled]
-	and	a
-	jp	z,UpdateCH3
-	ld	a,[CH2Tick]
-	and	a
-	jr	z,.continue
-	dec	a
-	ld	[CH2Tick],a
-	jp	UpdateCH3
-.continue
-	ld	hl,CH2Ptr	; get pointer
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-CH2_CheckByte:
-	ld	a,[hl+]		; get byte
-	cp	$ff
-	jp	z,.endChannel
-	cp	$c9
-	jp	z,.retSection
-	cp	release				; if release
-	jp	z,.release
-	cp	___
-	jp	z,.nullnote
-	cp	echo
-	jp	z,.echo
-	bit	7,a			; check for command
-	jp	nz,.getCommand
-	; if we have a note...
-	ld	b,a
-	xor	a
-	ld	[CH2DoEcho],a
-	ld	a,b
-.getNote
-	ld	[CH2NoteBackup],a
-	ld	b,a
-	ld	a,[CH2NotePlayed]
-	and	a
-	jr	nz,.skipfill
-	ld	a,b
-	call	CH2FillEchoBuffer
-.skipfill
-	ld	a,[hl+]
-	dec	a
-	ld	[CH2Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
-	ld	a,h
-	ld	[CH2Ptr+1],a
-	ld	a,[CH2PortaType]
-	dec	a				; if toneporta, don't reset everything
-	jr	z,.noreset
-	xor	a
-	ld	[CH2ArpPos],a
-	if(UseFXHammer)
-	ld	a,[FXHammer_SFXCH2]
-	cp	3
-	jp	z,.noupdate
-	endc
-	ldh	[rNR22],a
-.noupdate
-	inc	a
-	ld	[CH2VibPos],a
-	ld	hl,CH2VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[hl]
-	ld	[CH2VibDelay],a
-	xor	a
-	ld	hl,CH2Reset
-	bit	0,[hl]
-	jr	nz,.noreset_checkvol
-	ld	[CH2PulsePos],a
-.noreset_checkvol
-	bit	1,[hl]
-	jr	nz,.noreset
-	ld	[CH2VolPos],a
-	ld	[CH2VolLoop],a
-.noreset
-	ld	a,[CH2NoteCount]
-	inc	a
-	ld	[CH2NoteCount],a
-	ld	b,a
-	; check if instrument mode is 1 (alternating)
-	ld	a,[CH2InsMode]
-	and	a
-	jr	z,.noInstrumentChange
-	ld	a,b
-	rra
-	jr	nc,.notodd
-	ld	a,[CH2Ins1]
-	jr	.odd
-.notodd
-	ld	a,[CH2Ins2]
-.odd
-	call	CH2_SetInstrument
-.noInstrumentChange
-	ld	hl,CH2Reset
-	set	7,[hl]
-	jp	UpdateCH3
-
-.endChannel
-	xor	a
-	ld	[CH2Enabled],a
-	jp	UpdateCH3
-
-.retSection
-	ld	hl,CH2RetPtr
-	ld	a,[hl+]
-	ld	[CH2Ptr],a
-	ld	a,[hl]
-	ld	[CH2Ptr+1],a
-	jp	UpdateCH2
-
-.nullnote
-	xor	a
-	ld	[CH2DoEcho],a
-	ld	a,[hl+]
-	dec	a
-	ld	[CH2Tick],a		; set tick
-	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
-	ld	a,h
-	ld	[CH2Ptr+1],a
-	jp	UpdateCH3
-
-.release
-	; follows FamiTracker's behavior except only the volume table will be affected
-	xor	a
-	ld	[CH2DoEcho],a
-	ld	a,[hl+]
-	dec	a
-	ld	[CH2Tick],a		; set tick
-	ld	a,l				; store back current pos
-	ld	[CH2Ptr],a
-	ld	a,h
-	ld	[CH2Ptr+1],a
-	ld	hl,CH2VolPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	b,0
-.releaseloop
-	ld	a,[hl+]
-	inc	b
-	cp	$ff
-	jr	z,.norelease
-	cp	$fe
-	jr	nz,.releaseloop
-	ld	a,b
-	inc	a
-	ld	[CH2VolPos],a
-.norelease
-	jp	UpdateCH3
-
-.echo
-	ld	b,a
-	ld	a,1
-	ld	[CH2DoEcho],a
-	ld	a,b
-	jp	.getNote
-
-.getCommand
-	ld	b,a
-	xor	a
-	ld	[CH2DoEcho],a
-	ld	a,b
-	cp	DummyCommand
-	jp	nc,CH2_CheckByte
-	; Not needed because function performs "add a" which discards bit 7
-	; sub	$80
-	call	JumpTableBelow
-
-	dw	.setInstrument
-	dw	.setLoopPoint
-	dw	.gotoLoopPoint
-	dw	.callSection
-	dw	.setChannelPtr
-	dw	.pitchBendUp
-	dw	.pitchBendDown
-	dw	.setSweep
-	dw	.setPan
-	dw	.setSpeed
-	dw	.setInsAlternate
-	dw	CH2_CheckByte	;.randomizeWave
-	dw	.combineWaves
-	dw	.enablePWM
-	dw	.enableRandomizer
-	dw	CH2_CheckByte	;.disableAutoWave
-	dw	.arp
-	dw	.toneporta
-	dw	.chanvol
-	dw	.setSyncTick
-	dw	.setEchoDelay
-	dw	.setRepeatPoint
-	dw	.repeatSection
-
-.setInstrument
-	ld	a,[hl+]
-	push	hl
-	call	CH2_SetInstrument
-	pop	hl
-	xor	a
-	ld	[CH2InsMode],a
-	jp	CH2_CheckByte
-
-.setLoopPoint
-	ld	a,l
-	ld	[CH2LoopPtr],a
-	ld	a,h
-	ld	[CH2LoopPtr+1],a
-	jp	CH2_CheckByte
-
-.gotoLoopPoint
-	ld	hl,CH2LoopPtr
-	ld	a,[hl+]
-	ld	[CH2Ptr],a
-	ld	a,[hl]
-	ld	[CH2Ptr+1],a
-	jp	UpdateCH2
-
-.callSection
-	ld	a,[hl+]
-	ld	[CH2Ptr],a
-	ld	a,[hl+]
-	ld	[CH2Ptr+1],a
-	ld	a,l
-	ld	[CH2RetPtr],a
-	ld	a,h
-	ld	[CH2RetPtr+1],a
-	jp	UpdateCH2
-
-.setChannelPtr
-	ld	a,[hl+]
-	ld	[CH2Ptr],a
-	ld	a,[hl]
-	ld	[CH2Ptr+1],a
-	jp	UpdateCH2
-
-.pitchBendUp
-	ld	a,[hl+]
-	ld	[CH2PortaSpeed],a
-	and	a
-	jr	z,.loadPortaType
-	ld	a,2
-	jr	.loadPortaType
-
-.pitchBendDown
-	ld	a,[hl+]
-	ld	[CH2PortaSpeed],a
-	and	a
-	jr	z,.loadPortaType
-	ld	a,3
-	jr	.loadPortaType
-
-.toneporta
-	ld	a,[hl+]
-	ld	[CH2PortaSpeed],a
-	and	a
-	jr	z,.loadPortaType
-	ld	a,1
-.loadPortaType
-	ld	[CH2PortaType],a
-	jp	CH2_CheckByte
-
-.setSweep
-.enableRandomizer
-	inc	hl
-	jp	CH2_CheckByte
-
-.setPan
-	ld	a,[hl+]
-	ld	[CH2Pan],a
-	jp	CH2_CheckByte
-
-.setSpeed
-	ld	a,[hl+]
-	dec	a
-	ld	[GlobalSpeed1],a
-	ld	a,[hl+]
-	dec	a
-	ld	[GlobalSpeed2],a
-	jp	CH2_CheckByte
-
-.setInsAlternate
-	ld	a,[hl+]
-	ld	[CH2Ins1],a
-	ld	a,[hl+]
-	ld	[CH2Ins2],a
-	ld	a,1
-	ld	[CH2InsMode],a
-	jp	CH2_CheckByte
-
-.combineWaves
-	ld	a,l
-	add	4
-	ld	l,a
-	jp	nc,CH2_CheckByte
-	inc	h
-	jp	CH2_CheckByte
-
-.enablePWM
-	inc	hl
-	inc	hl
-	jp	CH2_CheckByte
-
-.arp
-	call	DoArp
-	jp	CH2_CheckByte
-
-.chanvol
-	ld	a,[hl+]
-	and	$f
-	ld	[CH2ChanVol],a
-	jp	CH2_CheckByte
-
-.setSyncTick
-	ld	a,[hl+]
-	ld	[SyncTick],a
-	jp	CH2_CheckByte
-
-.setEchoDelay
-	ld	a,[hl+]
-	and	$3f
-	ld	[CH2EchoDelay],a
-	jp	CH2_CheckByte
-
-.setRepeatPoint
-	ld	a,l
-	ld	[CH2RepeatPtr],a
-	ld	a,h
-	ld	[CH2RepeatPtr+1],a
-	jp	CH2_CheckByte
-
-.repeatSection
-	ld	a,[CH2RepeatCount]
-	and	a	; section currently repeating?
-	jr	z,.notrepeating
-	dec	a
-	ld	[CH2RepeatCount],a
-	and	a
-	jr	z,.stoprepeating
-	inc	hl
-	jr	.dorepeat
-.notrepeating
-	ld	a,[hl+]
-	dec	a
-	ld	[CH2RepeatCount],a
-	ld	a,1
-	ld	[CH2DoRepeat],a
-.dorepeat
-	ld	hl,CH2RepeatPtr			; get loop pointer
-	ld	a,[hl+]
-	ld	[CH2Ptr],a
-	ld	a,[hl]
-	ld	[CH2Ptr+1],a
-	jp	UpdateCH2
-.stoprepeating
-	xor	a
-	ld	[CH2DoRepeat],a
-.norepeat
-	inc	hl
-	jp	CH2_CheckByte
-
-CH2_SetInstrument:
-	ld	hl,InstrumentTable
-	ld	e,a
-	ld	d,0
-	add	hl,de
-	add	hl,de
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	and	3
-	ld	[CH2Reset],a
-	ld	b,a
-	; vol table
-	ld	a,[hl+]
-	ld	[CH2VolPtr],a
-	ld	a,[hl+]
-	ld	[CH2VolPtr+1],a
-	; arp table
-	ld	a,[hl+]
-	ld	[CH2ArpPtr],a
-	ld	a,[hl+]
-	ld	[CH2ArpPtr+1],a
-	; pulse table
-	ld	a,[hl+]
-	ld	[CH2PulsePtr],a
-	ld	a,[hl+]
-	ld	[CH2PulsePtr+1],a
-	; vib table
-	ld	a,[hl+]
-	ld	[CH2VibPtr],a
-	ld	a,[hl+]
-	ld	[CH2VibPtr+1],a
-	ld	hl,CH2VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[hl]
-	ld	[CH2VibDelay],a
-	ret
-
-; ================================================================
-
-UpdateCH3:
-	ld	a,[CH3Enabled]
-	and	a
-	jp	z,UpdateCH4
-	ld	a,[CH3Tick]
-	and	a
-	jr	z,.continue
-	dec	a
-	ld	[CH3Tick],a
-	jp	UpdateCH4
-.continue
-	ld	hl,CH3Ptr	; get pointer
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-CH3_CheckByte:
-	ld	a,[hl+]		; get byte
-	cp	$ff
-	jp	z,.endChannel
-	cp	$c9
-	jp	z,.retSection
-	cp	release				; if release
-	jp	z,.release
-	cp	___
-	jp	z,.nullnote
-	cp	echo
-	jp	z,.echo
-	bit	7,a			; check for command
-	jp	nz,.getCommand
-	; if we have a note...
-	ld	b,a
-	xor	a
-	ld	[CH1DoEcho],a
-	ld	a,b
-.getNote
-	ld	[CH3NoteBackup],a
-	ld	b,a
-	ld	a,[CH3NotePlayed]
-	and	a
-	jr	nz,.skipfill
-	ld	a,b
-	call	CH3FillEchoBuffer
-.skipfill
-	ld	a,[hl+]
-	dec	a
-	ld	[CH3Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH3Ptr],a
-	ld	a,h
-	ld	[CH3Ptr+1],a
-	ld	a,[CH3PortaType]
-	dec	a				; if toneporta, don't reset everything
-	jr	z,.noresetvol
-	xor	a
-	ld	[CH3ArpPos],a
-	cpl
-	ld	[CH3Wave],a		; workaround for wave corruption bug on DMG, forces wave update at note start
-	ld	a,1
-	ld	[CH3VibPos],a
-	ld	hl,CH3VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[hl]
-	ld	[CH3VibDelay],a
-	xor	a
-	ld	hl,CH3Reset
-	bit	0,[hl]
-	jr	nz,.noresetwave
-	ld	[CH3WavePos],a
-.noresetwave
-	bit	1,[hl]
-	jr	nz,.noresetvol
-	ld	[CH3VolPos],a
-.noresetvol
-	ld	a,[CH3NoteCount]
-	inc	a
-	ld	[CH3NoteCount],a
-	ld	b,a
-	ld	a,[CH3ComputedVol]
-	ldh	[rNR32],a	; fix for volume not updating when unpausing
-
-	; check if instrument mode is 1 (alternating)
-	ld	a,[CH3InsMode]
-	and	a
-	jr	z,.noInstrumentChange
-	ld	a,b
-	rra
-	jr	nc,.notodd
-	ld	a,[CH3Ins1]
-	jr	.odd
-.notodd
-	ld	a,[CH3Ins2]
-.odd
-	call	CH3_SetInstrument
-.noInstrumentChange
-	ld	hl,CH3Reset
-	set	7,[hl]
-	jp	UpdateCH4
-
-.endChannel
-	xor	a
-	ld	[CH3Enabled],a
-	jp	UpdateCH4
-
-.retSection
-	ld	hl,CH3RetPtr
-	ld	a,[hl+]
-	ld	[CH3Ptr],a
-	ld	a,[hl]
-	ld	[CH3Ptr+1],a
-	jp	UpdateCH3
-
-.nullnote
-	ld	b,a
-	xor	a
-	ld	[CH1DoEcho],a
-	ld	a,b
-	ld	a,[hl+]
-	dec	a
-	ld	[CH3Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH3Ptr],a
-	ld	a,h
-	ld	[CH3Ptr+1],a
-	jp	UpdateCH4
-
-.release
-	; follows FamiTracker's behavior except only the volume table will be affected
-	xor	a
-	ld	[CH1DoEcho],a
-	ld	a,[hl+]
-	dec	a
-	ld	[CH3Tick],a		; set tick
-	ld	a,l				; store back current pos
-	ld	[CH3Ptr],a
-	ld	a,h
-	ld	[CH3Ptr+1],a
-	ld	b,b
-	ld	hl,CH3VolPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	b,0
-.releaseloop
-	ld	a,[hl+]
-	inc	b
-	cp	$ff
-	jr	z,.norelease
-	cp	$fe
-	jr	nz,.releaseloop
-	ld	a,b
-	inc	a
-	ld	[CH3VolPos],a
-.norelease
-	jp	UpdateCH4
-
-.echo
-	ld	b,a
-	ld	a,1
-	ld	[CH3DoEcho],a
-	ld	a,b
-	jp	.getNote
-
-.getCommand
-	cp	DummyCommand
-	jp	nc,CH3_CheckByte
-	; Not needed because function performs "add a" which discards bit 7
-	; sub	$80
-	call	JumpTableBelow
-
-	dw	.setInstrument
-	dw	.setLoopPoint
-	dw	.gotoLoopPoint
-	dw	.callSection
-	dw	.setChannelPtr
-	dw	.pitchBendUp
-	dw	.pitchBendDown
-	dw	.setSweep
-	dw	.setPan
-	dw	.setSpeed
-	dw	.setInsAlternate
-	dw	.randomizeWave
-	dw	.combineWaves
-	dw	.enablePWM
-	dw	.enableRandomizer
-	dw	.disableAutoWave
-	dw	.arp
-	dw	.toneporta
-	dw	.chanvol
-	dw	.setSyncTick
-	dw	.setEchoDelay
-	dw	.setRepeatPoint
-	dw	.repeatSection
-
-.setInstrument
-	ld	a,[hl+]
-	push	hl
-	call	CH3_SetInstrument
-	pop	hl
-	xor	a
-	ld	[CH3InsMode],a
-	jp	CH3_CheckByte
-
-.setLoopPoint
-	ld	a,l
-	ld	[CH3LoopPtr],a
-	ld	a,h
-	ld	[CH3LoopPtr+1],a
-	jp	CH3_CheckByte
-
-.gotoLoopPoint
-	ld	hl,CH3LoopPtr
-	ld	a,[hl+]
-	ld	[CH3Ptr],a
-	ld	a,[hl]
-	ld	[CH3Ptr+1],a
-	jp	UpdateCH3
-
-.callSection
-	ld	a,[hl+]
-	ld	[CH3Ptr],a
-	ld	a,[hl+]
-	ld	[CH3Ptr+1],a
-	ld	a,l
-	ld	[CH3RetPtr],a
-	ld	a,h
-	ld	[CH3RetPtr+1],a
-	jp	UpdateCH3
-
-.setChannelPtr
-	ld	a,[hl+]
-	ld	[CH3Ptr],a
-	ld	a,[hl]
-	ld	[CH3Ptr+1],a
-	jp	UpdateCH3
-
-.pitchBendUp
-	ld	a,[hl+]
-	ld	[CH3PortaSpeed],a
-	and	a
-	jr	z,.loadPortaType
-	ld	a,2
-	jr	.loadPortaType
-
-.pitchBendDown
-	ld	a,[hl+]
-	ld	[CH3PortaSpeed],a
-	and	a
-	jr	z,.loadPortaType
-	ld	a,3
-	jr	.loadPortaType
-
-.toneporta
-	ld	a,[hl+]
-	ld	[CH3PortaSpeed],a
-	and	a
-	jr	z,.loadPortaType
-	ld	a,1
-.loadPortaType
-	ld	[CH3PortaType],a
-	jp	CH3_CheckByte
-
-.setSweep
-	inc	hl
-	jp	CH3_CheckByte
-
-.setPan
-	ld	a,[hl+]
-	ld	[CH3Pan],a
-	jp	CH3_CheckByte
-
-.setSpeed
-	ld	a,[hl+]
-	dec	a
-	ld	[GlobalSpeed1],a
-	ld	a,[hl+]
-	dec	a
-	ld	[GlobalSpeed2],a
-	jp	CH3_CheckByte
-
-.setInsAlternate
-	ld	a,[hl+]
-	ld	[CH3Ins1],a
-	ld	a,[hl+]
-	ld	[CH3Ins2],a
-	ld	a,1
-	ld	[CH3InsMode],a
-	jp	CH3_CheckByte
-
-if def(DemoSceneMode)
-
-.randomizeWave
-.disableAutoWave
-	jp	CH3_CheckByte
-
-.combineWaves
-	ld	a,l
-	add	4
-	ld	l,a
-	jp	nc,CH3_CheckByte
-	inc	h
-	jp	CH3_CheckByte
-
-.enablePWM
-	inc	hl
-	inc	hl
-	jp	CH3_CheckByte
-
-.enableRandomizer
-	inc	hl
-	jp	CH3_CheckByte
-
-else
-
+if IS_WAVE_CHANNEL && !def(DemoSceneMode)
 .randomizeWave
 	push	hl
 	call	_RandomizeWave
 	pop	hl
-	jp	CH3_CheckByte
+	jp	CH\1_CheckByte
 
 .combineWaves
 	push	bc
@@ -1504,7 +729,7 @@ else
 	call	_CombineWaves
 	pop	hl
 	pop	bc
-	jp	CH3_CheckByte
+	jp	CH\1_CheckByte
 
 .enablePWM
 	push	hl
@@ -1522,7 +747,7 @@ else
 	inc	a
 	ld	[PWMEnabled],a
 	ld	[PWMTimer],a
-	jp	CH3_CheckByte
+	jp	CH\1_CheckByte
 
 .enableRandomizer
 	push	hl
@@ -1535,50 +760,72 @@ else
 	inc a
 	ld	[RandomizerTimer],a
 	ld	[RandomizerEnabled],a
-	jp	CH3_CheckByte
+	jp	CH\1_CheckByte
 
 .disableAutoWave
 	xor	a
 	ld	[PWMEnabled],a
 	ld	[RandomizerEnabled],a
-	jp	CH3_CheckByte
-
-endc
-
+	jp	CH\1_CheckByte
+else
+.combineWaves
+	inc hl
+	inc hl
+.enablePWM
+	if IS_NOISE_CHANNEL
 .arp
-	call	DoArp
-	jp	CH3_CheckByte
-
-.chanvol
-	ld	a,[hl+]
-	and	$f
-	ld	[CH3ChanVol],a
-	jp	CH3_CheckByte
+	endc
+	inc	hl
+.enableRandomizer
+endc
+if IS_NOISE_CHANNEL
+.pitchBendUp
+.pitchBendDown
+.toneporta
+.setEchoDelay
+endc
+if \1 != 1
+.setSweep
+endc
+	inc	hl
+	jp	CH\1_CheckByte
 
 .setSyncTick
 	ld	a,[hl+]
 	ld	[SyncTick],a
-	jp	CH3_CheckByte
+	jp	CH\1_CheckByte
+
+.chanvol
+	ld	a,[hl+]
+	and	$f
+	ld	[CH\1ChanVol],a
+	jp	CH\1_CheckByte
+
+if !IS_NOISE_CHANNEL
+.arp
+	call	DoArp
+	jp	CH\1_CheckByte
 
 .setEchoDelay
 	ld	a,[hl+]
 	and	$3f
-	ld	[CH3EchoDelay],a
-	jp	CH3_CheckByte
+	ld	[CH\1EchoDelay],a
+	jp	CH\1_CheckByte
+endc
 
 .setRepeatPoint
 	ld	a,l
-	ld	[CH3RepeatPtr],a
+	ld	[CH\1RepeatPtr],a
 	ld	a,h
-	ld	[CH3RepeatPtr+1],a
-	jp	CH3_CheckByte
+	ld	[CH\1RepeatPtr+1],a
+	jp	CH\1_CheckByte
 
 .repeatSection
-	ld	a,[CH3RepeatCount]
+	ld	a,[CH\1RepeatCount]
 	and	a	; section currently repeating?
 	jr	z,.notrepeating
 	dec	a
-	ld	[CH3RepeatCount],a
+	ld	[CH\1RepeatCount],a
 	and	a
 	jr	z,.stoprepeating
 	inc	hl
@@ -1586,24 +833,24 @@ endc
 .notrepeating
 	ld	a,[hl+]
 	dec	a
-	ld	[CH3RepeatCount],a
+	ld	[CH\1RepeatCount],a
 	ld	a,1
-	ld	[CH3DoRepeat],a
+	ld	[CH\1DoRepeat],a
 .dorepeat
-	ld	hl,CH3RepeatPtr			; get loop pointer
+	ld	hl,CH\1RepeatPtr		; get loop pointer
 	ld	a,[hl+]
-	ld	[CH3Ptr],a
+	ld	[CH\1Ptr],a
 	ld	a,[hl]
-	ld	[CH3Ptr+1],a
-	jp	UpdateCH3
+	ld	[CH\1Ptr+1],a
+	jp	UpdateCH\1
 .stoprepeating
 	xor	a
-	ld	[CH3DoRepeat],a
+	ld	[CH\1DoRepeat],a
 .norepeat
 	inc	hl
-	jp	CH3_CheckByte
+	jp	CH\1_CheckByte
 
-CH3_SetInstrument:
+CH\1_SetInstrument:
 	ld	hl,InstrumentTable
 	ld	e,a
 	ld	d,0
@@ -1615,375 +862,83 @@ CH3_SetInstrument:
 	; no reset flag
 	ld	a,[hl+]
 	and	3
-	ld	[CH3Reset],a
+	ld	[CH\1Reset],a
 	ld	b,a
 	; vol table
 	ld	a,[hl+]
-	ld	[CH3VolPtr],a
+	ld	[CH\1VolPtr],a
 	ld	a,[hl+]
-	ld	[CH3VolPtr+1],a
+	ld	[CH\1VolPtr+1],a
+
 	; arp table
 	ld	a,[hl+]
-	ld	[CH3ArpPtr],a
+if IS_NOISE_CHANNEL
+	ld	[CH\1NoisePtr],a
+else
+	ld	[CH\1ArpPtr],a
+endc
 	ld	a,[hl+]
-	ld	[CH3ArpPtr+1],a
-	; wave table
+if IS_NOISE_CHANNEL
+	ld	[CH\1NoisePtr+1],a
+else
+	ld	[CH\1ArpPtr+1],a
+endc
+
+if !IS_NOISE_CHANNEL || !def(DisableDeflehacks)
+	; pulse table
 	ld	a,[hl+]
-	ld	[CH3WavePtr],a
+	if IS_PULSE_CHANNEL
+	ld	[CH\1PulsePtr],a
+	else
+	ld	[CH\1WavePtr],a
+	endc
 	ld	a,[hl+]
-	ld	[CH3WavePtr+1],a
+	if IS_PULSE_CHANNEL
+	ld	[CH\1PulsePtr+1],a
+	else
+	ld	[CH\1WavePtr+1],a
+	endc
+endc
+if !IS_NOISE_CHANNEL
 	; vib table
 	ld	a,[hl+]
-	ld	[CH3VibPtr],a
+	ld	[CH\1VibPtr],a
 	ld	a,[hl+]
-	ld	[CH3VibPtr+1],a
-	ld	hl,CH3VibPtr
+	ld	[CH\1VibPtr+1],a
+	ld	hl,CH\1VibPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
 	ld	a,[hl]
-	ld	[CH3VibDelay],a
+	ld	[CH\1VibDelay],a
+endc
 	ret
+
+CH\1Updated:
+
+	PURGE IS_PULSE_CHANNEL
+	PURGE IS_WAVE_CHANNEL
+	PURGE IS_NOISE_CHANNEL
+endm
 
 ; ================================================================
 
+UpdateCH1:
+	UpdateChannel 1
+
+UpdateCH2:
+	UpdateChannel 2
+
+UpdateCH3:
+	UpdateChannel 3
+
 UpdateCH4:
-	ld	a,[CH4Enabled]
-	and	a
-	jp	z,DoneUpdating
-	ld	a,[CH4Tick]
-	and	a
-	jr	z,.continue
-	dec	a
-	ld	[CH4Tick],a
-	jp	DoneUpdating
-.continue
-	ld	hl,CH4Ptr	; get pointer
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-CH4_CheckByte:
-	ld	a,[hl+]		; get byte
-	cp	$ff
-	jr	z,.endChannel
-	cp	$c9
-	jr	z,.retSection
-	cp	release				; if release
-	jr	z,.release
-	cp	___
-	jr	z,.nullnote
-	cp	echo
-	jr	z,.nullnote			; echo not applicable for ch4
-	bit	7,a			; check for command
-	jp	nz,.getCommand
-	; if we have a note...
-.getNote
-	ld	[CH4ModeBackup],a
-	ld	a,[hl+]
-	dec	a
-	ld	[CH4Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH4Ptr],a
-	ld	a,h
-	ld	[CH4Ptr+1],a
-	xor	a
-	ld	[CH4NoisePos],a
-if !def(DisableDeflehacks)
-	ld	[CH4WavePos],a
-endc
-	ld	a,[CH4Reset]
-	bit	1,a
-	jr	nz,.noresetvol
-	xor	a
-	ld	[CH4VolPos],a
-	ld	[CH4VolLoop],a
-.noresetvol
-	if(UseFXHammer)
-	ld	a,[FXHammer_SFXCH4]
-	cp	3
-	jp	z,.noupdate
-	endc
-	ldh	[rNR42],a
-.noupdate
-	ld	a,[CH4NoteCount]
-	inc	a
-	ld	[CH4NoteCount],a
-	ld	b,a
-	; check if instrument mode is 1 (alternating)
-	ld	a,[CH4InsMode]
-	and	a
-	jr	z,.noInstrumentChange
-	ld	a,b
-	rra
-	jr	nc,.notodd
-	ld	a,[CH4Ins1]
-	jr	.odd
-.notodd
-	ld	a,[CH4Ins2]
-.odd
-	call	CH4_SetInstrument
-.noInstrumentChange
-	jp	DoneUpdating
-
-.endChannel
-	xor	a
-	ld	[CH4Enabled],a
-	jp	DoneUpdating
-
-.retSection
-	ld	hl,CH4RetPtr
-	ld	a,[hl+]
-	ld	[CH4Ptr],a
-	ld	a,[hl]
-	ld	[CH4Ptr+1],a
-	jp	UpdateCH4
-
-.nullnote
-	ld	a,[hl+]
-	dec	a
-	ld	[CH4Tick],a
-	ld	a,l				; store back current pos
-	ld	[CH4Ptr],a
-	ld	a,h
-	ld	[CH4Ptr+1],a
-	jp	DoneUpdating
-
-.release
-	; follows FamiTracker's behavior except only the volume table will be affected
-	ld	a,[hl+]
-	dec	a
-	ld	[CH4Tick],a		; set tick
-	ld	a,l				; store back current pos
-	ld	[CH4Ptr],a
-	ld	a,h
-	ld	[CH4Ptr+1],a
-	ld	hl,CH4VolPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	b,0
-.releaseloop
-	ld	a,[hl+]
-	inc	b
-	cp	$ff
-	jr	z,.norelease
-	cp	$fe
-	jr	nz,.releaseloop
-	ld	a,b
-	inc	a
-	ld	[CH4VolPos],a
-.norelease
-
-	jp	DoneUpdating
-
-.getCommand
-	cp	DummyCommand
-	jp	nc,CH4_CheckByte
-	; Not needed because function performs "add a" which discards bit 7
-	; sub	$80
-	call	JumpTableBelow
-
-	dw	.setInstrument
-	dw	.setLoopPoint
-	dw	.gotoLoopPoint
-	dw	.callSection
-	dw	.setChannelPtr
-	dw	.pitchBendUp
-	dw	.pitchBendDown
-	dw	.setSweep
-	dw	.setPan
-	dw	.setSpeed
-	dw	.setInsAlternate
-	dw	CH4_CheckByte	;.randomizeWave
-	dw	.combineWaves
-	dw	.enablePWM
-	dw	.enableRandomizer
-	dw	CH4_CheckByte	;.disableAutoWave
-	dw	.arp
-	dw	.toneporta
-	dw	.chanvol
-	dw	.setSyncTick
-	dw	.setEchoDelay
-	dw	.setRepeatPoint
-	dw	.repeatSection
-
-.setInstrument
-	ld	a,[hl+]
-	push	hl
-	call	CH4_SetInstrument
-	pop	hl
-	xor	a
-	ld	[CH4InsMode],a
-	jp	CH4_CheckByte
-
-.setLoopPoint
-	ld	a,l
-	ld	[CH4LoopPtr],a
-	ld	a,h
-	ld	[CH4LoopPtr+1],a
-	jp	CH4_CheckByte
-
-.gotoLoopPoint
-	ld	hl,CH4LoopPtr
-	ld	a,[hl+]
-	ld	[CH4Ptr],a
-	ld	a,[hl]
-	ld	[CH4Ptr+1],a
-	jp	UpdateCH4
-
-.callSection
-	ld	a,[hl+]
-	ld	[CH4Ptr],a
-	ld	a,[hl+]
-	ld	[CH4Ptr+1],a
-	ld	a,l
-	ld	[CH4RetPtr],a
-	ld	a,h
-	ld	[CH4RetPtr+1],a
-	jp	UpdateCH4
-
-.setChannelPtr
-	ld	a,[hl+]
-	ld	[CH4Ptr],a
-	ld	a,[hl]
-	ld	[CH4Ptr+1],a
-	jp	UpdateCH4
-
-.pitchBendUp	; unused for ch4
-.pitchBendDown	; unused for ch4
-.setSweep		; unused for ch4
-.enableRandomizer
-.toneporta
-	inc	hl
-	jp	CH4_CheckByte
-
-.setPan
-	ld	a,[hl+]
-	ld	[CH4Pan],a
-	jp	CH4_CheckByte
-
-.setSpeed
-	ld	a,[hl+]
-	dec	a
-	ld	[GlobalSpeed1],a
-	ld	a,[hl+]
-	dec	a
-	ld	[GlobalSpeed2],a
-	jp	CH4_CheckByte
-
-.setInsAlternate
-	ld	a,[hl+]
-	ld	[CH4Ins1],a
-	ld	a,[hl+]
-	ld	[CH4Ins2],a
-	ld	a,1
-	ld	[CH4InsMode],a
-	jp	CH4_CheckByte
-
-.combineWaves
-	ld	a,l
-	add	4
-	ld	l,a
-	jp	nc,CH4_CheckByte
-	inc	h
-	jp	CH4_CheckByte
-
-.enablePWM
-.arp
-	pop	hl
-	inc	hl
-	inc	hl
-	jp	CH4_CheckByte
-
-.chanvol
-	ld	a,[hl+]
-	and	$f
-	ld	[CH4ChanVol],a
-	jp	CH4_CheckByte
-
-.setSyncTick
-	ld	a,[hl+]
-	ld	[SyncTick],a
-	jp	CH4_CheckByte
-
-.setEchoDelay
-	inc	hl
-	jp	CH4_CheckByte
-
-.setRepeatPoint
-	ld	a,l
-	ld	[CH4RepeatPtr],a
-	ld	a,h
-	ld	[CH4RepeatPtr+1],a
-	jp	CH4_CheckByte
-
-.repeatSection
-	ld	a,[CH4RepeatCount]
-	and	a	; section currently repeating?
-	jr	z,.notrepeating
-	dec	a
-	ld	[CH4RepeatCount],a
-	and	a
-	jr	z,.stoprepeating
-	inc	hl
-	jr	.dorepeat
-.notrepeating
-	ld	a,[hl+]
-	dec	a
-	ld	[CH4RepeatCount],a
-	ld	a,1
-	ld	[CH4DoRepeat],a
-.dorepeat
-	ld	hl,CH4RepeatPtr			; get loop pointer
-	ld	a,[hl+]
-	ld	[CH4Ptr],a
-	ld	a,[hl]
-	ld	[CH4Ptr+1],a
-	jp	UpdateCH4
-.stoprepeating
-	xor	a
-	ld	[CH4DoRepeat],a
-.norepeat
-	inc	hl
-	jp	CH4_CheckByte
-
-CH4_SetInstrument:
-	ld	hl,InstrumentTable
-	ld	e,a
-	ld	d,0
-	add	hl,de
-	add	hl,de
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	; no reset flag
-	ld	a,[hl+]
-	and	3
-	ld	[CH4Reset],a
-	ld	b,a
-	; vol table
-	ld	a,[hl+]
-	ld	[CH4VolPtr],a
-	ld	a,[hl+]
-	ld	[CH4VolPtr+1],a
-	; noise mode pointer
-	ld	a,[hl+]
-	ld	[CH4NoisePtr],a
-	ld	a,[hl+]
-	ld	[CH4NoisePtr+1],a
-if !def(DisableDeflehacks)
-	ld	a,[hl+]
-	ld	[CH4WavePtr],a
-	ld	a,[hl+]
-	ld	[CH4WavePtr+1],a
-endc
-	ret
+	UpdateChannel 4
 
 ; ================================================================
 
 DoneUpdating:
 
-UpdateRegisters:
 	call	DoEchoBuffers
 	; update panning
 	ld	a,[CH4Pan]
@@ -2070,51 +1025,74 @@ UpdateRegisters:
 	or	b
 	ldh	[rNR50],a
 
-CH1_UpdateRegisters:
-	ld	a,[CH1Enabled]
+; ================================================================
+
+UpdateRegisters: macro
+	ld	a,[CH\1Enabled]
 	and	a
-	jp	z,CH2_UpdateRegisters
-	ld	a,[CH1NoteBackup]
-	ld	[CH1Note],a
+	jp	z,CH\1RegistersUpdated
+
+if ((\1 == 2) || (\1 == 4)) && UseFXHammer
+	ld	a,[FXHammer_SFXCH\1]
+	cp	3
+	jr	z,.norest
+endc
+if \1 != 4
+	ld	a,[CH\1NoteBackup]
+	ld	[CH\1Note],a
+else
+	ld	a,[CH\1ModeBackup]
+	ld	[CH\1Mode],a
+endc
 	cp	rest
 	jr	nz,.norest
-	ld	a,[CH1IsResting]
+	ld	a,[CH\1IsResting]
 	and	a
 	jp	nz,.done
 	xor	a
-	ldh	[rNR12],a
-if def(Visualizer)
-	ld	[CH1OutputLevel],a
-	ld	[CH1TempEnvelope],a
+	ldh	[rNR\12],a
+if \1 == 3
+	ld	[CH\1Vol],a
+	ld	[CH\1ComputedVol],a
+elif def(Visualizer)
+	ld	[CH\1OutputLevel],a
+	ld	[CH\1TempEnvelope],a
 endc
-	ldh	a,[rNR14]
+	ldh	a,[rNR\14]
 	or	%10000000
-	ldh	[rNR14],a
+	ldh	[rNR\14],a
 	ld	a,1
-	ld	[CH1IsResting],a
+	ld	[CH\1IsResting],a
 	jp	.done
 .norest
 	xor	a
-	ld	[CH1IsResting],a
-	jr	.updatearp
+	ld	[CH\1IsResting],a
 
 	; update arps
 .updatearp
 ; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
-if !def(DisableDeflehacks)
-	ld	a,[CH1PortaType]
+if \1 != 4 && !def(DisableDeflehacks)
+	ld	a,[CH\1PortaType]
 	and	a
 	jr	z,.noskiparp
 	xor	a
-	ld	[CH1Transpose],a
+	ld	[CH\1Transpose],a
 	jr	.continue
 endc
 .noskiparp
-	ld	hl,CH1ArpPtr
+if \1 != 4
+	ld	hl,CH\1ArpPtr
+else
+	ld	hl,CH\1NoisePtr
+endc
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH1ArpPos]
+if \1 != 4
+	ld	a,[CH\1ArpPos]
+else
+	ld	a,[CH\1NoisePos]
+endc
 	add	l
 	ld	l,a
 	jr	nc,.nocarry
@@ -2124,7 +1102,11 @@ endc
 	cp	$fe
 	jr	nz,.noloop
 	ld	a,[hl]
-	ld	[CH1ArpPos],a
+if \1 != 4
+	ld	[CH\1ArpPos],a
+else
+	ld	[CH\1NoisePos],a
+endc
 	jr	.updatearp
 .noloop
 	cp	$ff
@@ -2136,26 +1118,64 @@ endc
 	jr	.donearp
 .absolute
 	and	$7f
-	ld	[CH1Note],a
+if \1 != 4
+	ld	[CH\1Note],a
+else
+	ld	[CH\1Mode],a
+endc
 	xor	a
 .donearp
-	ld	[CH1Transpose],a
+	ld	[CH\1Transpose],a
 .noreset
-	ld	a,[CH1ArpPos]
-	inc	a
-	ld	[CH1ArpPos],a
+if \1 != 4
+	ld	hl,CH\1ArpPos
+else
+	ld	hl,CH\1NoisePos
+endc
+	inc	[hl]
 .continue
 
+if \1 == 1
 	; update sweep
-	ld	a,[CH1Sweep]
-	ldh	[rNR10],a
+	ld	a,[CH\1Sweep]
+	ldh	[rNR\10],a
+elif \1 == 3
+	ld	a,$80
+	ldh	[rNR\10],a
+endc
 
-	; update pulse
-	ld	hl,CH1PulsePtr
+if \1 == 4
+	if !def(DisableDeflehacks)
+	ld	hl,CH\1WavePtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH1PulsePos]
+	ld	a,[CH\1WavePos]
+	add	l
+	ld	l,a
+	jr	nc,.nocarry3
+	inc	h
+.nocarry3
+	ld	a,[hl+]
+	cp	$ff
+	jr	z,.updateNote
+	ld	[CH\1Wave],a
+	ld	a,[CH\1WavePos]
+	inc	a
+	ld	[CH\1WavePos],a
+	ld	a,[hl+]
+	cp	$fe
+	jr	nz,.updateNote
+	ld	a,[hl]
+	ld	[CH\1WavePos],a
+	endc
+elif \1 != 3
+	; update pulse
+	ld	hl,CH\1PulsePtr
+	ld	a,[hl+]
+	ld	h,[hl]
+	ld	l,a
+	ld	a,[CH\1PulsePos]
 	add	l
 	ld	l,a
 	jr	nc,.nocarry2
@@ -2166,33 +1186,42 @@ endc
 	jr	z,.updateNote
 	; convert pulse value
 	and	3			; make sure value does not exceed 3
-if def(Visualizer)
-	ld	[CH1Pulse],a
-endc
+	if def(Visualizer)
+	ld	[CH\1Pulse],a
+	endc
 	rrca			; rotate right
 	rrca			;   ""    ""
-	ldh	[rNR11],a	; transfer to register
+	if (\1 == 2) && UseFXHammer
+	ld	e,a
+	ld	a,[FXHammer_SFXCH\1]
+	cp	3
+	jr	z,.noreset2
+	ld	a,e
+	endc
+	ldh	[rNR\11],a	; transfer to register
 .noreset2
-	ld	a,[CH1PulsePos]
+	ld	a,[CH\1PulsePos]
 	inc	a
-	ld	[CH1PulsePos],a
+	ld	[CH\1PulsePos],a
 	ld	a,[hl+]
 	cp	$fe
 	jr	nz,.updateNote
 	ld	a,[hl]
-	ld	[CH1PulsePos],a
+	ld	[CH\1PulsePos],a
+endc
 
 ; get note
 .updateNote
-	ld	a,[CH1DoEcho]
+if \1 != 4
+	ld	a,[CH\1DoEcho]
 	and	a
 	jr	z,.skipecho
-	ld	a,[CH1EchoDelay]
+	ld	a,[CH\1EchoDelay]
 	ld	b,a
 	ld	a,[EchoPos]
 	sub	b
 	and	$3f
-	ld	hl,CH1EchoBuffer
+	ld	hl,CH\1EchoBuffer
 	add	l
 	ld	l,a
 	jr	nc,.nocarry3
@@ -2204,23 +1233,25 @@ endc
 	; TODO: Prevent null byte from being played
 	jr	.getfrequency
 .skipecho
-	ld	a,[CH1PortaType]
+	ld	a,[CH\1PortaType]
 	cp	2
 	jr	c,.skippitchbend
-	ld	a,[CH1Reset]
+	ld	a,[CH\1Reset]
 	bit	7,a
 	jr	z,.pitchbend
 .skippitchbend
-	ld	a,[CH1Sweep]
+	if \1 == 1
+	ld	a,[CH\1Sweep]
 	and	$70
 	jr	z,.noskipsweep
-	ld	a,[CH1Reset]
+	ld	a,[CH\1Reset]
 	bit	7,a
 	jp	z,.updateVolume
 .noskipsweep
-	ld	a,[CH1Transpose]
+	endc
+	ld	a,[CH\1Transpose]
 	ld	b,a
-	ld	a,[CH1Note]
+	ld	a,[CH\1Note]
 	add	b
 .getfrequency
 	ld	c,a
@@ -2232,27 +1263,27 @@ endc
 	ld	e,a
 	ld	a,[hl]
 	ld	d,a
-	ld	a,[CH1PortaType]
+	ld	a,[CH\1PortaType]
 	cp	2
 	jr	c,.updateVibTable
 	ld	a,e
-	ld	[CH1TempFreq],a
+	ld	[CH\1TempFreq],a
 	ld	a,d
-	ld	[CH1TempFreq+1],a
+	ld	[CH\1TempFreq+1],a
 
 .updateVibTable
-	ld	a,[CH1VibDelay]
+	ld	a,[CH\1VibDelay]
 	and	a
 	jr	z,.doVib
 	dec	a
-	ld	[CH1VibDelay],a
+	ld	[CH\1VibDelay],a
 	jr	.setFreq
 .doVib
-	ld	hl,CH1VibPtr
+	ld	hl,CH\1VibPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH1VibPos]
+	ld	a,[CH\1VibPos]
 	add	l
 	ld	l,a
 	jr	nc,.nocarry4
@@ -2262,25 +1293,25 @@ endc
 	cp	$80
 	jr	nz,.noloop2
 	ld	a,[hl+]
-	ld	[CH1VibPos],a
+	ld	[CH\1VibPos],a
 	jr	.doVib
 .noloop2
-	ld	[CH1FreqOffset],a
-	ld	a,[CH1VibPos]
+	ld	[CH\1FreqOffset],a
+	ld	a,[CH\1VibPos]
 	inc	a
-	ld	[CH1VibPos],a
+	ld	[CH\1VibPos],a
 	jr	.getPitchOffset
 
 .pitchbend
-	ld	a,[CH1PortaSpeed]
+	ld	a,[CH\1PortaSpeed]
 	ld	b,a
-	ld	a,[CH1PortaType]
+	ld	a,[CH\1PortaType]
 	and	1
 	jr	nz,.sub2
-	ld	a,[CH1TempFreq]
+	ld	a,[CH\1TempFreq]
 	add	b
 	ld	e,a
-	ld	a,[CH1TempFreq+1]
+	ld	a,[CH\1TempFreq+1]
 	jr	nc,.nocarry6
 	inc	a
 .nocarry6
@@ -2290,10 +1321,10 @@ endc
 	ld	de,$7ff
 	jr	.pitchbenddone
 .sub2
-	ld	a,[CH1TempFreq]
+	ld	a,[CH\1TempFreq]
 	sub	b
 	ld	e,a
-	ld	a,[CH1TempFreq+1]
+	ld	a,[CH\1TempFreq+1]
 	jr	nc,.nocarry7
 	dec	a
 .nocarry7
@@ -2302,13 +1333,13 @@ endc
 	jr	c,.pitchbenddone
 	ld	de,0
 .pitchbenddone
-	ld	hl,CH1TempFreq
+	ld	hl,CH\1TempFreq
 	ld	a,e
 	ld	[hl+],a
 	ld	[hl],d
 
 .getPitchOffset
-	ld	a,[CH1FreqOffset]
+	ld	a,[CH\1FreqOffset]
 	bit	7,a
 	jr	nz,.sub
 	add	e
@@ -2322,8 +1353,8 @@ endc
 	add	c
 	ld	e,a
 .setFreq
-	ld	hl,CH1TempFreq
-	ld	a,[CH1PortaType]
+	ld	hl,CH\1TempFreq
+	ld	a,[CH\1PortaType]
 	and	a
 	jr	z,.normal
 	dec	a
@@ -2334,7 +1365,7 @@ endc
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH1PortaSpeed]
+	ld	a,[CH\1PortaSpeed]
 	ld	c,a
 	ld	b,0
 	ld	a,h
@@ -2372,564 +1403,131 @@ endc
 .clamp
 	ld	h,d
 	ld	l,e
-if def(Visualizer)
 .tonepordone
 	ld	a,l
-	ld	[CH1TempFreq],a
-	ld	[CH1ComputedFreq],a
-	ldh	[rNR13],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH1TempFreq+1],a
-	ld	[CH1ComputedFreq+1],a
-	ldh	[rNR14],a
-	jr	.updateVolume
-.normal
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-.donesetFreq
-	ld	[CH1ComputedFreq],a
-	ldh	[rNR13],a
-	ld	a,d
-	ld	[CH1ComputedFreq+1],a
-	ldh	[rNR14],a
-else
-.tonepordone
-	ld	a,l
-	ld	[CH1TempFreq],a
-	ldh	[rNR13],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH1TempFreq+1],a
-	ldh	[rNR14],a
-	jr	.updateVolume
-.normal
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-.donesetFreq
-	ldh	[rNR13],a
-	ld	a,d
-	ldh	[rNR14],a
-endc
-
-	; update volume
-.updateVolume
-	ld	hl,CH1Reset
-	res	7,[hl]
-	ld	hl,CH1VolPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH1VolLoop]
-	inc	a	; ended
-	jp	z,.done
-	ld	a,[CH1VolPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry5
-	inc	h
-.nocarry5
-	ld	a,[hl+]
-	cp	$ff
-	jr	z,.loadlast
-	cp	$fd
-	jp	z,.done
-	ld	b,a
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	a,[CH1ChanVol]
-	push	hl
-	call	MultiplyVolume
-	pop	hl
-	ld	a,[CH1VolLoop]
-	dec	a
-	jr	z,.zombieatpos0
-	ld	a,[CH1VolPos]
-	and	a
-	jr	z,.zombinit
-.zombieatpos0
-endc
-	ld	a,[CH1Vol]
-	cp	b
-	jr	z,.noreset3
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	c,a
-	ld	a,b
-	ld	[CH1Vol],a
-if def(Visualizer)
-	ld	[CH1OutputLevel],a
-endc
-	sub	c
-	and	$f
-	ld	c,a
-	ld	a,8
-.zombloop
-	ldh	[rNR12],a
-	dec	c
-	jr	nz,.zombloop
-	jr	.noreset3
-.zombinit
-endc
-if def(Visualizer)
-	ld	a,b
-	ld	[CH1Vol],a
-	ld	[CH1OutputLevel],a
-	swap	a
-	or	8
-	ldh	[rNR12],a
-	xor	a
-	ld	[CH1TempEnvelope],a
-	ld	a,d
-	or	$80
-	ldh	[rNR14],a
-else
-	ld	a,b
-	ld	[CH1Vol],a
-	swap	a
-	or	8
-	ldh	[rNR12],a
-	ld	a,d
-	or	$80
-	ldh	[rNR14],a
-endc
-.noreset3
-	ld	a,[CH1VolPos]
-	inc	a
-	ld	[CH1VolPos],a
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.done
-	ld	a,[hl]
-	ld	[CH1VolPos],a
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	a,1
-	ld	[CH1VolLoop],a
-endc
-	jr	.done
-.loadlast
-	ld	a,[hl]
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	push	af
-	swap	a
-	and	$f
-	ld	b,a
-	ld	a,[CH1ChanVol]
-	call	MultiplyVolume
-	swap	b
-	pop	af
-	and	$f
-	or	b
-endc
-	ldh	[rNR12],a
-if def(Visualizer)
-	ld	b,a
-	and	$f
-	ld	[CH1TempEnvelope],a
-	and	$7
-	inc	a
-	ld	[CH1EnvelopeCounter],a
-	ld	a,b
-	swap	a
-	and	$f
-	ld	[CH1OutputLevel],a
-endc
-	ld	a,d
-	or	$80
-	ldh	[rNR14],a
-	ld	a,$ff
-	ld	[CH1VolLoop],a
-.done
-
-; ================================================================
-
-CH2_UpdateRegisters:
-	ld	a,[CH2Enabled]
-	and	a
-	jp	z,CH3_UpdateRegisters
-
-	if(UseFXHammer)
-	ld	a,[FXHammer_SFXCH2]
-	cp	3
-	jr	z,.norest
+	ld	[CH\1TempFreq],a
+	if def(Visualizer)
+	ld	[CH\1ComputedFreq],a
 	endc
-	ld	a,[CH2NoteBackup]
-	ld	[CH2Note],a
-	cp	rest
-	jr	nz,.norest
-	ld	a,[CH2IsResting]
+	if \1 != 2 || !UseFXHammer
+	ldh	[rNR\13],a
+	endc
+	ld	a,h
+	ld	d,a	; for later restart uses
+	ld	[CH\1TempFreq+1],a
+	if def(Visualizer)
+	ld	[CH\1ComputedFreq+1],a
+	endc
+	if \1 != 2 || !UseFXHammer
+	ldh	[rNR\14],a
+	elif UseFXHammer
+	ld	a,[FXHammer_SFXCH\1]
+	cp	3
+	jr	z,.updateVolume
+	ld	a,l
+	ldh	[rNR\13],a
+	ld	a,h
+	ldh	[rNR\14],a
+	endc
+	jr	.updateVolume
+.normal
+	ld	a,e
+	ld	[hl+],a
+	ld	[hl],d
+.donesetFreq
+	if \1 == 2 && UseFXHammer
+	ld	a,[FXHammer_SFXCH\1]
+	cp	3
+	ld	a,e
+	jr	z,.updateVolume
+	endc
+	if def(Visualizer)
+	ld	[CH\1ComputedFreq],a
+	endc
+	ldh	[rNR\13],a
+	ld	a,d
+	if def(Visualizer)
+	ld	[CH\1ComputedFreq+1],a
+	endc
+	ldh	[rNR\14],a
+else
+	; don't do per noise mode arp clamping if deflemask compatibility mode
+	; is disabled so that relative arp with noise mode change is possible
+	ld	a,[CH\1Mode]
+CLAMP_VALUE = 90
+	if !def(DisableDeflehacks)
+CLAMP_VALUE = 45
+	cp	CLAMP_VALUE
+	ld	c,0
+	jr	c,.noise15_2
+	sub	CLAMP_VALUE
+	inc	c
+.noise15_2
+	endc
+	ld	b,a
+	ld	a,[CH\1Transpose]
+	bit	7,a
+	jr	nz,.minus
+	if !def(DisableDeflehacks)
+	cp	CLAMP_VALUE
+	jr	c,.noise15_3
+	sub	CLAMP_VALUE
+	ld	c,1
+.noise15_3
+	endc
+	add	b
+	cp	CLAMP_VALUE
+	jr	c,.noclamp
+	ld	a,CLAMP_VALUE - 1
+	jr	.noclamp
+.minus
+	add	b
+	cp	CLAMP_VALUE
+	jr	c,.noclamp
+	xor	a
+.noclamp
+	if !def(DisableDeflehacks)
+	ld	b,a
+	ld	a,[CH\1Wave]
+	or	c
 	and	a
-	jp	nz,.done
-	xor	a
-	ldh	[rNR22],a
-if def(Visualizer)
-	ld	[CH2OutputLevel],a
-	ld	[CH2TempEnvelope],a
-endc
-	ldh	a,[rNR24]
-	or	%10000000
-	ldh	[rNR24],a
-	ld	a,1
-	ld	[CH2IsResting],a
-	jp	.done
-.norest
-	xor	a
-	ld	[CH2IsResting],a
-
-
-	; update arps
-.updatearp
-; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
-if !def(DisableDeflehacks)
-	ld	a,[CH2PortaType]
-	and	a
-	jr	z,.noskiparp
-	xor	a
-	ld	[CH2Transpose],a
-	jr	.continue
-endc
-.noskiparp
-	ld	hl,CH2ArpPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH2ArpPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.noloop
-	ld	a,[hl]
-	ld	[CH2ArpPos],a
-	jr	.updatearp
-.noloop
-	cp	$ff
-	jr	z,.continue
-	cp	$80
-	jr	nc,.absolute
-	sla	a
-	sra	a
-	jr	.donearp
-.absolute
-	and	$7f
-	ld	[CH2Note],a
-	xor	a
-.donearp
-	ld	[CH2Transpose],a
-.noreset
-	ld	a,[CH2ArpPos]
-	inc	a
-	ld	[CH2ArpPos],a
-.continue
-
-	; update pulse
-	ld	hl,CH2PulsePtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH2PulsePos]
+	jr	z,.noise15
+	ld	a,CLAMP_VALUE
+.noise15
+	add	b
+	endc
+	if def(Visualizer)
+	ld	[CH\1Noise],a
+	endc
+	ld	hl,NoiseTable
 	add	l
 	ld	l,a
 	jr	nc,.nocarry2
 	inc	h
 .nocarry2
-	ld	a,[hl+]
-	cp	$ff
-	jr	z,.updateNote
-	; convert pulse value
-	and	3			; make sure value does not exceed 3
-if def(Visualizer)
-	ld	[CH2Pulse],a
-endc
-	rrca			; rotate right
-	rrca			;   ""    ""
-	if(UseFXHammer)
-	ld	e,a
-	ld	a,[FXHammer_SFXCH2]
+	if UseFXHammer
+	ld	a,[FXHammer_SFXCH\1]
 	cp	3
-	jp	z,.noreset2
-	ld	a,e
+	jr	z,.updateVolume
 	endc
-	ldh	[rNR21],a	; transfer to register
-.noreset2
-	ld	a,[CH2PulsePos]
-	inc	a
-	ld	[CH2PulsePos],a
 	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.updateNote
-	ld	a,[hl]
-	ld	[CH2PulsePos],a
-
-; get note
-.updateNote
-	ld	a,[CH2DoEcho]
-	and	a
-	jr	z,.skipecho
-	ld	a,[CH2EchoDelay]
-	ld	b,a
-	ld	a,[EchoPos]
-	sub	b
-	and	$3f
-	ld	hl,CH2EchoBuffer
-	add	l
-	ld	l,a
-	jr	nc,.nocarry3
-	inc	h
-.nocarry3
-	ld	a,[hl]
-	cp	$4a
-	jr	nz,.getfrequency
-	; TODO: Prevent null byte from being played
-	jr	.getfrequency
-.skipecho
-	ld	a,[CH2PortaType]
-	cp	2
-	jr	c,.skippitchbend
-	ld	a,[CH2Reset]
-	bit	7,a
-	jr	z,.pitchbend
-.skippitchbend
-	ld	a,[CH2Transpose]
-	ld	b,a
-	ld	a,[CH2Note]
-	add	b
-
-.getfrequency
-	ld	c,a
-	ld	b,0
-	ld	hl,FreqTable
-	add	hl,bc
-	add	hl,bc
-	ld	a,[hl+]
-	ld	e,a
-	ld	a,[hl]
-	ld	d,a
-	ld	a,[CH2PortaType]
-	cp	2
-	jr	c,.updateVibTable
-	ld	a,e
-	ld	[CH2TempFreq],a
-	ld	a,d
-	ld	[CH2TempFreq+1],a
-
-.updateVibTable
-	ld	a,[CH2VibDelay]
-	and	a
-	jr	z,.doVib
-	dec	a
-	ld	[CH2VibDelay],a
-	jr	.setFreq
-.doVib
-	ld	hl,CH2VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH2VibPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry4
-	inc	h
-.nocarry4
-	ld	a,[hl+]
-	cp	$80
-	jr	nz,.noloop2
-	ld	a,[hl+]
-	ld	[CH2VibPos],a
-	jr	.doVib
-.noloop2
-	ld	[CH2FreqOffset],a
-	ld	a,[CH2VibPos]
-	inc	a
-	ld	[CH2VibPos],a
-	jr	.getPitchOffset
-
-.pitchbend
-	ld	a,[CH2PortaSpeed]
-	ld	b,a
-	ld	a,[CH2PortaType]
-	and	1
-	jr	nz,.sub2
-	ld	a,[CH2TempFreq]
-	add	b
-	ld	e,a
-	ld	a,[CH2TempFreq+1]
-	jr	nc,.nocarry6
-	inc	a
-.nocarry6
-	ld	d,a
-	cp	8
-	jr	c,.pitchbenddone
-	ld	de,$7ff
-	jr	.pitchbenddone
-.sub2
-	ld	a,[CH2TempFreq]
-	sub	b
-	ld	e,a
-	ld	a,[CH2TempFreq+1]
-	jr	nc,.nocarry7
-	dec	a
-.nocarry7
-	ld	d,a
-	cp	8
-	jr	c,.pitchbenddone
-	ld	de,0
-.pitchbenddone
-	ld	hl,CH2TempFreq
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-
-.getPitchOffset
-	ld	a,[CH2FreqOffset]
-	bit	7,a
-	jr	nz,.sub
-	add	e
-	ld	e,a
-	jr	nc,.setFreq
-	inc	d
-	jr	.setFreq
-.sub
-	ld	c,a
-	ld	a,e
-	add	c
-	ld	e,a
-.setFreq
-	ld	hl,CH2TempFreq
-	ld	a,[CH2PortaType]
-	and	a
-	jr	z,.normal
-	dec	a
-	ld	a,e
-	jr	nz,.donesetFreq
-
-; toneporta
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH2PortaSpeed]
-	ld	c,a
-	ld	b,0
-	ld	a,h
-	cp	d
-	jr	c,.lt
-	jr	nz,.gt
-	ld	a,l
-	cp	e
-	jr	z,.tonepordone
-	jr	c,.lt
-.gt
-	ld	a,l
-	sub	c
-	ld	l,a
-	jr	nc,.nocarry8
-	dec	h
-.nocarry8
-	ld	a,h
-	cp	d
-	jr	c,.clamp
-	jr	nz,.tonepordone
-	ld	a,l
-	cp	e
-	jr	c,.clamp
-	jr	.tonepordone
-.lt
-	add	hl,bc
-	ld	a,h
-	cp	d
-	jr	c,.tonepordone
-	jr	nz,.clamp
-	ld	a,l
-	cp	e
-	jr	c,.tonepordone
-.clamp
-	ld	h,d
-	ld	l,e
-.tonepordone
-	if(UseFXHammer)
-if def(Visualizer)
-	ld	a,l
-	ld	[CH2TempFreq],a
-	ld	[CH2ComputedFreq],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH2TempFreq+1],a
-	ld	[CH2ComputedFreq+1],a
-else
-	ld	a,l
-	ld	[CH2TempFreq],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH2TempFreq+1],a
-endc
-	ld	a,[FXHammer_SFXCH2]
-	cp	3
-	jp	z,.updateVolume
-	ld	a,l
-	ldh	[rNR23],a
-	ld	a,h
-	ldh	[rNR24],a
-	else
-if def(Visualizer)
-	ld	a,l
-	ld	[CH2TempFreq],a
-	ld	[CH2ComputedFreq],a
-	ldh	[rNR23],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH2TempFreq+1],a
-	ld	[CH2ComputedFreq+1],a
-	ldh	[rNR24],a
-else
-	ld	a,l
-	ld	[CH2TempFreq],a
-	ldh	[rNR23],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH2TempFreq+1],a
-	ldh	[rNR24],a
-endc
-	endc
-	jr	.updateVolume
-.normal
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-.donesetFreq
-	if(UseFXHammer)
-	ld	a,[FXHammer_SFXCH2]
-	cp	3
-	ld	a,e
-	jp	z,.updateVolume
-	endc
-if def(Visualizer)
-	ld	[CH2ComputedFreq],a
-	ldh	[rNR23],a
-	ld	a,d
-	ld	[CH2ComputedFreq+1],a
-	ldh	[rNR24],a
-else
-	ldh	[rNR23],a
-	ld	a,d
-	ldh	[rNR24],a
+	ldh	[rNR\13],a
 endc
 
 	; update volume
 .updateVolume
-	ld	hl,CH2Reset
+	ld	hl,CH\1Reset
 	res	7,[hl]
-	ld	hl,CH2VolPtr
+	ld	hl,CH\1VolPtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH2VolLoop]
-	ld	c,a
+if \1 != 3
+	ld	a,[CH\1VolLoop]
 	inc	a	; ended
 	jp	z,.done
-	ld	a,[CH2VolPos]
+endc
+	ld	a,[CH\1VolPos]
 	add	l
 	ld	l,a
 	jr	nc,.nocarry5
@@ -2941,452 +1539,64 @@ endc
 	cp	$fd
 	jp	z,.done
 	ld	b,a
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	a,[CH2ChanVol]
+if !def(DemoSceneMode)
+	if !def(DisableZombieMode) || (\1 == 3)
+	ld	a,[CH\1ChanVol]
 	push	hl
 	call	MultiplyVolume
 	pop	hl
-	ld	a,[CH2VolLoop]
+	endc
+	if !def(DisableZombieMode) && (\1 != 3)
+	ld	a,[CH\1VolLoop]
 	dec	a
 	jr	z,.zombieatpos0
-	ld	a,[CH2VolPos]
+	ld	a,[CH\1VolPos]
 	and	a
 	jr	z,.zombinit
 .zombieatpos0
+	endc
 endc
-	ld	a,[CH2Vol]
-	cp	b
+	ld	a,[CH\1Vol]
+	sub	b
 	jr	z,.noreset3
-if !def(DemoSceneMode) && !def(DisableZombieMode)
+if \1 != 3
+	if !def(DemoSceneMode) && !def(DisableZombieMode)
+	or ~$0f
 	ld	c,a
 	ld	a,b
-	ld	[CH2Vol],a
-if def(Visualizer)
-	ld	[CH2OutputLevel],a
-endc
-	sub	c
-	and	$f
-	ld	c,a
+	ld	[CH\1Vol],a
+		if def(Visualizer)
+	ld	[CH\1OutputLevel],a
+		endc
 	ld	a,8
 .zombloop
-	ldh	[rNR22],a
-	dec	c
+	ldh	[rNR\12],a
+	inc	c
 	jr	nz,.zombloop
 	jr	.noreset3
 .zombinit
-endc
-if def(Visualizer)
+	endc
 	ld	a,b
-	ld	[CH2Vol],a
-	ld	[CH2OutputLevel],a
+	ld	[CH\1Vol],a
+	if def(Visualizer)
+	ld	[CH\1OutputLevel],a
+	endc
 	swap	a
 	or	8
-	ldh	[rNR22],a
+	ldh	[rNR\12],a
+	if def(Visualizer) && (\1 != 3)
 	xor	a
-	ld	[CH2TempEnvelope],a
+	ld	[CH\1TempEnvelope],a
+	endc
 	ld	a,d
 	or	$80
-	ldh	[rNR24],a
-else
-	ld	a,b
-	ld	[CH2Vol],a
-	swap	a
-	or	8
-	ldh	[rNR22],a
-	ld	a,d
-	or	$80
-	ldh	[rNR24],a
-endc
+	ldh	[rNR\14],a
 .noreset3
-	ld	a,[CH2VolPos]
-	inc	a
-	ld	[CH2VolPos],a
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.done
-	ld	a,[hl]
-	ld	[CH2VolPos],a
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	a,1
-	ld	[CH2VolLoop],a
-endc
-	jr	.done
-.loadlast
-	ld	a,[hl]
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	push	af
-	swap	a
-	and	$f
-	ld	b,a
-	ld	a,[CH2ChanVol]
-	call	MultiplyVolume
-	swap	b
-	pop	af
-	and	$f
-	or	b
-endc
-	ldh	[rNR22],a
-if def(Visualizer)
-	ld	b,a
-	and	$f
-	ld	[CH2TempEnvelope],a
-	and	$7
-	inc	a
-	ld	[CH2EnvelopeCounter],a
-	ld	a,b
-	swap	a
-	and	$f
-	ld	[CH2OutputLevel],a
-endc
-	ld	a,d
-	or	$80
-	ldh	[rNR24],a
-	ld	a,$ff
-	ld	[CH2VolLoop],a
-.done
-
-; ================================================================
-
-CH3_UpdateRegisters:
-	ld	a,[CH3Enabled]
-	and	a
-	jp	z,CH4_UpdateRegisters
-
-	ld	a,[CH3NoteBackup]
-	ld	[CH3Note],a
-	cp	rest
-	jr	nz,.norest
-	ld	a,[CH3IsResting]
-	and	a
-	jp	nz,.done
-	xor	a
-	ldh	[rNR32],a
-	ld	[CH3Vol],a
-	ld	[CH3ComputedVol],a
-	ldh	a,[rNR34]
-	or	%10000000
-	ldh	[rNR34],a
-	ld	a,1
-	ld	[CH3IsResting],a
-	jp	.done
-.norest
-	xor	a
-	ld	[CH3IsResting],a
-	; update arps
-.updatearp
-; Deflemask compatibility: if pitch bend is active, don't update arp and force the transpose of 0
-if !def(DisableDeflehacks)
-	ld	a,[CH3PortaType]
-	and	a
-	jr	z,.noskiparp
-	xor	a
-	ld	[CH3Transpose],a
-	jr	.continue
-endc
-.noskiparp
-	ld	hl,CH3ArpPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH3ArpPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.noloop
-	ld	a,[hl]
-	ld	[CH3ArpPos],a
-	jr	.updatearp
-.noloop
-	cp	$ff
-	jr	z,.continue
-	cp	$80
-	jr	nc,.absolute
-	sla	a
-	sra	a
-	jr	.donearp
-.absolute
-	and	$7f
-	ld	[CH3Note],a
-	xor	a
-.donearp
-	ld	[CH3Transpose],a
-.noreset
-	ld	a,[CH3ArpPos]
-	inc	a
-	ld	[CH3ArpPos],a
-.continue
-
-	xor	a
-	ldh	[rNR31],a
-	or	%10000000
-	ldh	[rNR30],a
-
-; get note
-.updateNote
-	ld	a,[CH3DoEcho]
-	and	a
-	jr	z,.skipecho
-	ld	a,[CH3EchoDelay]
-	ld	b,a
-	ld	a,[EchoPos]
-	sub	b
-	and	$3f
-	ld	hl,CH3EchoBuffer
-	add	l
-	ld	l,a
-	jr	nc,.nocarry3
-	inc	h
-.nocarry3
-	ld	a,[hl]
-	cp	$4a
-	jr	nz,.getfrequency
-	; TODO: Prevent null byte from being played
-	jr	.getfrequency
-.skipecho
-	ld	a,[CH3PortaType]
-	cp	2
-	jr	c,.skippitchbend
-	ld	a,[CH3Reset]
-	bit	7,a
-	jr	z,.pitchbend
-.skippitchbend
-	ld	a,[CH3Transpose]
-	ld	b,a
-	ld	a,[CH3Note]
-	add	b
-
-.getfrequency
-	ld	c,a
-	ld	b,0
-	ld	hl,FreqTable
-	add	hl,bc
-	add	hl,bc
-	ld	a,[hl+]
-	ld	e,a
-	ld	a,[hl]
-	ld	d,a
-	ld	a,[CH3PortaType]
-	cp	2
-	jr	c,.updateVibTable
-	ld	a,e
-	ld	[CH3TempFreq],a
-	ld	a,d
-	ld	[CH3TempFreq+1],a
-
-.updateVibTable
-	ld	a,[CH3VibDelay]
-	and	a
-	jr	z,.doVib
-	dec	a
-	ld	[CH3VibDelay],a
-	jr	.setFreq
-.doVib
-	ld	hl,CH3VibPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH3VibPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry4
-	inc	h
-.nocarry4
-	ld	a,[hl+]
-	cp	$80
-	jr	nz,.noloop2
-	ld	a,[hl+]
-	ld	[CH3VibPos],a
-	jr	.doVib
-.noloop2
-	ld	[CH3FreqOffset],a
-	ld	a,[CH3VibPos]
-	inc	a
-	ld	[CH3VibPos],a
-	jr	.getPitchOffset
-
-.pitchbend
-	ld	a,[CH3PortaSpeed]
-	ld	b,a
-	ld	a,[CH3PortaType]
-	and	1
-	jr	nz,.sub2
-	ld	a,[CH3TempFreq]
-	add	b
-	ld	e,a
-	ld	a,[CH3TempFreq+1]
-	jr	nc,.nocarry6
-	inc	a
-.nocarry6
-	ld	d,a
-	cp	8
-	jr	c,.pitchbenddone
-	ld	de,$7ff
-	jr	.pitchbenddone
-.sub2
-	ld	a,[CH3TempFreq]
-	sub	b
-	ld	e,a
-	ld	a,[CH3TempFreq+1]
-	jr	nc,.nocarry7
-	dec	a
-.nocarry7
-	ld	d,a
-	cp	8
-	jr	c,.pitchbenddone
-	ld	de,0
-.pitchbenddone
-	ld	hl,CH3TempFreq
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-
-.getPitchOffset
-	ld	a,[CH3FreqOffset]
-	bit	7,a
-	jr	nz,.sub
-	add	e
-	ld	e,a
-	jr	nc,.setFreq
-	inc	d
-	jr	.setFreq
-.sub
-	ld	c,a
-	ld	a,e
-	add	c
-	ld	e,a
-.setFreq
-	ld	hl,CH3TempFreq
-	ld	a,[CH3PortaType]
-	and	a
-	jr	z,.normal
-	dec	a
-	ld	a,e
-	jr	nz,.donesetFreq
-
-; toneporta
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH3PortaSpeed]
-	ld	c,a
-	ld	b,0
-	ld	a,h
-	cp	d
-	jr	c,.lt
-	jr	nz,.gt
-	ld	a,l
-	cp	e
-	jr	z,.tonepordone
-	jr	c,.lt
-.gt
-	ld	a,l
-	sub	c
-	ld	l,a
-	jr	nc,.nocarry8
-	dec	h
-.nocarry8
-	ld	a,h
-	cp	d
-	jr	c,.clamp
-	jr	nz,.tonepordone
-	ld	a,l
-	cp	e
-	jr	c,.clamp
-	jr	.tonepordone
-.lt
-	add	hl,bc
-	ld	a,h
-	cp	d
-	jr	c,.tonepordone
-	jr	nz,.clamp
-	ld	a,l
-	cp	e
-	jr	c,.tonepordone
-.clamp
-	ld	h,d
-	ld	l,e
-if def(Visualizer)
-.tonepordone
-	ld	a,l
-	ld	[CH3TempFreq],a
-	ld	[CH3ComputedFreq],a
-	ldh	[rNR33],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH3TempFreq+1],a
-	ld	[CH3ComputedFreq+1],a
-	ldh	[rNR34],a
-	jr	.updateVolume
-.normal
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-.donesetFreq
-	ld	[CH3ComputedFreq],a
-	ldh	[rNR33],a
-	ld	a,d
-	ld	[CH3ComputedFreq+1],a
-	ldh	[rNR34],a
 else
-.tonepordone
-	ld	a,l
-	ld	[CH3TempFreq],a
-	ldh	[rNR33],a
-	ld	a,h
-	ld	d,a	; for later restart uses
-	ld	[CH3TempFreq+1],a
-	ldh	[rNR34],a
-	jr	.updateVolume
-.normal
-	ld	a,e
-	ld	[hl+],a
-	ld	[hl],d
-.donesetFreq
-	ldh	[rNR33],a
-	ld	a,d
-	ldh	[rNR34],a
-endc
-
-.updateVolume
-	ld	hl,CH3Reset
-	res	7,[hl]
-	ld	hl,CH3VolPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH3VolPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry5
-	inc	h
-.nocarry5
-	ld	a,[hl+]
-	cp	$ff
-	jr	z,.done
-	cp	$fd
-	jr	z,.done
-	ld	b,a
-if !def(DemoSceneMode)
-	ld	a,[CH3ChanVol]
-	push	hl
-	call	MultiplyVolume
-	pop	hl
-endc
-	ld	a,[CH3Vol]
-	cp	b
-if !def(DemoSceneMode) && !def(NoWaveVolumeScaling)
-	ld	a,0
-endc
-	jr	z,.noreset3
 	ld	a,b
-	ld	[CH3Vol],a
-if def(DemoSceneMode) || def(NoWaveVolumeScaling)
+	ld	[CH\1Vol],a
+	if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	and	a
-	ld	b,a
 	jr	z,.skip
 	cp	8
 	ld	b,%00100000
@@ -3396,37 +1606,81 @@ if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	jr	nc,.skip
 	ld	b,%01100000
 .skip
-	ld	a,[CH3ComputedVol]
+	ld	a,[CH\1ComputedVol]
 	cp	b
 	jr	z,.noreset3
 	ld	a,b
-	ld	[CH3ComputedVol],a
-	ld	[rNR32],a
+	ld	[CH\1ComputedVol],a
+	ld	[rNR\12],a
 	ld	a,d
 	or	$80
-	ldh	[rNR34],a
+	ldh	[rNR\14],a
 .noreset3
-else
+	else
 	ld	a,1
 .noreset3
 	ld	[WaveBufUpdateFlag],a
+	endc
 endc
-	ld	a,[CH3VolPos]
+	ld	a,[CH\1VolPos]
 	inc	a
-	ld	[CH3VolPos],a
+	ld	[CH\1VolPos],a
 	ld	a,[hl+]
 	cp	$fe
 	jr	nz,.done
 	ld	a,[hl]
-	ld	[CH3VolPos],a
+	ld	[CH\1VolPos],a
+if \1 != 3
+	if !def(DemoSceneMode) && !def(DisableZombieMode)
+	ld	a,1
+	ld	[CH\1VolLoop],a
+	endc
+	jr	.done
+.loadlast
+	ld	a,[hl]
+	if !def(DemoSceneMode) && !def(DisableZombieMode)
+	push	af
+	swap	a
+	and	$f
+	ld	b,a
+	ld	a,[CH\1ChanVol]
+	call	MultiplyVolume
+	swap	b
+	pop	af
+	and	$f
+	or	b
+	endc
+	ldh	[rNR\12],a
+	if def(Visualizer)
+	ld	b,a
+	and	$f
+	ld	[CH\1TempEnvelope],a
+	and	$7
+	inc	a
+	ld	[CH\1EnvelopeCounter],a
+	ld	a,b
+	swap	a
+	and	$f
+	ld	[CH\1OutputLevel],a
+	endc
+	ld	a,d
+	or	$80
+	ldh	[rNR\14],a
+	ld	a,$ff
+	ld	[CH\1VolLoop],a
+else
+.loadlast
+endc
+
 .done
 
-	; update wave
-	ld	hl,CH3WavePtr
+if \1 == 3
+	; Update wave
+	ld	hl,CH\1WavePtr
 	ld	a,[hl+]
 	ld	h,[hl]
 	ld	l,a
-	ld	a,[CH3WavePos]
+	ld	a,[CH\1WavePos]
 	add	l
 	ld	l,a
 	jr	nc,.nocarry2
@@ -3436,20 +1690,20 @@ endc
 	cp	$ff					; table end?
 	jr	z,.updatebuffer
 	ld	b,a
-	ld	a,[CH3Wave]
+	ld	a,[CH\1Wave]
 	cp	b
-if def(DemoSceneMode) || def(NoWaveVolumeScaling)
+	if def(DemoSceneMode) || def(NoWaveVolumeScaling)
 	jr	z,.noreset2
 	ld	a,b
-	ld	[CH3Wave],a
+	ld	[CH\1Wave],a
 	cp	$c0
 	push	hl
-if def(DemoSceneMode)
+		if def(DemoSceneMode)
 	jr	z,.noreset2			; if value = $c0, ignore (since this feature is disabled in DemoSceneMode)
-else
+		else
 	ld	hl,WaveBuffer
 	jr	z,.wavebuf
-endc
+		endc
 	ld	c,b
 	ld	b,0
 	ld	hl,WaveTable
@@ -3463,37 +1717,37 @@ endc
 	pop	hl
 	ld	a,d
 	or	%10000000
-	ldh	[rNR34],a
+	ldh	[rNR\34],a
 .noreset2
-else
+	else
 	ld	c,0
 	jr	z,.noreset2
 	ld	a,b
-	ld	[CH3Wave],a
+	ld	[CH\1Wave],a
 	ld	c,1
 .noreset2
 	ld	a,[WaveBufUpdateFlag]
 	or	c
 	ld	[WaveBufUpdateFlag],a
-endc
-	ld	a,[CH3WavePos]
+	endc
+	ld	a,[CH\1WavePos]
 	inc	a
-	ld	[CH3WavePos],a
+	ld	[CH\1WavePos],a
 	ld	a,[hl+]
 	cp	$fe
 	jr	nz,.updatebuffer
 	ld	a,[hl]
-	ld	[CH3WavePos],a
+	ld	[CH\1WavePos],a
 
 .updatebuffer
-if !def(DemoSceneMode)
+	if !def(DemoSceneMode)
 	call	DoPWM
 	call	DoRandomizer
-if !def(NoWaveVolumeScaling)
+		if !def(NoWaveVolumeScaling)
 	ld	a,[WaveBufUpdateFlag]
 	and	a
 	jp	z,.noupdate
-	ld	a,[CH3Wave]
+	ld	a,[CH\1Wave]
 	cp	$c0					; if value = $c0, use wave buffer
 	jr	nz,.notwavebuf
 	ld	bc,WaveBuffer
@@ -3508,7 +1762,7 @@ if !def(NoWaveVolumeScaling)
 	ld	b,[hl]
 	ld	c,a
 .multiplyvolume
-if def(Visualizer)
+			if def(Visualizer)
 	push	bc
 	ld	hl,VisualizerTempWave
 	ld	e,16
@@ -3520,8 +1774,8 @@ if def(Visualizer)
 	dec	e
 	jr	nz,.visuwavecopyloop
 	pop	bc
-endc
-	ld	a,[CH3Vol]
+			endc
+	ld	a,[CH\1Vol]
 	and	a
 	jr	z,.mute
 	cp	8
@@ -3592,321 +1846,35 @@ endc
 	pop	de
 	ld	a,e
 .mute
-	ld	[CH3ComputedVol],a
-	ld	[rNR32],a
+	ld	[CH\1ComputedVol],a
+	ld	[rNR\12],a
 	and	a
 	call	nz,LoadWave
 	xor	a
 	ld	[WaveBufUpdateFlag],a
 	ld	a,d
 	or	$80
-	ldh	[rNR34],a
+	ldh	[rNR\14],a
 .noupdate
-endc
+		endc
+	endc
 endc
 
-; ================================================================
+CH\1RegistersUpdated:
+
+endm
+
+CH1_UpdateRegisters:
+	UpdateRegisters 1
+
+CH2_UpdateRegisters:
+	UpdateRegisters 2
+
+CH3_UpdateRegisters:
+	UpdateRegisters 3
 
 CH4_UpdateRegisters:
-	ld	a,[CH4Enabled]
-	and	a
-	jp	z,DoneUpdatingRegisters
-
-	if(UseFXHammer)
-	ld	a,[FXHammer_SFXCH4]
-	cp	3
-	jr	z,.norest
-	endc
-	ld	a,[CH4ModeBackup]
-	ld	[CH4Mode],a
-	cp	rest
-	jr	nz,.norest
-	ld	a,[CH4IsResting]
-	and	a
-	jp	nz,.done
-	xor	a
-	ldh	[rNR42],a
-if def(Visualizer)
-	ld	[CH4OutputLevel],a
-	ld	[CH4TempEnvelope],a
-endc
-	ldh	a,[rNR44]
-	or	%10000000
-	ldh	[rNR44],a
-	ld	a,1
-	ld	[CH4IsResting],a
-	jp	.done
-.norest
-	xor	a
-	ld	[CH4IsResting],a
-
-	; update arps
-.updatearp
-	ld	hl,CH4NoisePtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH4NoisePos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry
-	inc	h
-.nocarry
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.noloop
-	ld	a,[hl]
-	ld	[CH4NoisePos],a
-	jr	.updatearp
-.noloop
-	cp	$ff
-	jr	z,.continue
-	cp	$80
-	jr	nc,.absolute
-	sla	a
-	sra	a
-	jr	.donearp
-.absolute
-	and	$7f
-	ld	[CH4Mode],a
-	xor	a
-.donearp
-	ld	[CH4Transpose],a
-.noreset
-	ld	a,[CH4NoisePos]
-	inc	a
-	ld	[CH4NoisePos],a
-.continue
-
-	; update wave
-if !def(DisableDeflehacks)
-	ld	hl,CH4WavePtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH4WavePos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry3
-	inc	h
-.nocarry3
-	ld	a,[hl+]
-	cp	$ff
-	jr	z,.updateNote
-	ld	[CH4Wave],a
-	ld	a,[CH4WavePos]
-	inc	a
-	ld	[CH4WavePos],a
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.updateNote
-	ld	a,[hl]
-	ld	[CH4WavePos],a
-endc
-
-; get note
-if def(DisableDeflehacks)
-; don't do per noise mode arp clamping if deflemask compatibility mode
-; is disabled so that relative arp with noise mode change is possible
-.updateNote
-	ld	a,[CH4Mode]
-	ld	b,a
-	ld	a,[CH4Transpose]
-	bit	7,a
-	jr	nz,.minus
-	add	b
-	cp	90
-	jr	c,.noclamp
-	ld	a,89
-	jr	.noclamp
-.minus
-	add	b
-	cp	90
-	jr	c,.noclamp
-	xor	a
-.noclamp
-else
-.updateNote
-	ld	c,0
-	ld	a,[CH4Mode]
-	cp	45
-	ld	b,a
-	jr	c,.noise15_2
-	sub	45
-	ld	b,a
-	inc	c
-.noise15_2
-	ld	a,[CH4Transpose]
-	bit	7,a
-	jr	nz,.minus
-	cp	45
-	jr	c,.noise15_3
-	sub	45
-	ld	c,1
-.noise15_3
-	add	b
-	cp	45
-	jr	c,.noclamp
-	ld	a,44
-	jr	.noclamp
-.minus
-	add	b
-	cp	45
-	jr	c,.noclamp
-	xor	a
-.noclamp
-	ld	b,a
-	ld	a,[CH4Wave]
-	or	c
-	and	a
-	jr	z,.noise15
-	ld	a,45
-.noise15
-	add	b
-endc
-
-if def(Visualizer)
-	ld	[CH4Noise],a
-endc
-	ld	hl,NoiseTable
-	add	l
-	ld	l,a
-	jr	nc,.nocarry2
-	inc	h
-.nocarry2
-
-	if(UseFXHammer)
-	ld	a,[FXHammer_SFXCH4]
-	cp	3
-	jr	z,.updateVolume
-	endc
-	ld	a,[hl+]
-	ldh	[rNR43],a
-
-	; update volume
-.updateVolume
-	ld	hl,CH4Reset
-	res	7,[hl]
-	ld	hl,CH4VolPtr
-	ld	a,[hl+]
-	ld	h,[hl]
-	ld	l,a
-	ld	a,[CH4VolLoop]
-	cp	$ff	; ended
-	jp	z,.done
-	ld	a,[CH4VolPos]
-	add	l
-	ld	l,a
-	jr	nc,.nocarry5
-	inc	h
-.nocarry5
-	ld	a,[hl+]
-	cp	$ff
-	jr	z,.loadlast
-	cp	$fd
-	jp	z,.done
-
-	ld	b,a
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	a,[CH4ChanVol]
-	push	hl
-	call	MultiplyVolume
-	pop	hl
-	ld	a,[CH4VolLoop]
-	dec	a
-	jr	z,.zombieatpos0
-	ld	a,[CH4VolPos]
-	and	a
-	jr	z,.zombinit
-.zombieatpos0
-endc
-	ld	a,[CH4Vol]
-	cp	b
-	jr	z,.noreset3
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	c,a
-	ld	a,b
-	ld	[CH4Vol],a
-if def(Visualizer)
-	ld	[CH4OutputLevel],a
-endc
-	sub	c
-	and	$f
-	ld	c,a
-	ld	a,8
-.zombloop
-	ldh	[rNR42],a
-	dec	c
-	jr	nz,.zombloop
-	jr	.noreset3
-.zombinit
-endc
-if def(Visualizer)
-	ld	a,b
-	ld	[CH4Vol],a
-	ld	[CH4OutputLevel],a
-	swap	a
-	or	8
-	ldh	[rNR42],a
-	xor	a
-	ld	[CH4TempEnvelope],a
-	ld	a,$80
-	ldh	[rNR44],a
-else
-	ld	a,b
-	ld	[CH4Vol],a
-	swap	a
-	or	8
-	ldh	[rNR42],a
-	ld	a,$80
-	ldh	[rNR44],a
-endc
-.noreset3
-	ld	a,[CH4VolPos]
-	inc	a
-	ld	[CH4VolPos],a
-	ld	a,[hl+]
-	cp	$fe
-	jr	nz,.done
-	ld	a,[hl]
-	ld	[CH4VolPos],a
-if !def(DemoSceneMode) && !def(DisableZombieMode)
-	ld	a,1
-	ld	[CH4VolLoop],a
-endc
-	jr	.done
-.loadlast
-	ld	a,[hl]
-if !def(DemoSceneMode)
-	push	af
-	swap	a
-	and	$f
-	ld	b,a
-	ld	a,[CH4ChanVol]
-	call	MultiplyVolume
-	swap	b
-	pop	af
-	and	$f
-	or	b
-endc
-	ldh	[rNR42],a
-if def(Visualizer)
-	ld	b,a
-	and	$f
-	ld	[CH4TempEnvelope],a
-	and	$7
-	inc	a
-	ld	[CH4EnvelopeCounter],a
-	ld	a,b
-	swap	a
-	and	$f
-	ld	[CH4OutputLevel],a
-endc
-	ld	a,$80
-	ldh	[rNR44],a
-	ld	a,$ff
-	ld	[CH4VolLoop],a
-.done
+	UpdateRegisters 4
 
 DoneUpdatingRegisters:
 	pop	hl
