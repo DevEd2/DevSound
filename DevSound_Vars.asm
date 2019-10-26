@@ -63,6 +63,9 @@ CH1Ins1					ds	1
 CH1Ins2					ds	1
 CH1DoRepeat				ds	1
 CH1RepeatCount			ds	1
+CH1MontyMode			ds	1
+CH1MontyTimer			ds	1
+CH1MontyFreq			ds	2
 
 CH2Ptr					ds	2
 CH2VolPtr				ds	2
@@ -97,6 +100,9 @@ CH2Ins1					ds	1
 CH2Ins2					ds	1
 CH2DoRepeat				ds	1
 CH2RepeatCount			ds	1
+CH2MontyMode			ds	1
+CH2MontyTimer			ds	1
+CH2MontyFreq			ds	2
 
 CH3Ptr					ds	2
 CH3VolPtr				ds	2
@@ -132,6 +138,9 @@ CH3Ins1					ds	1
 CH3Ins2					ds	1
 CH3DoRepeat				ds	1
 CH3RepeatCount			ds	1
+CH3MontyMode			ds	1
+CH3MontyTimer			ds	1
+CH3MontyFreq			ds	2
 
 CH4Ptr					ds	2
 CH4VolPtr				ds	2
@@ -164,6 +173,9 @@ CH4Ins1					ds	1
 CH4Ins2					ds	1
 CH4DoRepeat				ds	1
 CH4RepeatCount			ds	1
+CH4MontyMode			ds	1
+CH4MontyTimer			ds	1
+CH4MontyFreq			ds	2
 DSVarsEnd
 
 DSBufVars

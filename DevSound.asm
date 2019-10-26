@@ -607,6 +607,7 @@ endc
 	dw	.setEchoDelay
 	dw	.setRepeatPoint
 	dw	.repeatSection
+	dw	.setMontyMode
 
 .setInstrument
 	ld	a,[hl+]					; get ID of instrument to switch to
@@ -848,6 +849,13 @@ endc
 	ld	[CH\1DoRepeat],a
 .norepeat
 	inc	hl
+	jp	CH\1_CheckByte
+	
+.setMontyMode
+	ld	a,[hl+]
+	and	$7f	; upper bit is used as a flag
+	ld	[CH\1MontyMode],a
+	ld	[CH\1MontyTimer],a
 	jp	CH\1_CheckByte
 
 CH\1_SetInstrument:
@@ -1261,8 +1269,10 @@ if \1 != 4
 	add	hl,bc
 	ld	a,[hl+]
 	ld	e,a
+	ld	[CH\1MontyFreq],a
 	ld	a,[hl]
 	ld	d,a
+	ld	[CH\1MontyFreq+1],a
 	ld	a,[CH\1PortaType]
 	cp	2
 	jr	c,.updateVibTable
@@ -1270,7 +1280,7 @@ if \1 != 4
 	ld	[CH\1TempFreq],a
 	ld	a,d
 	ld	[CH\1TempFreq+1],a
-
+	
 .updateVibTable
 	ld	a,[CH\1VibDelay]
 	and	a
@@ -1353,7 +1363,36 @@ if \1 != 4
 	add	c
 	ld	e,a
 .setFreq
-	ld	hl,CH\1TempFreq
+	ld	a,[CH\1MontyMode]
+	and	a	; is Monty mode on?
+	jr	z,.nomonty			; if not, skip
+	ld	a,[CH\1MontyTimer]
+	dec	a
+	jr	nz,.montyset
+	ld	a,[CH\1MontyMode]
+	and	$7f	; strip monty flag
+	ld	[CH\1MontyTimer],a
+	jr	.montycontinue
+.montyset:
+	ld	[CH\1MontyTimer],a
+	ld	a,[CH\1MontyMode]
+	jr	.montycheck
+.montycontinue
+	ld	a,[CH\1MontyMode]
+	xor	%10000000			; flip monty flag
+	ld	[CH\1MontyMode],a
+.montycheck
+	bit	7,a					; is flag set?
+	jr	nz,.nomonty
+	ld	hl,CH\1MontyFreq	; use base pitch
+	ld	a,[hl+]
+	ld	d,[hl]
+	ld	e,a
+	; TODO: Work out vibrato	
+	jr	.donesetFreq
+.nomonty
+	ld	hl,CH\1TempFreq		; use calculated pitch
+.dogetpitchoffset
 	ld	a,[CH\1PortaType]
 	and	a
 	jr	z,.normal
@@ -2392,20 +2431,20 @@ DefaultRegTable:
 	db	0,7,0,0,0,0,0,1,1,1,1,1,0,0,0,0
 	; ch1
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch2
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch3
 	dw	DummyTable,DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	; ch4
 if def(DisableDeflehacks)
 	dw	DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 else
 	dw	DummyTable,DummyTable,DummyTable,DummyTable
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 endc
 
 DefaultWave:	db	$01,$23,$45,$67,$89,$ab,$cd,$ef,$fe,$dc,$ba,$98,$76,$54,$32,$10

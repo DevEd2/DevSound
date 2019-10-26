@@ -135,6 +135,11 @@ $96 - RepeatSection
   Parameter 1: Repeat count (1 byte)
   NOTE: A repeat count of zero will be ignored!
  
+$97 - SetMontyMode
+  Enables/disables Monty mode for the current channel. When using portamento or note slide commands, this will make the channel rapidly
+  alternate between the base note and the current note slide position in an arpeggio-like fashion.
+  Parameter 1: Speed (0 to disable)
+ 
 $C9 - ret
   Return from a section. (The ret instruction can be used, as long as it is not preceded with a db or dw instruction)
   No parameters.

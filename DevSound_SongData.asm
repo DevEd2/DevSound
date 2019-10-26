@@ -13,6 +13,7 @@ SongSpeedTable:
 ;	db	2,2			; asterix egypt
 	db	4,4			; flash title
 	db	6,6			; RainbowDevs logo (porta test)
+	db	6,6			; monty mode test
 SongSpeedTable_End
 
 
@@ -23,6 +24,7 @@ SongPointerTable:
 ;	dw	PT_Egypt
 	dw	PT_FlashTitle
 	dw	PT_RDLogo
+	dw	PT_MontyTest
 SongPointerTable_End
 
 if(SongSpeedTable_End-SongSpeedTable) < (SongPointerTable_End-SongPointerTable)
@@ -169,6 +171,7 @@ waveseq_EchoTest:	db	1,$ff
 ; =================================================================
 
 vib_Test:	db	4,2,4,6,8,6,4,2,0,-2,-4,-6,-8,-6,-4,-2,0,$80,1
+vib_Test2:	db	8,3,6,6,3,0,-3,-6,-6,-3,0,$80,1
 
 ; =================================================================
 ; Instruments
@@ -225,6 +228,9 @@ InstrumentTable:
 
 	dins	EgyptBass1
 	dins	EgyptBass2
+	
+	dins	MontyTest1
+	dins	MontyTest2
 
 ; Instrument format: [no reset flag],[voltable id],[arptable id],[wavetable id],[vibtable id]
 ; _ for no table
@@ -278,6 +284,9 @@ ins_RDLNoise:		Instrument	0,Echo1,RDLNoise,_,_
 
 ins_EgyptBass1:		Instrument	0,EgyptBass,Pluck,PulseLead,_
 ins_EgyptBass2:		Instrument	0,EgyptBass,Pluck,Bass_,_
+
+ins_MontyTest1:		Instrument	0,Echo1,_,EchoTest,Test2
+ins_MontyTest2:		Instrument	0,Echo1,_740,EchoTest,Test2
 
 ; =================================================================
 
@@ -827,4 +836,41 @@ RDLogo_CH4:
 	db	fix,10,rest,1
 	db	EndChannel
 
+; =================================================================
+
+PT_MontyTest:	dw	MontyTest_CH1,MontyTest_CH2,MontyTest_CH3,MontyTest_CH4
+
+MontyTest_CH1:
+	db	SetInstrument,id_MontyTest1
+	db	SetMontyMode,1
+	db	C_5,16
+	db	PitchBendDown,1
+	db	___,16
+	db	rest,8
 	
+	db	EndChannel
+	
+MontyTest_CH2:
+	db	SetInstrument,id_MontyTest1
+	db	SetMontyMode,2
+	db	rest,40
+	db	Arp,1,$47
+	db	G_4,16
+	db	PitchBendUp,2
+	db	___,16
+	db	rest,8
+	db	EndChannel
+	
+MontyTest_CH3:
+	db	SetInstrument,id_PWM1
+	db	SetMontyMode,4
+	db	EnablePWM,$f,7
+	db	rest,80
+	db	C_6,16
+	db	PitchBendDown,5
+	db	___,16
+	db	rest,8
+	db	EndChannel
+	
+MontyTest_CH4:
+	db	EndChannel

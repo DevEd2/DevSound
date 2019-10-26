@@ -113,7 +113,8 @@ SendSyncTick		equ	$93
 SetEchoDelay		equ	$94
 SetRepeatPoint		equ	$95
 RepeatSection		equ	$96
-DummyCommand		equ	$97
+SetMontyMode		equ	$97
+DummyCommand		equ	$98
 EndChannel			equ	$FF
 
 endc
