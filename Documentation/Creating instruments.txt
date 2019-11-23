@@ -18,7 +18,7 @@ The pointer should now be set up. Now let's define the instrument!
 	ins_Boom:	Instrument	0,Boom,Boom,_,_
 
 5. At the bottom of this list, add a new entry for your instrument. It should look something like this:
-	ins_Bepis:	Instrument,0,Bepis,Bepis,Bepis,Bepis
+	ins_Bepis:	Instrument	0,Bepis,Bepis,Bepis,Bepis
 
 NOTE: The names given here are simply examples, you can replace them with whatever you want.
 (See Appendix 1 for the instrument format in detail.)
