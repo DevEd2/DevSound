@@ -1,5 +1,5 @@
 # DevSound
-DevSound is a sound driver for the Game Boy which supports pulse width manipulation, arpeggios, and multiple waveforms. DevSound was designed with homebrew games in mind, so you can easily include it in your project.
+DevSound is a sound driver for the Game Boy which supports pulse width manipulation, arpeggios, and multiple waveforms. This version is no longer under development, and I recommend using [DevSound Lite](https://github.com/DevEd2/DevSoundLite) instead.
 
 # Building a demo ROM and/or GBS
 Note that the demo ROM is included already; these instructions are if you want to try your own modifications.
